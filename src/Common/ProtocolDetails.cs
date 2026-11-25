@@ -47,13 +47,22 @@ namespace SAAControl
                 {
                     ["11"] = ("Shake between readings", "\u8bfb\u6570\u4e4b\u95f4\u632f\u677f"),
                 },
-                // not confirmed yet (shown as codes): which side is read, the direction, the kind and frequency of
-                // shaking, the positioning delay, the speed
-                ["TopBottom"] = new Dictionary<string, (string, string)>(),
+                // confirmed 2026-11-25 against Omega's own protocol window (a 384-well run: Bottom optic,
+                // shaking Double orbital at 900 rpm) and the settings the program stored for that run
+                ["TopBottom"] = new Dictionary<string, (string, string)>
+                {
+                    ["1"] = ("Bottom optic", "底读"),
+                },
+                ["IdleMode"] = new Dictionary<string, (string, string)>
+                {
+                    ["9"] = ("Double orbital", "双轨道"),
+                },
+                ["IdleFrequency"] = new Dictionary<string, (string, string)>
+                {
+                    ["8"] = ("900 rpm", "900 rpm"),
+                },
+                // not confirmed yet (shown as codes): the reading direction, the speed
                 ["ReadingDir"] = new Dictionary<string, (string, string)>(),
-                ["IdleMode"] = new Dictionary<string, (string, string)>(),
-                ["IdleFrequency"] = new Dictionary<string, (string, string)>(),
-                ["Posdelay"] = new Dictionary<string, (string, string)>(),
                 ["SlowFast"] = new Dictionary<string, (string, string)>(),
             };
 
@@ -159,7 +168,16 @@ namespace SAAControl
                 AddRow(rows, "Flashes per well", "\u6bcf\u5b54\u95ea\u5149\u6b21\u6570", flashes.Distinct().Count() == 1 ? flashes[0] : string.Join(" / ", flashes));
             AddCodeRow(rows, s, "TopBottom", "Read from (top/bottom)", "\u8bfb\u677f\u4f4d\u7f6e");
             AddCodeRow(rows, s, "ReadingDir", "Reading direction", "\u8bfb\u677f\u65b9\u5411");
-            AddCodeRow(rows, s, "Posdelay", "Positioning delay", "\u5b9a\u4f4d\u5ef6\u8fdf");
+            // Posdelay: Omega's "Settling time" (0.0 ... 1.0 s) in tenths of a second (1 = 0.1 s, confirmed 2026-11-25)
+            double? settling = Number(Get(s, "Posdelay"));
+            if (settling.HasValue && settling.Value >= 0)
+                AddRow(rows, "Settling time", "\u7a33\u5b9a\u65f6\u95f4", Plain(settling.Value / 10) + " s", Plain(settling.Value / 10) + " \u79d2");
+            object flying = Get(s, "FlyMeas");
+            if (flying is bool || Whole(flying).HasValue)
+            {
+                bool on = flying is bool f ? f : Whole(flying) != 0;
+                AddRow(rows, "Flying mode", "\u98de\u884c\u6a21\u5f0f", on ? "On" : "Off", on ? "\u5f00" : "\u5173");
+            }
             AddCodeRow(rows, s, "SlowFast", "Speed", "\u901f\u5ea6");
             AddSection(sections, "Measurement", "\u6d4b\u91cf", rows);
 

@@ -378,7 +378,7 @@ Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</
 <li><b>读板仪（Omega）</b>：方案名称、板型、测量模式、方案最后保存时间、Omega 版本；循环次数 × 每轮时间、每孔闪光次数；每个通道的激发 / 发射滤光片和增益；振板设置；目标温度。取自实验开始时 Omega 的方案设置。</li>
 <li><b>PCR（Archimed）</b>：反应体积、热盖温度、运行模式、染料和检测项目；温度程序，每个阶段一行，例如“阶段 1 · 循环 99 次：80.0 °C 10:00 → 4.0 °C 5:00 (采光)”。取自实验文件（.qps / .qpt），找到后就存进程序的记录，之后实验文件再改也不影响；以前的实验在程序找到它的实验文件时补上。</li>
 </ul>
-<p>Omega 有几项设置（读板位置、读板方向、振板方式、振板频率、定位延迟、速度）的代码含义还没有核对，暂时显示为“Omega 代码 1”这样的数字，核对后会换成文字。旧版本记录的实验、或者找不到实验文件的 PCR 实验，显示“没有记录”。</p>
+<p>Omega 存的是代码。已经和 Omega 的方案窗口核对过的，显示成文字（例如底读、稳定时间 0.1 秒、双轨道振板、900 rpm）；还没核对的（例如读板方向、速度，或者别的振板方式和频率）暂时显示为“Omega 代码 1”这样的数字，核对后会换成文字。旧版本记录的实验、或者找不到实验文件的 PCR 实验，显示“没有记录”。</p>
 
 <h3>实验的状态</h3>
 <div class="tw"><table>
@@ -959,7 +959,7 @@ Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</
 <li><b>Plate reader (Omega)</b>: protocol name, plate, mode, when the protocol was last saved, Omega version; cycles × cycle time, flashes per well; excitation / emission filters and gain of each channel; shaking; target temperature. Taken from Omega’s protocol settings at the start of the run.</li>
 <li><b>PCR (Archimed)</b>: sample volume, cover temperature, run mode, dyes and detectors; the temperature program, one line per stage, e.g. “Stage 1 · Cycling × 99: 80.0 °C 10:00 → 4.0 °C 5:00 (data collected)”. Taken from the experiment file (.qps / .qpt) and stored in the program’s record once found, so a later change of the file does not alter it; earlier runs get it when the program finds their experiment file.</li>
 </ul>
-<p>The meaning of some Omega codes (read from top/bottom, reading direction, shaking mode, shaking frequency, positioning delay, speed) is not confirmed yet: they are shown as numbers such as “Omega code 1” until they are. Runs recorded by an earlier version, and PCR runs whose experiment file is not found, show “No record”.</p>
+<p>Omega stores codes. Those checked against Omega's protocol window are shown in words (for example Bottom optic, settling time 0.1 s, Double orbital shaking, 900 rpm); the others (for example the reading direction, the speed, or other shaking modes and frequencies) are shown as numbers such as “Omega code 1” until they are checked. Runs recorded by an earlier version, and PCR runs whose experiment file is not found, show “No record”.</p>
 
 <h3>The status of an experiment</h3>
 <div class="tw"><table>
