@@ -51,11 +51,11 @@ namespace SAAControl
                 // shaking Double orbital at 900 rpm) and the settings the program stored for that run
                 ["TopBottom"] = new Dictionary<string, (string, string)>
                 {
-                    ["1"] = ("Bottom optic", "底读"),
+                    ["1"] = ("Bottom optic", "\u5e95\u8bfb"),
                 },
                 ["IdleMode"] = new Dictionary<string, (string, string)>
                 {
-                    ["9"] = ("Double orbital", "双轨道"),
+                    ["9"] = ("Double orbital", "\u53cc\u8f68\u9053"),
                 },
                 ["IdleFrequency"] = new Dictionary<string, (string, string)>
                 {
