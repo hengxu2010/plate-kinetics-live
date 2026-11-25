@@ -1,97 +1,99 @@
 # Plate Kinetics Live (BMG Omega)
 
-[中文](#中文) · [English](#english)
-
-## 中文
-
-Plate Kinetics Live 是一个 Windows 程序：用 Omega 控制软件的 BMG LABTECH 读板仪（已验证 FLUOstar Omega，Omega 软件 6.20 和 6.40）
-测量时，它在旁边**只读**仪器软件写下的数据文件，实时画出每个孔的动力学曲线，并把每次实验自动存成一个记录文件（`.pk`）和 Excel 表。
-分析页面和网站 [Plate Kinetics Analysis](https://tools.fow.mobi/kinetics/) 是同一份。
-
-- 不控制仪器、不写入或锁住仪器软件的文件；
-- 不联网：网页服务只监听本机 `127.0.0.1:47815`，不收集任何统计；
-- 安装版带一个后台服务（开机就记录，不用开窗口）和托盘通知；也有免安装的便携版。
-
-> 仅供科研使用，不用于临床诊断。本项目独立开发，与 BMG LABTECH 无关，也没有得到它的认可。本仓库不含 BMG 的任何程序、库文件、说明书或数据文件；
-> 使用时需要你自己合法安装的 Omega 软件。BMG LABTECH、Omega、FLUOstar、MARS 是 BMG LABTECH GmbH 的商标，这里只用来说明本程序读取哪个软件的文件。
-> 详见 [help/NOTICE.txt](help/NOTICE.txt)。
-
-### 编译
-
-需要：Windows 10/11（自带 .NET Framework 4.8）和 [.NET SDK](https://dotnet.microsoft.com/download)（6 或更新，只用来编译）。
-不需要联网下载任何包：WebView2 的三个 DLL 已经放在 `vendor\webview2\`（微软签名，1.0.4370.26）。
-
-```powershell
-powershell -ExecutionPolicy Bypass -File build.ps1
-```
-
-成品在 `dist\`：
-
-| 文件 | 用法 |
-|---|---|
-| `PlateKineticsLive-Setup.exe` | 安装版，双击安装（要管理员权限），默认装到 `C:\Program Files\Plate Kinetics Live (BMG)` |
-| `PlateKineticsLive-portable.zip` | 便携版：解压后运行 `PlateKineticsLive.exe`，窗口开着时才记录 |
-
-可选参数：`-Version 2.2.1.0`（版本号）；`-Offline`（另做离线包，要先把微软的 .NET 4.8 和 WebView2 离线安装程序放进 `redist\`）。
-
-### 使用
-
-1. 在装有 Omega 软件的电脑上安装（或解压便携版）并打开程序。
-2. 开始测量后，程序自动找到正在跑的实验，显示实时曲线。
-3. 每次实验的记录在数据文件夹 `PlateKineticsLive-data\Experiments\` 里（`.pk` 和 `.xlsx`），可以在程序里打开、标注样本、分组和导出。
-
-Omega 软件不在默认位置时，用 `--bmg-root <文件夹>` 指定。其他命令行参数和详细说明见 [help/index.html](help/index.html)。
-
-### 文件夹
-
-| 位置 | 内容 |
-|---|---|
-| `src\Bmg\` | 读 Omega 的数据文件和数据库，整理实验记录 |
-| `src\Common\` | 窗口（WebView2）、本机网页服务、后台服务、托盘、数据文件夹、.pk 和 Excel 文件 |
-| `src\Setup\` | 安装程序（安装、更新、搬家、卸载） |
-| `web\` | 界面：分析页面 `PlateKineticsAnalysis.html` 和外壳 `shell.js`、`shell.css`、`live.js` |
-| `help\` | 说明书和许可文本（装到程序的 `Help\` 文件夹） |
-| `vendor\webview2\` | 微软 WebView2 SDK 的 DLL 和它的许可 |
-| `tools\make-icon.ps1` | 生成程序图标 `src\app.ico` |
-
-## English
+**English** · [中文](#中文说明)
 
 Plate Kinetics Live is a Windows program for BMG LABTECH plate readers run by the Omega control software (verified:
-FLUOstar Omega with Omega 6.20 and 6.40). While the reader measures, it
-**reads** (never writes or locks) the files the Omega software writes, draws each well's kinetic curve live, and
-saves every run as a record (`.pk`) and an Excel workbook. The analysis page is the same as the website
-[Plate Kinetics Analysis](https://tools.fow.mobi/kinetics/).
+FLUOstar Omega with Omega 6.20 and 6.40). While the reader measures, it **reads** (never writes or locks) the files the
+Omega software writes, draws each well's kinetic curve live, and saves every run as a record (`.pk`) and an Excel
+workbook. The analysis page is the same as the website [Plate Kinetics Analysis](https://tools.fow.mobi/kinetics/).
 
-- It never controls the instrument and never changes the instrument software's files.
-- No network use: its web server listens on `127.0.0.1:47815` only; no usage statistics.
-- The installed version runs a background service (records from boot, no window needed) with tray notifications;
-  a portable version needs no installation.
+![Overview: three readers, one measuring, live curves and positive wells](docs/images/overview.png)
+
+![Analysis of a run: plate, kinetic curves and per-well parameters](docs/images/analysis.png)
+
+<sub>Screenshots with simulated data.</sub>
+
+## Features
+
+- **Live curves** for every reader on the PC (Omega, Omega2, ...), updated as each cycle is read; positive wells,
+  earliest rise and progress at a glance.
+- **Run records**: every run is saved as a `.pk` file and an Excel workbook in `PlateKineticsLive-data\Experiments\`,
+  also when the PC restarted or the Omega software was closed during the run (gaps are filled from Omega's own files).
+- **Analysis**: sample names, groups, thresholds, lag time / T50 / max fluorescence per well, group statistics, export.
+- **Background service** (installed version): records from boot without a window or a login; tray notifications when a
+  run finishes, stops early or is interrupted.
+- **Safe for the instrument**: never controls the reader, never changes the Omega software's files.
+- **No network use**: the web server listens on `127.0.0.1:47815` only; no usage statistics, no update checks.
+- English and Chinese interface.
 
 > For research use only, not for diagnostic use. Developed independently; not affiliated with or endorsed by
 > BMG LABTECH. This repository contains no BMG program, library, manual or data file; it needs your own licensed
 > installation of the Omega software. BMG LABTECH, Omega, FLUOstar and MARS are trademarks of BMG LABTECH GmbH, used
 > here only to say whose software's files the program reads. See [help/NOTICE.txt](help/NOTICE.txt).
 
-### Build
+## Download
 
-Needs Windows 10/11 (with its .NET Framework 4.8) and the [.NET SDK](https://dotnet.microsoft.com/download)
-(6 or later, for building only). Nothing is downloaded: the WebView2 DLLs are in `vendor\webview2\`.
+Ready-made builds are on the [Releases](https://github.com/hengxu2010/plate-kinetics-live/releases) page:
+
+| File | Use |
+|---|---|
+| `PlateKineticsLive-Setup.exe` | Installer (run as administrator). Installs to `C:\Program Files\Plate Kinetics Live (BMG)` with the background service |
+| `PlateKineticsLive-portable.zip` | Portable: unzip, run `PlateKineticsLive.exe`; records while its window is open |
+
+Requires Windows 10/11 (the .NET Framework 4.8 and the WebView2 Runtime are part of Windows).
+
+## Use
+
+Install it on the PC with the Omega software and open it. When a measurement starts, the program finds the run and
+shows its curves. Use `--bmg-root <folder>` when the Omega software is not in its default location. The full manual
+is [help/index.html](help/index.html) (also under *Help* in the program).
+
+## Build
+
+Needs Windows 10/11 and the [.NET SDK](https://dotnet.microsoft.com/download) (6 or later, for building only).
+Nothing is downloaded: the WebView2 DLLs are in `vendor\webview2\` (signed by Microsoft, version 1.0.4370.26).
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-Output in `dist\`: `PlateKineticsLive-Setup.exe` (installer, run as administrator) and
-`PlateKineticsLive-portable.zip` (unzip, run `PlateKineticsLive.exe`). Options: `-Version <a.b.c.d>`,
-`-Offline` (also an offline package; put Microsoft's .NET 4.8 and WebView2 offline installers in `redist\` first).
+Output in `dist\`: `PlateKineticsLive-Setup.exe` and `PlateKineticsLive-portable.zip`. Options: `-Version <a.b.c.d>`;
+`-Offline` also makes an offline package (put Microsoft's .NET 4.8 and WebView2 offline installers in `redist\` first).
 
-### Use
-
-Install it on the PC with the Omega software and open it. When a measurement starts, the program finds the run and
-shows live curves. Records are kept in `PlateKineticsLive-data\Experiments\`. Use `--bmg-root <folder>` when the
-Omega software is not in its default location. The full manual is [help/index.html](help/index.html).
+| Folder | Contents |
+|---|---|
+| `src\Bmg\` | Reading Omega's data files and databases, building the run records |
+| `src\Common\` | Window (WebView2), local web server, service, tray, data folder, `.pk` and Excel files |
+| `src\Setup\` | The installer (install, update, move, uninstall) |
+| `web\` | The interface: the analysis page `PlateKineticsAnalysis.html` and its shell (`shell.js`, `shell.css`, `live.js`) |
+| `help\` | Manual and licence texts (installed as `Help\`) |
+| `vendor\webview2\` | Microsoft WebView2 SDK DLLs and their licence |
+| `tools\make-icon.ps1` | Draws the program icon `src\app.ico` |
 
 ## License
 
 MIT, see [LICENSE](LICENSE). Third-party components (Microsoft WebView2 SDK, SheetJS) keep their own licences, see
 [help/THIRD-PARTY-NOTICES.txt](help/THIRD-PARTY-NOTICES.txt).
+
+---
+
+## 中文说明
+
+Plate Kinetics Live 是 Windows 程序，给用 Omega 控制软件的 BMG LABTECH 读板仪用（已验证 FLUOstar Omega，Omega 6.20 和 6.40）。
+测量时它**只读** Omega 写下的数据文件，实时画出每个孔的动力学曲线，并把每次实验自动存成 `.pk` 记录和 Excel 表。
+界面有中文和英文。
+
+![总览（中文界面）](docs/images/overview-zh.png)
+
+<sub>截图为模拟数据。</sub>
+
+- **下载**：在 [Releases](https://github.com/hengxu2010/plate-kinetics-live/releases) 页面。`PlateKineticsLive-Setup.exe`
+  是安装版（管理员权限，带开机自动记录的后台服务）；`PlateKineticsLive-portable.zip` 是便携版（解压运行，窗口开着时记录）。
+- **使用**：装在有 Omega 软件的电脑上，开始测量后程序自动找到实验并显示曲线。Omega 不在默认位置时用 `--bmg-root <文件夹>`。
+  详细说明见程序里的"帮助"或 [help/index.html](help/index.html)。
+- **编译**：装好 .NET SDK 后运行 `powershell -ExecutionPolicy Bypass -File build.ps1`，成品在 `dist\`。不需要联网下载任何包。
+- **安全**：不控制仪器，不改 Omega 的文件；不联网，网页服务只开在本机 `127.0.0.1:47815`。
+
+> 仅供科研使用，不用于临床诊断。本项目独立开发，与 BMG LABTECH 无关，也没有得到它的认可。本仓库不含 BMG 的任何程序、
+> 库文件、说明书或数据文件，使用时需要你自己合法安装的 Omega 软件。BMG LABTECH、Omega、FLUOstar、MARS 是 BMG LABTECH GmbH
+> 的商标，这里只用来说明本程序读取哪个软件的文件。许可证：MIT。
