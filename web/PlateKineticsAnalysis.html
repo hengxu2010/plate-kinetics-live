@@ -191,6 +191,18 @@ h1, h2, h3 { text-wrap: balance; }
 .sp-msg .btn { margin-top: 8px; }
 .sp-msg .sp-warn { margin-bottom: 6px; font-weight: 600; }
 .ds-tab .demo.spl.stale { border-color: var(--warn); }
+/* "Save project" with its arrow ("Save as…"), and the project's name in the top bar */
+.save-split { display: inline-flex; flex: none; }
+.save-split #btnSave { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.save-split .save-more { width: 22px; padding: 0; margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; color: var(--ink-2); }
+.save-split .save-more svg { width: 12px; height: 12px; }
+.save-split #btnSave[hidden] + .save-more { display: none; }
+.pop.save-menu .mi { display: flex; align-items: baseline; gap: 14px; }
+.pop.save-menu .kb { margin-left: auto; font: 11px var(--font-mono); color: var(--muted); }
+.proj-name { flex: 0 1 auto; min-width: 0; max-width: min(280px, 30vw); display: flex; align-items: baseline; gap: 5px; font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+.proj-name .nm { overflow: hidden; text-overflow: ellipsis; }
+.proj-name .dot { flex: none; color: var(--warn); font-size: 11px; }
+.proj-name.dirty .nm { color: var(--ink); }
 .top-actions { display: flex; gap: 8px; flex: none; align-items: center; }
 /* labels of the bar: the full wording in a wide window, otherwise the short wording or the icon alone, so that the
    dataset tabs keep their place */
@@ -703,6 +715,7 @@ html.pk-wait body { visibility: hidden; }
       <div class="brand-sub">PLATE KINETICS · 96 / 384</div>
     </div>
   </div>
+  <div class="proj-name" id="projName" translate="no" hidden></div>
   <nav class="ds-tabs" id="dsTabs" aria-label="Loaded datasets"></nav>
   <div class="top-actions">
     <button class="btn icon" id="btnUndo" type="button" title="Undo the last action (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M5.5 4 2.5 7l3 3M3 7h6.5a3.5 3.5 0 0 1 0 7H7"/></svg></button>
@@ -711,7 +724,7 @@ html.pk-wait body { visibility: hidden; }
     <button class="btn" id="btnImport" type="button">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 2v8m0 0L5 7m3 3 3-3M2.5 11v2.5h11V11"/></svg>Import data</button>
     <button class="btn" id="btnOpen" type="button" title="Open a saved project file (.json)"><span class="l-narrow">Open</span><span class="l-wide">Open project</span></button>
-    <button class="btn" id="btnSave" type="button" title="Save the data, names, groups and settings as a project file (Ctrl+S)"><span class="l-narrow">Save</span><span class="l-wide">Save project</span></button>
+    <span class="save-split"><button class="btn" id="btnSave" type="button" title="Save the data, names, groups and settings as a project file (Ctrl+S)"><span class="l-narrow">Save</span><span class="l-wide">Save project</span></button><button class="btn save-more" id="btnSaveMore" type="button" title="Save as… (Ctrl+Shift+S)" aria-label="More ways to save" aria-haspopup="menu"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg></button></span>
     <button class="btn" id="btnShare" type="button">Share</button>
     <button class="btn primary" id="btnExport" type="button">Export data…</button>
     <button class="btn fold" id="btnOffline" type="button" title="Download the whole app (one HTML file) for offline use" aria-label="Download app" aria-haspopup="dialog"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 9.5v-6h11v6M1.5 12.5h13M8 5v4.6m0 0L6.2 7.8M8 9.6l1.8-1.8"/></svg><span class="l-wide">Download app</span></button>
@@ -3480,6 +3493,37 @@ const LOCALES = {
       'Click a group in the list': '点击列表里的分组',
       'Select its wells; {0}-click more groups, or tick their boxes, to select them together; Shift-click for a run of groups': '选中这一组的孔；按住 {0} 点击或勾选其他组可一起选中；按住 Shift 点击可连选一串分组',
       'Language': '语言 Language',
+      'Untitled project': '未命名项目',
+      'Changes not saved yet': '有改动还没有保存',
+      'All changes are saved': '改动都已保存',
+      'Not saved as a project file yet': '还没有保存成项目文件',
+      'Project file': '项目文件',
+      'Saved to {0}': '已保存到 {0}',
+      'Saved “{0}” to {1}': '已把“{0}”保存到 {1}',
+      'Not saved: {~0}': '没有保存：{~0}',
+      'Not saved: {~0}. “Save as…” can save it somewhere else.': '没有保存：{~0}。可以用“另存为…”保存到别处。',
+      'the file is no longer there (moved or deleted)': '文件已经不在原处了（被移走或删掉了）',
+      'the browser did not give leave to write the file': '浏览器没有给写入这个文件的许可',
+      'there is not enough space on the disk': '磁盘空间不够',
+      'the file is in use or cannot be changed': '文件正被别的程序占用，或者不能修改',
+      '“{0}” is no longer there (moved or deleted): choose where to save it': '“{0}”已经不在原处了（被移走或删掉了），请选择保存位置',
+      'The file was changed elsewhere': '这个文件在别处被改过',
+      '“{0}” was changed after it was opened or saved here (in another window, by another program or by someone else). Saving now replaces those changes.': '“{0}”在这里打开或保存之后，又在别处被改过（另一个窗口、别的程序或别人）。现在保存会盖掉那些改动。',
+      'Overwrite': '覆盖',
+      'That is the file of the project itself: choose another name for the dataset': '这是当前项目自己的文件，请给这个实验换一个文件名',
+      'Saved. “{0}” is the file that was to be opened: the page shows what it holds now.': '已保存。要打开的正是“{0}”，页面上现在就是它的内容。',
+      'Was “{0}” downloaded and kept? Opening the other project replaces the datasets on this page.': '“{0}”下载好了吗？打开另一个项目会替换这个页面上的数据。',
+      'Click “Save” again to choose where to save': '请再点一次“保存”来选择保存位置',
+      'This browser downloads a new file at every save': '这个浏览器每次保存都会下载一个新文件',
+      'Save the data, names, groups and settings as a project file (Ctrl+S). This browser downloads a new file at every save.': '把数据、命名、分组和设置保存成项目文件（Ctrl+S）。这个浏览器每次保存都会下载一个新文件。',
+      'Save as… (Ctrl+Shift+S)': '另存为…（Ctrl+Shift+S）',
+      'More ways to save': '更多保存方式',
+      'Save as…': '另存为…',
+      'Save this dataset…': '单独保存这个实验…',
+      'Unsaved changes': '有未保存的改动',
+      '“{0}” has changes that are not saved. Save them before opening another project?': '“{0}”有还没保存的改动。打开另一个项目之前要先保存吗？',
+      'Do not save': '不保存',
+      'Save the project under another name or in another place': '把项目另存为别的名字或别的位置',
       'Dataset menu': '数据集菜单',
       'Splice with another dataset, rename': '与另一个数据集拼接、改名',
       'spliced': '拼接',
@@ -7283,6 +7327,7 @@ function savePrefs() {
   const json = JSON.stringify(room ? { v: PREFS_VER, view: S.view, lang: S.lang, langSet: S.langSet } : { v: PREFS_VER, set: S.set, view: S.view, lang: S.lang, langSet: S.langSet });
   if (key + json !== prefsWritten) { try { localStorage.setItem(key, json); prefsWritten = key + json; } catch (e) { /* storage unavailable */ } }
   if (!room) AUTOSAVE.touch();
+  projTouch();
 }
 /* Version of the stored preferences. 2: "Selected only" is on by default and English is the default language;
    preferences written before that get these new defaults once, after which the choices made here are kept. */
@@ -8675,6 +8720,7 @@ function closeDS(i) {
     if (S.cur >= S.ds.length) S.cur = S.ds.length - 1;
     else if (j < S.cur) S.cur--;
     S.zoom = null;
+    if (!S.ds.some(projCounted)) projForget();      // every dataset of the project closed: a new start, Save asks where again
     invAll();
   };
   // groups, colours and exclusions are work to lose also when no step of this session made them (a restored session)
@@ -12762,14 +12808,18 @@ function dsMenu(anchor, i) {
   const html = `<button class="mi" type="button" role="menuitem" data-act="splice"${why ? ' disabled' : ''}>${esc(L('Splice…'))}</button>` +
     (why ? `<p class="hint mi-note">${esc(why)}</p>` : '') +
     `<button class="mi" type="button" role="menuitem" data-act="rename">${esc(L('Rename'))}</button>` +
+    `<button class="mi" type="button" role="menuitem" data-act="saveone">${esc(L('Save this dataset…'))}</button>` +
     (r ? `<p class="hint mi-note" translate="no">${esc(L('Spliced from “{0}” and “{1}”', r.parts[0].name, r.parts[1].name))}</p>` : '');
   const el = openPop(anchor, html, p => { p.classList.add('ds-menu'); p.dataset.i = String(i); p.setAttribute('role', 'menu'); });
   el.addEventListener('click', e => {
     const b = e.target.closest('[data-act]');
     if (!b || b.disabled) return;
     closePop();
-    if (b.dataset.act === 'splice') openSplice(i);
-    else { const t = $(`#dsTabs .ds-tab[data-i="${i}"]`); if (t) t.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); }
+    const j = S.ds.indexOf(ds);          // (the list of datasets can have changed while the menu was open)
+    if (j < 0) return;
+    if (b.dataset.act === 'splice') openSplice(j);
+    else if (b.dataset.act === 'saveone') saveDatasetFile(ds);
+    else { const t = $(`#dsTabs .ds-tab[data-i="${j}"]`); if (t) t.dispatchEvent(new MouseEvent('dblclick', { bubbles: true })); }
   });
   const first = $('.mi:not(:disabled)', el);
   if (first) try { first.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
@@ -12964,21 +13014,381 @@ function loadProject(o, keepPrefs) {
   }
   S.each = !!o.settingsPerDataset;
   S.setVer++; S.zoom = null; S.sort = { key: null, dir: 1 }; S.dirty = false;
+  try { PROJ.base = projFp(); PROJ.dirty = false; } catch (e) { PROJ.base = null; }      // what was loaded has no changes
   invAll();
 }
-function saveProject() {
-  if (!S.ds.length) { toast('Nothing to save'); return; }
-  const ds = curDS();
-  saveFile(safeName((ds ? ds.name : L('project')) + L('_project')) + '.json', JSON.stringify(projectObj())).then(ok => { if (ok) S.dirty = false; });
+/* ---------- saving to the same file ----------
+   "Save project" (the button, Ctrl+S) asks where only the first time (the File System Access API: showSaveFilePicker)
+   and then writes the same file again; a project opened with "Open project" through showOpenFilePicker is written back
+   to its own file. "Save as…" (the arrow beside Save, Ctrl+Shift+S) always asks, and the new file becomes the current
+   one. Without the API (Firefox, Safari, a frame of another site) every save is a download, as it always was, and the
+   page says so once. The file is the project file it always was (projectObj).
+   The top bar shows the project's name (its file's; "Untitled project" before the first save), with "●" while there
+   are changes that are not in the file: what the file would hold now (projFp) differs from what it held when it was
+   saved or opened (PROJ.base). Not changes: new readings of a run that is measuring (times, readings, overflows, the
+   time and source notes of a dataset, a spliced dataset following its sources), the dataset in front, what is looked
+   at right now (the results tab, "Selected only", the curves shown, the wells' display), the language; datasets that
+   are saved elsewhere (S.savedElsewhere(ds), set by the shell of the instrument programs: an experiment goes into its
+   own file) and an untouched example; what the program puts back by itself (applyDatasetAnalysis without a step to
+   undo); nothing at all in a shared room. Closing the page and opening another project ask first while there are such
+   changes. "Save this dataset…" (a dataset's menu) writes a project file of that dataset alone and changes nothing
+   here (never into the project's own file). Autosave in the browser is not touched by any of this.
+   Safeguards: before Save writes the current file again it looks at it on the disk: written by something else since it
+   was opened or saved here (another window, program or person) → Overwrite / Save as… / Cancel; gone (moved, deleted)
+   → asked where, as the first time. Closing every dataset of the project is a new start (Save asks again). A name
+   being typed is taken before saving. Across a reload (the session autosave restores) the project's name, its file and
+   the state it was saved in are kept apart (IndexedDB "pk-project"), so "●" says whether the restored session is in
+   the file. */
+const PROJ = { handle: null, name: '', base: null, dirty: false, room: false, timer: 0, busy: false, sig: '', noApi: false, hinted: false, stamp: '' };
+const PROJ_VIEW_SKIP = ['tab', 'onlySel', 'source', 'plateMode', 'viewVer', 'colsVer'];
+const PROJ_TYPES = () => [{ description: L('Project file'), accept: { 'application/json': ['.json'] } }];
+/** A dataset whose changes count for the project file: not an untouched example, not one saved elsewhere. */
+function projCounted(ds) {
+  if (!ds || (ds.isDemo && !dsEdited(ds) && !ds.notes)) return false;
+  try { return !(typeof S.savedElsewhere === 'function' && S.savedElsewhere(ds)); } catch (e) { return true; }
 }
-async function openProjectFile(f) {
+/** What the project file would hold now, without what is no change (see above), as a string to compare. */
+function projFp() {
+  const o = projectObj(true), ids = new Set(S.ds.filter(projCounted).map(d => d.id)), view = {};
+  for (const k of Object.keys(o.view || {})) if (!PROJ_VIEW_SKIP.includes(k)) view[k] = o.view[k];
+  // a standard name of the signal axis is written in the language in use: it is the same name in every language
+  if (typeof view.sigLabel === 'string' && sigNameIndex(view.sigLabel) >= 0) view.sigLabel = '#' + sigNameIndex(view.sigLabel);
+  const pick = (m, id) => (m && Object.prototype.hasOwnProperty.call(m, id) ? m[id] : null);
+  const list = o.datasetOrder.filter(id => ids.has(id)).map(id => {
+    const d = Object.assign({}, o.datasets[id], { timeInfo: null, sourceInfo: null, t: null, wells: {} });
+    for (const [w, x] of Object.entries(o.datasets[id].wells)) d.wells[w] = [x.name, x.color, x.excluded];
+    return [d, pick(o.activeSets, id), pick(o.notes, id), pick(o.datasetSettings, id), pick(o.frames, id)];
+  });
+  return JSON.stringify([o.settingsPerDataset ? null : o.set, !!o.settingsPerDataset, view, list]);
+}
+/** Whether there are changes that are not in the project's file (looked at now). */
+function projDirty() {
+  if (COLLAB.active) { PROJ.room = true; return false; }
+  // the first look, and the first after a shared room: what is on the page now is where changes start from
+  if (PROJ.room || PROJ.base == null) { PROJ.room = false; PROJ.base = projFp(); return false; }
+  return S.ds.some(projCounted) && projFp() !== PROJ.base;
+}
+/** projDirty() that never throws: false when it cannot tell. */
+function projClean() {
+  try { return !projDirty(); } catch (e) { return false; }
+}
+/** After a drawing: the marker follows, a moment later (once for a burst of drawings). */
+function projTouch() { if (!PROJ.timer) PROJ.timer = setTimeout(projCheck, 250); }
+function projCheck() {
+  clearTimeout(PROJ.timer); PROJ.timer = 0;
+  try { PROJ.dirty = projDirty(); } catch (e) { console.error(e); }
+  projShow();
+}
+/** The project's name in the top bar and in the window's title, with "●" while it has unsaved changes. */
+function projShow() {
+  const on = !COLLAB.active && (!!PROJ.name || S.ds.some(projCounted)), name = PROJ.name || L('Untitled project'), dirty = on && PROJ.dirty;
+  const sig = [on, dirty, name, S.lang].join('\u0001');
+  if (sig === PROJ.sig) return;
+  PROJ.sig = sig;
+  const el = $('#projName');
+  if (el) {
+    el.hidden = !on;
+    el.classList.toggle('dirty', dirty);
+    el.innerHTML = (dirty ? '<span class="dot" aria-hidden="true">●</span>' : '') + `<span class="nm">${esc(name)}</span>`;
+    el.title = dirty ? L('Changes not saved yet') : PROJ.name ? L('All changes are saved') : L('Not saved as a project file yet');
+  }
+  document.title = (on ? (dirty ? '● ' : '') + name + ' · ' : '') + L('Plate Kinetics Analysis') + ' · ' + APP.version;
+}
+/** Whether a file picker of the File System Access API can be used here (not in a frame of another site). */
+function fsPicker(name) {
+  if (PROJ.noApi || typeof window[name] !== 'function') return false;
+  try { return window.top === window.self || !!window.top.location.href; } catch (e) { return false; }
+}
+/** The name a new project file is offered under: the project's, or the first dataset's with today's date. */
+function projSuggest() {
+  const ds = S.ds.find(projCounted) || S.ds[0];
+  return (PROJ.name ? safeName(PROJ.name) : safeName((ds ? ds.name : L('project')) + '_' + dateTag())) + '.json';
+}
+/** Leave to write a file the user picked: asked for when the browser has not given it (yet). */
+async function writable(h) {
+  if (typeof h.queryPermission === 'function' && (await h.queryPermission({ mode: 'readwrite' })) !== 'granted' &&
+      (typeof h.requestPermission !== 'function' || (await h.requestPermission({ mode: 'readwrite' })) !== 'granted')) {
+    const e = new Error('no leave to write');
+    e.name = 'NotAllowedError';
+    throw e;
+  }
+}
+/** Writes text into a file the user picked. */
+async function writeHandle(h, text) {
+  await writable(h);
+  const w = await h.createWritable();
+  try { await w.write(new Blob([text], { type: 'application/json' })); await w.close(); }
+  catch (e) { try { await w.abort(); } catch (x) { /* gone already */ } throw e; }
+}
+/** A file as it is on the disk now (its time and size): something else wrote it when this changes. */
+async function fileStamp(h) {
+  const f = await h.getFile();
+  return f.lastModified + '/' + f.size;
+}
+/** Whether two file handles are the same file (false when it cannot tell). */
+async function sameFile(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  try { return typeof a.isSameEntry === 'function' && !!(await a.isSameEntry(b)); } catch (e) { return false; }
+}
+/** Why a file was not written, in words (the browser's own message is English and technical). */
+function fileProblem(e) {
+  const n = e && e.name;
+  return n === 'NotFoundError' ? L('the file is no longer there (moved or deleted)')
+    : n === 'NotAllowedError' || n === 'SecurityError' ? L('the browser did not give leave to write the file')
+    : n === 'QuotaExceededError' ? L('there is not enough space on the disk')
+    : n === 'NoModificationAllowedError' || n === 'InvalidStateError' ? L('the file is in use or cannot be changed')
+    : (e && e.message) || String(e);
+}
+/** A question with buttons ([key, label, primary]): resolves to the key of the one clicked, '' when it was closed. */
+function askBox(title, msg, buttons) {
+  return new Promise(res => {
+    let answer = '';
+    const m = openModal({ title, body: `<p style="margin:0;color:var(--ink-2)" translate="no">${esc(msg)}</p>`,
+      foot: buttons.map(([k, label, main]) => `<button class="btn${main ? ' primary' : ''}" type="button" data-k="${k}">${esc(label)}</button>`).join(''),
+      onClose: () => res(answer) });
+    for (const [k] of buttons) $(`[data-k="${k}"]`, m.el).onclick = () => { answer = k; m.close(); };
+  });
+}
+/** Asks where to save: a file handle, null when the user cancelled, false when the API cannot be used here. */
+async function pickSave(name, startIn) {
+  if (!fsPicker('showSaveFilePicker')) return false;
+  try { return await window.showSaveFilePicker(Object.assign({ suggestedName: name, types: PROJ_TYPES() }, startIn ? { startIn } : {})); }
+  catch (e) {
+    if (e && e.name === 'AbortError') return null;
+    if (startIn && e && e.name === 'TypeError') return pickSave(name, null);
+    // too long after the click (a question of the browser in between): the picker may not open now, but it can
+    const ua = typeof navigator !== 'undefined' && navigator.userActivation;
+    if (e && e.name === 'SecurityError' && ua && !ua.isActive) { toast(L('Click “Save” again to choose where to save')); return null; }
+    PROJ.noApi = true;           // the API is there, but this page may not use it: downloads from now on
+    return false;
+  }
+}
+/** A name being typed (a group's, a dataset's) is taken first, as a click elsewhere would take it. */
+function projCommit() {
+  const a = typeof document !== 'undefined' && document.activeElement;
+  if (!a || a.tagName !== 'INPUT' || !/^(text|search|number|)$/.test(a.type || '') || (a.closest && a.closest('.modal-back'))) return;
+  try { a.blur(); if (a.isConnected) a.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+}
+/** "Save project" (as === true: "Save as…"). Resolves to true when the project is in its file, 'download' when it was
+    handed to the browser as a download (whether it was kept there is not known), false when nothing was saved. */
+async function saveProject(as) {
+  if (!S.ds.length) { toast('Nothing to save'); return false; }
+  if (PROJ.busy) return false;
+  PROJ.busy = true;
+  try {
+    projCommit();
+    const text = JSON.stringify(projectObj()), fp = projFp();
+    let h = as === true ? null : PROJ.handle;
+    if (h) {
+      // the current file: still there, and not written by anything else since it was opened or saved here
+      let now = '';
+      try { await writable(h); now = await fileStamp(h); }
+      catch (e) {
+        if (!(e && e.name === 'NotFoundError')) { if (!(e && e.name === 'AbortError')) toast(L('Not saved: {~0}. “Save as…” can save it somewhere else.', fileProblem(e)), 8000); return false; }
+        toast(L('“{0}” is no longer there (moved or deleted): choose where to save it', h.name), 6000);
+        PROJ.handle = null; PROJ.stamp = ''; h = null;
+      }
+      if (h && PROJ.stamp && now !== PROJ.stamp) {
+        const a = await askBox('The file was changed elsewhere', L('“{0}” was changed after it was opened or saved here (in another window, by another program or by someone else). Saving now replaces those changes.', h.name),
+          [['as', 'Save as…', true], ['over', 'Overwrite'], ['cancel', 'Cancel']]);
+        if (a === 'as') h = null;
+        else if (a !== 'over') return false;
+      }
+    }
+    if (!h) {
+      h = await pickSave(projSuggest(), PROJ.handle);
+      if (h === null) return false;
+    }
+    if (h) {
+      try { await writeHandle(h, text); }
+      catch (e) {
+        if (!(e && e.name === 'AbortError')) toast(L('Not saved: {~0}. “Save as…” can save it somewhere else.', fileProblem(e)), 8000);
+        return false;
+      }
+      PROJ.handle = h;
+      PROJ.name = String(h.name || '').replace(/\.json$/i, '') || PROJ.name;
+      try { PROJ.stamp = await fileStamp(h); } catch (e) { PROJ.stamp = ''; }
+      toast(L('Saved to {0}', h.name));
+    } else {
+      const file = projSuggest();
+      if (!(await saveFile(file, text))) return false;
+      PROJ.name = file.replace(/\.json$/i, '');
+      projHint();
+    }
+    PROJ.base = fp; S.dirty = false;
+    projKeep();
+    projCheck();
+    return h ? true : 'download';
+  } finally { PROJ.busy = false; }
+}
+/** "Save this dataset…": a project file of that dataset alone (its names, groups, notes, settings; a spliced dataset
+    with its joined data and recipe). It always asks where (or downloads); the project's file and its marker stay as
+    they are. which: the dataset (or its index). */
+async function saveDatasetFile(which) {
+  const ds = typeof which === 'number' ? S.ds[which] : which;
+  if (!ds || !S.ds.includes(ds)) return false;
+  projCommit();
+  const keep = { ds: S.ds, cur: S.cur };
+  let text;
+  try { S.ds = [ds]; S.cur = 0; text = JSON.stringify(projectObj()); } finally { S.ds = keep.ds; S.cur = keep.cur; }
+  const name = safeName(ds.name + '_' + dateTag()) + '.json';
+  const h = await pickSave(name, PROJ.handle);
+  if (h === null) return false;
+  if (h) {
+    // never into the project's own file: it would hold this dataset alone, and the page would still say all is saved
+    if (await sameFile(h, PROJ.handle)) { toast(L('That is the file of the project itself: choose another name for the dataset'), 8000); return false; }
+    try { await writeHandle(h, text); }
+    catch (e) {
+      if (!(e && e.name === 'AbortError')) toast(L('Not saved: {~0}', fileProblem(e)), 8000);
+      return false;
+    }
+    toast(L('Saved “{0}” to {1}', ds.name, h.name));
+    return true;
+  }
+  if (!(await saveFile(name, text))) return false;
+  projHint();
+  return true;
+}
+/** Once: that every save of this browser is a new download. */
+function projHint() {
+  if (PROJ.hinted) return;
+  PROJ.hinted = true;
+  try { if (localStorage.getItem('pk.saveHint') === '1') return; localStorage.setItem('pk.saveHint', '1'); } catch (e) { /* no storage: once on this page */ }
+  toast(L('This browser downloads a new file at every save'), 6000);
+}
+/** "Open project": through the file picker of the API where it can be used (Save then writes back to that file). */
+async function openProjectPick() {
+  if (!fsPicker('showOpenFilePicker')) { $('#projInput').click(); return; }
+  let h, f;
+  try { [h] = await window.showOpenFilePicker({ types: PROJ_TYPES(), multiple: false }); }
+  catch (e) {
+    if (e && e.name === 'AbortError') return;
+    PROJ.noApi = true;
+    $('#projInput').click();
+    return;
+  }
+  try { f = await h.getFile(); } catch (e) { toast(L('Cannot open: {~0}', fileProblem(e))); return; }
+  await openProjectFile(f, h);
+}
+/** A project was opened: its file is the current one (handle: where Save writes it back; none for a file from the
+    file input, which Save asks about; f: the file as it was read, to notice later writes of others). */
+function projOpened(name, handle, f) {
+  PROJ.handle = handle || null;
+  PROJ.name = String(name || '').replace(/\.json$/i, '');
+  PROJ.stamp = handle && f && f.lastModified != null ? f.lastModified + '/' + f.size : '';
+  PROJ.base = projFp(); PROJ.dirty = false; S.dirty = false;
+  projKeep();
+  projCheck();
+}
+/** Every dataset of the project was closed: a new start (no file, "Untitled project"; Save asks where again). */
+function projForget() {
+  PROJ.handle = null; PROJ.name = ''; PROJ.stamp = ''; PROJ.dirty = false;
+  try { PROJ.base = projFp(); } catch (e) { PROJ.base = null; }
+  projKeep();
+  projShow();
+}
+/** Opening another project while this one has changes that are not in its file: Save, Do not save, Cancel. handle:
+    the file to be opened, when it is known. */
+function projAskSave(then, handle) {
+  const m = openModal({ title: 'Unsaved changes',
+    body: `<p style="margin:0;color:var(--ink-2)" translate="no">${esc(L('“{0}” has changes that are not saved. Save them before opening another project?', PROJ.name || L('Untitled project')))}</p>`,
+    foot: '<button class="btn primary" type="button" data-ok>Save</button><button class="btn" type="button" data-skip>Do not save</button><button class="btn" type="button" data-cancel>Cancel</button>' });
+  $('[data-cancel]', m.el).onclick = m.close;
+  $('[data-skip]', m.el).onclick = () => { m.close(); then(); };
+  $('[data-ok]', m.el).onclick = () => { m.close(); saveProject().then(async ok => {
+    if (!ok) return;
+    // saved into the very file that was to be opened: the page shows what that file holds now
+    if (ok === true && handle && await sameFile(handle, PROJ.handle)) { toast(L('Saved. “{0}” is the file that was to be opened: the page shows what it holds now.', PROJ.handle.name), 8000); return; }
+    // a download: whether it was kept is not known here, so the datasets are not replaced without a word
+    if (ok === 'download') confirmBox('Open project', esc(L('Was “{0}” downloaded and kept? Opening the other project replaces the datasets on this page.', PROJ.name + '.json')), 'Open', then);
+    else then();
+  }); };
+}
+/* the project's file across a reload: { name, hash of the state it was saved in, stamp, handle } in IndexedDB */
+function projHash(s) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(36) + ':' + s.length;
+}
+function projDb() {
+  return new Promise((res, rej) => {
+    if (typeof indexedDB === 'undefined' || !indexedDB) { rej(new Error('no IndexedDB')); return; }
+    const rq = indexedDB.open('pk-project', 1);
+    rq.onupgradeneeded = () => { if (!rq.result.objectStoreNames.contains('kv')) rq.result.createObjectStore('kv'); };
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error || new Error('IndexedDB'));
+    rq.onblocked = () => rej(new Error('IndexedDB blocked'));
+  });
+}
+/** Reads (rec undefined) or writes the record of the project's file. */
+async function projStore(rec) {
+  const db = await projDb();
+  try {
+    return await new Promise((res, rej) => {
+      const tx = db.transaction('kv', rec === undefined ? 'readonly' : 'readwrite'), st = tx.objectStore('kv');
+      const rq = rec === undefined ? st.get('current') : st.put(rec, 'current');
+      tx.oncomplete = () => res(rec === undefined ? rq.result : true);
+      tx.onerror = tx.onabort = () => rej(tx.error || new Error('IndexedDB'));
+    });
+  } finally { db.close(); }
+}
+/** Keeps the project's name, file and saved state for the next start of the page (never in a shared room). */
+function projKeep() {
+  if (COLLAB.active) return;
+  const rec = { name: PROJ.name, hash: PROJ.base == null ? '' : projHash(PROJ.base), stamp: PROJ.stamp, handle: PROJ.handle || null, at: Date.now() };
+  projStore(rec).catch(() => {
+    if (!rec.handle) return;
+    rec.handle = null; rec.stamp = '';                 // a file that cannot be kept: its name and state at least
+    projStore(rec).catch(() => { /* no storage: after a reload the project is untitled */ });
+  });
+}
+/** The session autosave restored: its project's name and file come back, and "●" when the session holds changes that
+    are not in that file (also when it was never saved into one). */
+async function projResume() {
+  let rec = null;
+  try { rec = await projStore(); } catch (e) { return; }      // no storage: as before (no name, no marker)
+  if (COLLAB.active || !S.ds.some(projCounted)) return;
+  rec = rec && typeof rec === 'object' ? rec : {};
+  const fp = projFp();
+  PROJ.name = typeof rec.name === 'string' ? rec.name : '';
+  PROJ.handle = rec.handle && typeof rec.handle.createWritable === 'function' ? rec.handle : null;
+  PROJ.stamp = PROJ.handle && typeof rec.stamp === 'string' ? rec.stamp : '';
+  PROJ.base = rec.hash && rec.hash === projHash(fp) ? fp : '\u0000' + fp;      // (never equal to what is on the page)
+  projCheck();
+}
+/** Leaving the page (beforeunload): asks while the project has changes that are not in its file. */
+function projUnload(e) {
+  if (!S.ds.length || projClean()) return false;
+  e.preventDefault(); e.returnValue = '';
+  return true;
+}
+/** The arrow beside Save: "Save as…". */
+function projMenu(anchor) {
+  if (popEl && popEl.classList.contains('save-menu')) { closePop(); return; }
+  const keys = /Mac|iPhone|iPad/.test(navigator.platform || '') ? '⇧⌘S' : 'Ctrl+Shift+S';
+  const html = `<button class="mi" type="button" role="menuitem" data-act="saveas">${esc(L('Save as…'))}<span class="kb" translate="no">${keys}</span></button>` +
+    (fsPicker('showSaveFilePicker') ? '' : `<p class="hint mi-note">${esc(L('This browser downloads a new file at every save'))}</p>`);
+  const el = openPop(anchor, html, p => { p.classList.add('ds-menu', 'save-menu'); p.setAttribute('role', 'menu'); });
+  el.addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (!b) return; closePop(); saveProject(true); });
+  const first = $('.mi', el);
+  if (first) try { first.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+}
+function setupProjectFile() {
+  const save = $('#btnSave'), more = $('#btnSaveMore');
+  if (save && !fsPicker('showSaveFilePicker')) save.title = 'Save the data, names, groups and settings as a project file (Ctrl+S). This browser downloads a new file at every save.';
+  if (more) more.addEventListener('click', e => projMenu(e.currentTarget));
+  projShow();
+}
+async function openProjectFile(f, handle) {
   try {
     // looked at before anything is asked: a file that is no project must not offer to replace the datasets
     let o;
     try { o = JSON.parse(await f.text()); } catch (e) { throw new Error(L('This is not a project file saved by this app')); }
     if (!projectDatasets(o).length) throw new Error(L('The project contains no datasets'));
-    const go = () => { try { loadProject(o); toast('Project opened'); } catch (e) { toast(L('Cannot open: {~0}', e.message)); } };
+    const go = () => { try { loadProject(o); projOpened(f.name, handle, f); toast('Project opened'); } catch (e) { toast(L('Cannot open: {~0}', e.message)); } };
     if (COLLAB.active) confirmBox('Replace the shared data', 'Opening a project replaces every dataset in the room and is synchronized to the other participants. If changes are still unsynchronized, save the draft on this page first.', 'Open and synchronize', go);
+    else if (!projClean()) projAskSave(go, handle);
     else if (S.ds.some(d => !d.isDemo)) confirmBox('Open project', 'Opening a project replaces all current datasets.', 'Open', go);
     else go();
   } catch (e) { toast(L('Cannot open: {~0}', e.message)); }
@@ -13056,6 +13466,7 @@ function applyDatasetAnalysis(id, a, opt) {
   const fmt = /^plate-kinetics-live-analysis\/(\d+)$/.exec(String(a.format == null ? ANALYSIS_FORMAT : a.format));
   if (!fmt) throw new Error('This is no analysis of Plate Kinetics Live');
   if (+fmt[1] > 1) throw new Error('Made by a newer version of Plate Kinetics Live - please update');
+  const quiet = !!opt && opt.undo === false && projClean();      // put back by the program: no change, when there was none
   if (!opt || opt.undo !== false) pushUndo(ds);
   const p = isObj(a.page) ? a.page : {}, samples = isObj(a.samples) ? a.samples : {}, colors = isObj(p.colors) ? p.colors : {};
   const excluded = new Set(Array.isArray(p.excluded) ? p.excluded.filter(x => typeof x === 'string') : []);
@@ -13101,6 +13512,7 @@ function applyDatasetAnalysis(id, a, opt) {
   if (!opt || opt.undo !== false) S.dirty = true;
   AUTOSAVE.touch();
   invAll();
+  if (quiet) { try { PROJ.base = projFp(); projKeep(); } catch (e) { /* looked at again with the next drawing */ } }
   return { ok: true, settings };
 }
 
@@ -13379,7 +13791,8 @@ function openHelp() {
     [L('Editing'), [
       [k(mod + ' + Z'), L('Undo')],
       [k(mod + ' + Shift + Z') + ' <span class="hint">/</span> ' + k(mod + ' + Y'), L('Redo')],
-      [k(mod + ' + S'), L('Save the project (data, names, groups and settings)')]
+      [k(mod + ' + S'), L('Save the project (data, names, groups and settings)')],
+      [k(mod + ' + Shift + S'), L('Save the project under another name or in another place')]
     ]],
     [L('Chart'), [
       [L('Drag'), L('Zoom into the box; a horizontal drag zooms the time axis only'), 1],
@@ -13498,7 +13911,8 @@ function applyLang() {
   S.lang = C.setLanguage(S.lang);
   const pack = C.locale();
   document.documentElement.lang = pack ? pack.lang : 'en';
-  document.title = L('Plate Kinetics Analysis') + ' · ' + APP.version;
+  document.title = L('Plate Kinetics Analysis') + ' · ' + APP.version;   // kept: the website's release tool stamps it
+  projShow();                          // the window's title: the project's name, "●" while it has unsaved changes
   $$('#langSeg button').forEach(b => b.classList.toggle('on', b.dataset.lang === S.lang));
   $('#langSeg').setAttribute('aria-label', L('Language'));
   $('#brandVersion').title = L('About this app, and a copy for offline use');
@@ -14314,6 +14728,8 @@ function init() {
   $('#langSeg').addEventListener('click', e => { const b = e.target.closest('[data-lang]'); if (b) setLang(b.dataset.lang); });
   $('#btnMenu').addEventListener('click', e => openMenu(e.currentTarget));
   window.addEventListener('beforeunload', e => {
+    // changes that are not in the project's file: the browser asks (never in a shared room)
+    if (projUnload(e)) return;
     // collaboration rooms have their own guard; with autosave working nothing is lost by leaving
     if (COLLAB.active || !S.dirty || !S.ds.some(d => !d.isDemo) || AUTOSAVE.safe()) return;
     e.preventDefault(); e.returnValue = '';
@@ -14321,9 +14737,10 @@ function init() {
   setupPlate(); setupSelBar(); setupGroups(); setupSettings(); setupTabs(); setupSplice(); setupChart(); setupTimeBar(); setupNotes(); setupResults();
 
   $('#btnImport').addEventListener('click', () => openImport());
-  $('#btnOpen').addEventListener('click', () => $('#projInput').click());
+  $('#btnOpen').addEventListener('click', openProjectPick);
   $('#projInput').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) openProjectFile(f); });
-  $('#btnSave').addEventListener('click', saveProject);
+  $('#btnSave').addEventListener('click', () => saveProject());
+  setupProjectFile();
   $('#btnExport').addEventListener('click', () => { if (curDS()) openExport(); else toast('Import data first'); });
   $('#btnOffline').addEventListener('click', openAbout);
   $('#brandVersion').addEventListener('click', openAbout);
@@ -14399,7 +14816,8 @@ function init() {
   });
   document.addEventListener('keydown', e => {
     // Ctrl/⌘+S saves the project (the browser would offer to save the page, without the data)
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') { e.preventDefault(); if (!$('.modal-back')) saveProject(); return; }
+    // (with Shift: Save as…)
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 's') { e.preventDefault(); if (!$('.modal-back')) saveProject(e.shiftKey); return; }
     if ($('.modal-back')) return;
     const tag = (e.target.tagName || '').toLowerCase();
     const typing = (tag === 'input' && !/^(checkbox|radio|button|submit|reset|range|color|file)$/i.test(e.target.type || '')) || tag === 'textarea' || tag === 'select' || e.target.isContentEditable;
@@ -14449,6 +14867,7 @@ function boot() {
       show();
       if (!r) AUTOSAVE.abandon();
       else {
+        projResume();
         const when = new Date(r.saved).toLocaleString(dateLocale(), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
         toast(L('Restored your last session (autosaved {0})', when) + (UI.told ? '' : L('. It is kept in this browser only; you can turn this off under Settings, top right')), UI.told ? 3200 : 7000);
         if (!UI.told) { UI.told = true; saveUi(); }

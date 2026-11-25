@@ -136,7 +136,7 @@
 .saa-title h1 { flex: 0 1 auto; min-width: 0; }
 .saa-title span { flex: 1 1 0; min-width: 0; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* undo, save and export belong to the dataset of the analysis view */
-.saa-shell:not([data-view="analysis"]) :is(#btnUndo, #btnRedo, #btnSave, #btnExport, .top-sep) { display: none; }
+.saa-shell:not([data-view="analysis"]) :is(#btnUndo, #btnRedo, #btnSave, #btnSaveMore, #btnExport, .top-sep) { display: none; }
 
 /* ---------- the analysis view: the page's cards ---------- */
 .saa-shell .workspace { grid-template-columns: clamp(420px, 45%, 700px) minmax(0, 1fr); gap: 16px; padding: 16px 18px 24px; }

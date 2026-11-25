@@ -301,6 +301,9 @@ function mount(pkApp) {
   // they follow the language the page is in. (Without the hook a page that has the same core is used the same way.)
   core = app ? app.C : window.PKCore || null;
   if (core) { X.addChinese(core); X.useWords(app ? app.L : core.T); }
+  // an experiment is saved into its own file: no unsaved change of the page's project file (its "●", the question
+  // when the page is closed)
+  if (app && app.S) app.S.savedElsewhere = ds => !!expOf(ds);
   const parts = app ? pageParts() : null;
   mode = parts ? 'shell' : 'classic';
   document.documentElement.classList.add(parts ? 'saa-mode-shell' : 'saa-mode-classic');
@@ -2118,9 +2121,10 @@ function redrawKeepingPlace(...parts) {
 function guardKeys(e) {
   if (mode !== 'shell') return;
   const ctrl = e.ctrlKey || e.metaKey, k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-  if (ctrl && !e.shiftKey && !e.altKey && k === 's' && !document.querySelector('.modal-back')) {
+  if (ctrl && !e.altKey && k === 's' && !document.querySelector('.modal-back')) {
     const x = view === 'analysis' ? expOf(app.curDS()) : null;
     if (x || view !== 'analysis') { e.preventDefault(); e.stopImmediatePropagation(); }
+    if (e.shiftKey) return;              // Ctrl+Shift+S: the page's "Save as…", for imported tables in the analysis view
     if (x) saveExperiment();
     else if (view === 'layouts' && lay.draft) saveLayout();
     else if (view === 'settings' && setDirty()) saveSettings();
