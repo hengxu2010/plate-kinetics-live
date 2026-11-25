@@ -564,9 +564,13 @@ function datasetInput(run, channelIndex, n, info) {
     return { id: w.id, y: numbers(w.y, n, 1), ovf: 0 };
   });
   const filters = run.channels.length !== 1 ? '' : info.excitation && info.emission ? info.excitation + '/' + info.emission : info.excitation || '';
+  // when the run started (its times count from there): the page can splice it to another dataset by actual time. As
+  // the clock of the instrument PC read it, a zone the text may carry left out: every start the page compares is such
+  // a clock time (a run's "Start time" line, a table's dates), so a viewer in another time zone sees the same pause.
+  const startMs = wallMs(info.startedAt), timeInfo = fin(startMs) ? { unit: 's', sourceKind: 'time', startMs } : { unit: 's', sourceKind: 'time' };
   return {
     t: hours(run.seconds, n), series, names, plate: { rows: run.plate.rows, cols: run.plate.cols },
-    channel: filters || say('Channel {0}', ch.channel), warnings: [], timeInfo: { unit: 's', sourceKind: 'time' },
+    channel: filters || say('Channel {0}', ch.channel), warnings: [], timeInfo,
     // printed in the page's export notes; made in the language in use, like the page's own notes about a source
     sourceInfo: {
       timeLabel: say('{0} reading time (s)', kind.software), native: { format: kind.instruments + ' · Plate Kinetics Live', notes: [] },
@@ -868,6 +872,12 @@ function stampMs(text) {
   if (!m) return NaN;
   if (/(?:Z|[+-]\d\d:?\d\d)$/i.test(s.trim())) { const at = Date.parse(s.trim()); if (fin(at)) return at; }
   return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6] || 0).getTime();
+}
+/** '2026-01-16T09:00:00' or '2026-01-16T09:00:00+08:00' -> the clock time it reads, in this browser's zone
+    (milliseconds; NaN when it is not a time): a zone is left out. */
+function wallMs(text) {
+  const m = /^(\d{4})-(\d\d)-(\d\d)[T ](\d\d):(\d\d)(?::(\d\d))?/.exec(String(text || ''));
+  return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6] || 0).getTime() : NaN;
 }
 /** A moment as the programs write it: the local time with its offset, "2026-01-20T09:30:00+08:00". */
 function localStamp(ms) {
@@ -1889,7 +1899,7 @@ const logic = { ZH, PROGRAM, PROGRAMS, ME, say: (fmt, ...args) => say(fmt, ...ar
   kindOf, softwareOf, setScreenNames, reader, readerNames, runName, datasetName, experimentDatasetName, datasetInput, inProgressText,
   planChannel, differs, isEntry, holdReason, createFeed, endedEarly, cycleText, cyclesText, stateText, progressParts, progressText, tileParts, tileLive,
   temperatureText, timesText, recordCycles,
-  runSeconds, stampMs, localStamp, clockText, spanText, runTiming, quietSeconds, runSummary, newlyPositive, timeText,
+  runSeconds, stampMs, wallMs, localStamp, clockText, spanText, runTiming, quietSeconds, runSummary, newlyPositive, timeText,
   miniCurves, axisSteps, shortNumber, lookBackAt, lookBackPlace, lookBackStep, interruptionText, interruptionLine,
   searchWords, instrumentText, statusText, experimentList, experimentRows, experimentMeta, experimentStatus, experimentProblem, instrumentsOf, removedRows,
   omegaRows, omegaTitle, omegaMeta, omegaName, runOf, safeId, bytesText, storageProblem, placeOf, inFolder,

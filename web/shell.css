@@ -116,6 +116,9 @@
 .saa-side .ds-tab .x { grid-column: 3; grid-row: 1 / span 2; margin-left: 4px; opacity: 0; }
 .saa-side .ds-tab:hover .x, .saa-side .ds-tab.on .x, .saa-side .ds-tab .x:focus-visible { opacity: 1; }
 .saa-side .ds-tab input { grid-column: 2; grid-row: 1; width: 100% !important; }
+/* the menu button of the dataset in front (splice, rename): under its close button */
+.saa-side .ds-tab .mb { grid-column: 3; grid-row: 2; margin: 2px 0 0 4px; }
+.saa-side .ds-tab .mb ~ .x { grid-row: 1; }
 /* a run of an instrument: its badge in front; coloured while it is being measured */
 .saa-side .ds-tab[data-reader] { padding-left: 34px; }
 .saa-side .ds-tab[data-reader]::before {
