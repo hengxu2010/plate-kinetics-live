@@ -1,0 +1,1476 @@
+<!doctype html>
+<html lang="zh-CN" data-lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="hx_mao">
+<meta name="description" content="Plate Kinetics Live: quick start, user guide and IT guide, in Chinese and English.">
+<title>Plate Kinetics Live · 说明书 / Manual</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Crect width='26' height='26' rx='6' fill='%23077682'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='7' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='19' cy='9' r='2.7'/%3E%3Ccircle cx='7' cy='17' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='17' r='2.7' fill-opacity='.8'/%3E%3Ccircle cx='19' cy='17' r='2.7' fill-opacity='.45'/%3E%3C/g%3E%3C/svg%3E">
+<script>
+/* The language: ?lang=zh|en or #zh-... / #en-... in the address, else the one chosen here before, else the browser's.
+   Set before the first paint so that only one language is ever shown. Without scripts both languages are shown. */
+(function () {
+  var root = document.documentElement, lang = null, m;
+  m = /[?&]lang=(zh|en)\b/i.exec(location.search) || /^#(zh|en)(?:-|$)/i.exec(location.hash);
+  if (m) lang = m[1].toLowerCase();
+  if (!lang) { try { var kept = localStorage.getItem('plk.help.lang'); if (kept === 'zh' || kept === 'en') lang = kept; } catch (e) { /* no storage */ } }
+  if (!lang) {
+    var list = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+    for (var i = 0; i < list.length && !lang; i++) {
+      var l = String(list[i]).toLowerCase();
+      if (l.indexOf('zh') === 0) lang = 'zh'; else if (l.indexOf('en') === 0) lang = 'en';
+    }
+  }
+  lang = lang || 'en';
+  root.setAttribute('data-lang', lang);
+  root.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+})();
+</script>
+<style>
+:root {
+  --plane: #eef1f1; --surface: #fcfcfb; --surface-2: #f4f6f6;
+  --ink: #0e1213; --ink-2: #4b5254; --muted: #7d8486;
+  --hair: #e1e4e3; --hair-2: #ccd2d1;
+  --accent: #077682; --accent-strong: #04545d; --accent-ink: #ffffff;
+  --accent-wash: rgba(7, 118, 130, .09); --accent-wash-2: rgba(7, 118, 130, .16);
+  --pos: #d03b3b; --pos-wash: rgba(208, 59, 59, .10);
+  --warn: #b26f00; --warn-wash: rgba(250, 178, 25, .16);
+  --ok: #148a60; --ok-wash: rgba(27, 175, 122, .13);
+  --info: #2a6fc4; --info-wash: rgba(42, 120, 214, .11);
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Microsoft YaHei", monospace;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --plane: #0d1011; --surface: #171a1b; --surface-2: #1d2122;
+    --ink: #eef0ef; --ink-2: #b7bdbd; --muted: #838a8b;
+    --hair: #2a2f30; --hair-2: #3a4142;
+    --accent: #3fb7c4; --accent-strong: #86d6de; --accent-ink: #051314;
+    --accent-wash: rgba(63, 183, 196, .12); --accent-wash-2: rgba(63, 183, 196, .22);
+    --pos: #ef6b6b; --pos-wash: rgba(239, 107, 107, .14);
+    --warn: #fab219; --warn-wash: rgba(250, 178, 25, .12);
+    --ok: #3cc48f; --ok-wash: rgba(60, 196, 143, .14);
+    --info: #6aa7f0; --info-wash: rgba(106, 167, 240, .14);
+  }
+}
+:root[data-lang="zh"] .lang-en, :root[data-lang="en"] .lang-zh { display: none !important; }
+
+* { box-sizing: border-box; }
+html { background: var(--plane); scroll-padding-top: 76px; }
+body { margin: 0; background: var(--plane); color: var(--ink); font: 15px/1.7 var(--font-sans); -webkit-text-size-adjust: 100%; }
+a { color: var(--accent-strong); }
+a:hover { color: var(--accent); }
+:root[data-lang="en"] body { line-height: 1.6; }
+
+/* ---------- top bar ---------- */
+.top {
+  position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 20px; background: var(--surface); border-bottom: 1px solid var(--hair);
+}
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; margin-right: auto; }
+.brand .mark { width: 26px; height: 26px; flex: none; color: var(--ink); }
+.brand-name { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 8px; font-size: 15px; font-weight: 600; line-height: 1.2; }
+.brand-sub { font: 500 10px/1.2 var(--font-mono); color: var(--muted); letter-spacing: .14em; margin-top: 3px; }
+.badge { font: 500 10px/1.3 var(--font-mono); color: var(--accent-strong); background: var(--accent-wash); border: 1px solid var(--hair); border-radius: 4px; padding: 2px 5px; white-space: nowrap; }
+.tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.seg { display: inline-flex; padding: 2px; border: 1px solid var(--hair-2); border-radius: 8px; background: var(--surface-2); }
+.seg button { border: 0; background: transparent; color: var(--ink-2); font: 500 13px/1 var(--font-sans); padding: 7px 11px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--accent-strong); box-shadow: 0 1px 2px rgba(14, 18, 19, .08); font-weight: 600; }
+.btn { border: 1px solid var(--hair-2); background: var(--surface); color: var(--ink); font: 500 13px/1 var(--font-sans); padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+.btn:hover, .seg button:hover { color: var(--accent-strong); }
+.btn:focus-visible, .seg button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- page ---------- */
+.wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 28px; }
+.toc { position: sticky; top: 76px; align-self: start; max-height: calc(100vh - 96px); overflow-y: auto; font-size: 13.5px; line-height: 1.45; scrollbar-width: thin; }
+.toc summary { display: none; }
+.toc .grp { margin: 14px 0 4px; padding: 0 10px; color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.toc a { display: block; padding: 5px 10px; border-radius: 7px; color: var(--ink-2); text-decoration: none; }
+.toc a:hover { background: var(--surface-2); color: var(--ink); }
+.toc a.on { background: var(--accent-wash-2); color: var(--accent-strong); font-weight: 600; }
+.toc a.sub { padding-left: 20px; font-size: 13px; }
+.doc { min-width: 0; }
+.part { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 28px 34px 30px; margin: 0 0 24px; box-shadow: 0 1px 2px rgba(14, 18, 19, .04), 0 6px 20px rgba(14, 18, 19, .04); }
+.kicker { font: 600 11px/1.2 var(--font-mono); letter-spacing: .14em; color: var(--accent-strong); text-transform: uppercase; margin: 0 0 6px; }
+h1 { font-size: 26px; line-height: 1.25; margin: 0 0 12px; letter-spacing: .005em; }
+h2 { font-size: 19px; line-height: 1.35; margin: 34px 0 10px; padding-top: 18px; border-top: 1px solid var(--hair); }
+h3 { font-size: 15.5px; line-height: 1.4; margin: 22px 0 6px; }
+h1 + h2, .lead + h2 { border-top: 0; padding-top: 0; }
+p { margin: 8px 0; }
+ul, ol { margin: 8px 0; padding-left: 22px; }
+li { margin: 3px 0; }
+li > ul { margin: 3px 0; }
+.lead { font-size: 16px; color: var(--ink-2); margin: 0 0 14px; }
+.fine { font-size: 13px; color: var(--muted); }
+b, strong { font-weight: 600; }
+code, kbd, .path { font-family: var(--font-mono); font-size: .88em; background: var(--surface-2); border: 1px solid var(--hair); border-radius: 4px; padding: 0 4px; overflow-wrap: anywhere; }
+kbd { border-bottom-width: 2px; }
+pre { font-family: var(--font-mono); font-size: 13px; line-height: 1.55; background: var(--surface-2); border: 1px solid var(--hair); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre; margin: 8px 0; }
+.tw { overflow-x: auto; margin: 10px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; line-height: 1.55; }
+th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--hair); }
+th { font-size: 12.5px; font-weight: 600; color: var(--ink-2); background: var(--surface-2); border-bottom-color: var(--hair-2); }
+td:first-child { white-space: nowrap; }
+td.wrap-ok, td.wrap-ok:first-child { white-space: normal; }
+.callout { border: 1px solid var(--hair); border-left: 3px solid var(--accent); background: var(--accent-wash); border-radius: 8px; padding: 10px 14px; margin: 14px 0; }
+.callout.warn { border-left-color: var(--warn); background: var(--warn-wash); }
+.callout h3 { margin: 2px 0 4px; font-size: 14.5px; }
+.callout ul { margin: 4px 0; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 600; white-space: nowrap; border: 1px solid transparent; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip.green { color: var(--ok); background: var(--ok-wash); }
+.chip.orange { color: var(--warn); background: var(--warn-wash); }
+.chip.blue { color: var(--info); background: var(--info-wash); }
+.sev { display: inline-block; min-width: 4.2em; padding: 0 6px; border-radius: 4px; font-size: 12px; font-weight: 600; text-align: center; }
+.sev.err { color: var(--pos); background: var(--pos-wash); }
+.sev.wrn { color: var(--warn); background: var(--warn-wash); }
+.sev.inf { color: var(--info); background: var(--info-wash); }
+
+ol.steps { list-style: none; padding: 0; margin: 14px 0; counter-reset: step; }
+ol.steps > li { position: relative; padding: 0 0 12px 42px; margin: 0; counter-increment: step; }
+ol.steps > li::before {
+  content: counter(step); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font: 600 13.5px/1 var(--font-sans);
+}
+dl.faq dt { font-weight: 600; margin: 16px 0 4px; }
+dl.faq dd { margin: 0 0 0 0; color: var(--ink); }
+.files a { font-family: var(--font-mono); }
+footer { max-width: 1200px; margin: 0 auto; padding: 0 20px 36px; color: var(--muted); font-size: 12.5px; }
+
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 16px 16px 40px; }
+  .toc { position: static; max-height: none; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 8px 8px; }
+  .toc summary { display: block; cursor: pointer; padding: 6px 10px; font-weight: 600; font-size: 14px; }
+  .toc details[open] summary { margin-bottom: 6px; }
+  .part { padding: 20px 18px 22px; border-radius: 10px; }
+  h1 { font-size: 22px; }
+  .top { padding: 8px 16px; }
+  footer { padding: 0 16px 28px; }
+}
+@media (max-width: 520px) {
+  body { font-size: 14.5px; }
+  .brand-sub { display: none; }
+  td:first-child { white-space: normal; }
+  ol.steps > li { padding-left: 38px; }
+}
+
+@media print {
+  :root {
+    --plane: #fff; --surface: #fff; --surface-2: #f4f6f6; --ink: #000; --ink-2: #333; --muted: #555;
+    --hair: #d4d8d7; --hair-2: #b9c0bf; --accent: #077682; --accent-strong: #04545d; --accent-ink: #fff;
+    --accent-wash: #eef5f6; --ok: #0d6b4a; --warn: #8a5500; --info: #1d5aa6; --pos: #b02a2a;
+  }
+  @page { size: A4; margin: 15mm 14mm 15mm; }
+  html, body { background: #fff; }
+  body { font-size: 10pt; line-height: 1.5; }
+  .top, .toc, .no-print, footer { display: none !important; }
+  .wrap { display: block; max-width: none; margin: 0; padding: 0; }
+  .part { border: 0; border-radius: 0; box-shadow: none; padding: 0; margin: 0; break-before: page; }
+  .doc > .part:first-child { break-before: auto; }
+  h1 { font-size: 17pt; }
+  h2 { font-size: 13pt; margin-top: 16pt; padding-top: 0; border-top: 0; }
+  h3 { font-size: 11pt; margin-top: 10pt; }
+  h2, h3 { break-after: avoid; }
+  tr, li, .callout, pre, dl.faq dd { break-inside: avoid; }
+  a { color: inherit; text-decoration: none; }
+  table { font-size: 9pt; }
+  pre { white-space: pre-wrap; font-size: 8.5pt; }
+  td:first-child { white-space: normal; }
+  :root.print-quick .part:not(.quick) { display: none !important; }
+  .part.quick { font-size: 10.2pt; line-height: 1.5; }
+  .part.quick h1 { font-size: 16pt; margin-bottom: 6pt; }
+  .part.quick .lead { font-size: 10pt; }
+  .part.quick ol.steps > li { padding-bottom: 5pt; }
+  .part.quick .callout { margin: 8pt 0; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 26 26" aria-hidden="true">
+      <rect x="0.5" y="0.5" width="25" height="25" rx="6" fill="none" stroke="currentColor" stroke-opacity=".25"/>
+      <circle cx="7" cy="9" r="2.6" fill="currentColor" fill-opacity=".22"/><circle cx="13" cy="9" r="2.6" fill="currentColor" fill-opacity=".22"/><circle cx="19" cy="9" r="2.6" fill="var(--accent)"/>
+      <circle cx="7" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/><circle cx="13" cy="17" r="2.6" fill="var(--accent)" fill-opacity=".55"/><circle cx="19" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/>
+    </svg>
+    <div>
+      <div class="brand-name"><span>Plate Kinetics Live</span><span class="lang-zh">说明书</span><span class="lang-en">Manual</span><span class="badge">2.2</span></div>
+      <div class="brand-sub">BMG OMEGA · ROCGENE ARCHIMED</div>
+    </div>
+  </div>
+  <div class="tools no-print">
+    <div class="seg" role="group" aria-label="语言 / Language">
+      <button type="button" data-set-lang="zh" lang="zh-CN">中文</button>
+      <button type="button" data-set-lang="en" lang="en">English</button>
+    </div>
+    <button class="btn" type="button" data-print="quick"><span class="lang-zh">打印快速上手</span><span class="lang-en">Print quick start</span></button>
+    <button class="btn" type="button" data-print="all"><span class="lang-zh">打印全部</span><span class="lang-en">Print all</span></button>
+  </div>
+</header>
+
+<!-- =====================================================================================================
+     中文
+     ===================================================================================================== -->
+<div class="wrap lang-zh" lang="zh-CN">
+<nav class="toc" aria-label="目录">
+<details open>
+<summary>目录</summary>
+<a href="#zh-quick">快速上手</a>
+<div class="grp">用户手册</div>
+<a href="#zh-overview">1. 概览</a>
+<a href="#zh-live">2. 实时查看</a>
+<a href="#zh-files">3. 实验和实验文件</a>
+<a href="#zh-folder">4. 数据文件夹</a>
+<a href="#zh-annotations">5. 标注和自动保存</a>
+<a href="#zh-layouts">6. 孔板布局</a>
+<a href="#zh-notify">7. 通知</a>
+<a href="#zh-settings">8. 设置</a>
+<a href="#zh-problems">9. 问题和处理办法</a>
+<a href="#zh-update">10. 更新</a>
+<a href="#zh-uninstall">11. 卸载</a>
+<a href="#zh-faq">12. 常见问题</a>
+<div class="grp">IT 指南</div>
+<a href="#zh-it-req">1. 系统要求</a>
+<a href="#zh-it-install">2. 安装和静默安装</a>
+<a href="#zh-it-folders">3. 文件夹和权限</a>
+<a href="#zh-it-service">4. 后台服务</a>
+<a href="#zh-it-ports">5. 端口和网络</a>
+<a href="#zh-it-tray">6. 托盘</a>
+<a href="#zh-it-uninstall">7. 卸载</a>
+<a href="#zh-it-offline">8. 离线安装包</a>
+<a href="#zh-it-portable">9. 便携版</a>
+<a href="#zh-it-move">10. 搬到别的文件夹</a>
+<a href="#zh-it-logs">11. 日志和隐私</a>
+<a href="#zh-it-former">12. 从 SAAControl 升级</a>
+<a href="#zh-it-cmd">13. 程序的命令行</a>
+<div class="grp">其他</div>
+<a href="#zh-legal">许可与声明</a>
+</details>
+</nav>
+
+<main class="doc">
+
+<!-- ---------------------------------------------------------------- 快速上手 -->
+<section class="part quick" id="zh-quick">
+<p class="kicker">快速上手</p>
+<h1>Plate Kinetics Live 快速上手</h1>
+<p class="lead">Plate Kinetics Live 装在连着仪器的电脑上。它读取仪器软件自己写下的文件，自动记录每一次测量，边测边显示曲线，并把每个实验存成一个 <b>.pk 实验文件</b>和一个 <b>Excel 表格</b>。它从不控制仪器，也不改动仪器软件的任何文件。</p>
+<p>有两个程序，用法相同：<b>Plate Kinetics Live</b> 用于装有 Omega 软件的 BMG LABTECH 读板仪；<b>Plate Kinetics Live (Archimed)</b> 用于 RocGene Archimed 实时荧光定量 PCR 仪。</p>
+<ol class="steps">
+<li><b>安装。</b>以管理员身份运行 <code>PlateKineticsLive-Setup.exe</code>（读板仪）或 <code>PlateKineticsLive-Archimed-Setup.exe</code>（PCR），按默认设置安装。装好后，后台服务立刻开始记录；以后开机自动启动，不需要有人登录，也不需要开着窗口。</li>
+<li><b>照常测量。</b>在 Omega 或 Archimed Analyzer 里开始实验。实验名取自 Omega 里填的 ID1（没填就用方案名），或 Archimed 的实验文件名。也可以事先在“设置 → 下一个实验”里给仪器定好名字和孔板布局。</li>
+<li><b>看实时曲线。</b>从开始菜单打开 Plate Kinetics Live。每台仪器一张卡片，显示第几轮和预计结束时间。测满 2 轮后，点“在分析里打开”看曲线；曲线随新数据自动更新。</li>
+<li><b>标注样本。</b>在分析页面里填样本名、分组和备注，调整阈值等分析设置。改动约 3 秒后自动存进这个实验，旁边显示“已保存 14:32”。按 <kbd>Ctrl</kbd>+<kbd>S</kbd> 立即保存，并更新 Excel 文件。</li>
+<li><b>找到文件。</b>点“打开数据文件夹”。每个实验在 <code>Experiments\年-月\</code> 里有两个文件：<code>.pk</code>（完整的实验记录，双击就能打开）和同名的 <code>.xlsx</code>（“Full record”和“Basic data”两张表）。</li>
+<li><b>留意通知。</b>实验完成、提前停止、中断、很久没有新数据或没能保存时，屏幕右下角弹出 Windows 通知。窗口顶部的横幅说明出了什么问题、该怎么办。</li>
+</ol>
+<div class="callout">
+<h3>记住三件事</h3>
+<ul>
+<li>安装版关掉窗口不影响记录；便携版只在程序开着时记录。</li>
+<li>备份整个 <code>PlateKineticsLive-data</code> 文件夹（包括隐藏的 System），不要只备份 Experiments。</li>
+<li>误删了实验文件，可以在“实验”列表里恢复。</li>
+</ul>
+</div>
+<p class="fine">仅供科研使用，不用于临床诊断。完整说明见“用户手册”，安装和维护见“IT 指南”。</p>
+</section>
+
+<!-- ---------------------------------------------------------------- 用户手册 -->
+<section class="part" id="zh-guide">
+<p class="kicker">用户手册</p>
+<h1>用户手册</h1>
+
+<h2 id="zh-overview">1. 概览</h2>
+<p>Plate Kinetics Live 让仪器电脑上的每一次动力学测量都有完整、可靠的记录，并且可以边测边看曲线。</p>
+<ul>
+<li><b>自动记录。</b>程序一直看着仪器软件写下的文件，记下每一轮读数。程序没在运行时结束的实验，下次启动时从仪器软件自己的文件里补全。</li>
+<li><b>实时曲线。</b>测量中的实验可以直接在分析页面（Plate Kinetics Analysis）里看曲线、算动力学参数、做分组统计、出图和报告。分析页面也能导入其他仪器导出的数据文件。</li>
+<li><b>实验文件。</b>每个实验自动得到一个 .pk 文件（完整记录）和一个 Excel 文件，按月份放在数据文件夹里。</li>
+<li><b>只读取。</b>程序从不向仪器发送命令，也不写入、不锁住仪器软件的文件。</li>
+<li><b>不联网。</b>程序不向任何地方发送数据。</li>
+</ul>
+
+<h3>两个程序</h3>
+<div class="tw"><table>
+<tr><th>程序</th><th>仪器</th><th>读取什么</th></tr>
+<tr><td>Plate Kinetics Live</td><td class="wrap-ok">BMG LABTECH 读板仪，用 Omega 控制软件。已验证：Omega 6.20 和 6.40 的板模式动力学，96 孔和 384 孔板。</td><td class="wrap-ok">Omega 测量中的读数文件；Omega 各个用户的数据库</td></tr>
+<tr><td>Plate Kinetics Live (Archimed)</td><td class="wrap-ok">RocGene Archimed 实时荧光定量 PCR 仪。已验证：Archimed X4 和 Archimed Analyzer 1.5.5。</td><td class="wrap-ok">Archimed Analyzer 的日志；桌面上的实验文件</td></tr>
+</table></div>
+<p>两个程序可以装在同一台电脑上，各用各的端口和数据文件夹，互不影响。</p>
+
+<h3>安装版和便携版</h3>
+<div class="tw"><table>
+<tr><th></th><th>安装版</th><th>便携版（zip）</th></tr>
+<tr><td>谁在记录</td><td class="wrap-ok">Windows 后台服务：开机就启动，不需要登录，不需要开窗口</td><td class="wrap-ok">程序本身：只在程序开着时记录</td></tr>
+<tr><td>窗口</td><td class="wrap-ok">只用来看，关掉不影响记录</td><td class="wrap-ok">关掉就停止记录（关之前会提醒）</td></tr>
+<tr><td>通知</td><td class="wrap-ok">托盘图标弹出 Windows 通知</td><td class="wrap-ok">只在窗口里提示</td></tr>
+<tr><td>双击 .pk 打开</td><td class="wrap-ok">可以</td><td class="wrap-ok">用“打开方式”选这个程序</td></tr>
+<tr><td>适合</td><td class="wrap-ok">日常使用</td><td class="wrap-ok">试用，或不能安装软件的电脑</td></tr>
+</table></div>
+
+<h3>窗口</h3>
+<p>从开始菜单或桌面打开 Plate Kinetics Live。窗口左侧是导航栏：总览（所有仪器的状态）、每台仪器、分析（分析页面）、实验（所有实验文件）、孔板布局、设置、关于和帮助；读板仪程序还有“全部 BMG 实验”。窗口按每个 Windows 用户分别记住大小、语言和页面设置。</p>
+
+<h3>用词</h3>
+<div class="tw"><table>
+<tr><th>中文</th><th>English</th><th>意思</th></tr>
+<tr><td>实验</td><td>experiment</td><td class="wrap-ok">一次测量，从开始到结束</td></tr>
+<tr><td>仪器</td><td>instrument</td><td class="wrap-ok">一台读板仪或 PCR 仪</td></tr>
+<tr><td>方案</td><td>protocol</td><td class="wrap-ok">仪器软件里的测量设置</td></tr>
+<tr><td>轮</td><td>cycle</td><td class="wrap-ok">动力学测量中把整板读一遍</td></tr>
+<tr><td>已完成</td><td>completed</td><td class="wrap-ok">测完了计划的所有轮</td></tr>
+<tr><td>提前停止</td><td>stopped early</td><td class="wrap-ok">在仪器软件里被停止，没有测满计划的轮数</td></tr>
+<tr><td>中断</td><td>interrupted</td><td class="wrap-ok">因电脑或软件出事而意外结束（写明原因）</td></tr>
+<tr><td>没看到结束</td><td>end not seen</td><td class="wrap-ok">程序没能确定实验是怎么结束的</td></tr>
+<tr><td>操作者</td><td>operator</td><td class="wrap-ok">做这个实验的人</td></tr>
+<tr><td>标注</td><td>annotation</td><td class="wrap-ok">样本名、分组、备注和分析设置</td></tr>
+</table></div>
+
+<h2 id="zh-live">2. 实时查看</h2>
+<p>每台仪器有一张卡片，显示：</p>
+<ul>
+<li>状态：空闲、测量中、已结束、提前结束或无法读取；</li>
+<li>实验名、方案、开始时间、操作者、第几轮（例如“第 12 / 300 轮”）、预计结束时间、温度和最新数据的时间；</li>
+<li>实验意外结束时的时间和原因，例如“提前结束：03:10 电脑因 Windows 更新重启”（见第 3 节）。</li>
+</ul>
+<p>卡片上出现“已经 … 没有新数据了，请看一下仪器和 Omega 软件”时，是仪器软件很久没有写下新读数：请看一下仪器和仪器软件是否暂停、报错或在等人操作。</p>
+<p>点“在分析里打开”，这次实验的曲线就在分析页面里打开，并随新数据自动更新；关掉“自动载入曲线”后不再自动更新。测满 2 轮后才能显示曲线；曲线只支持 96 孔和 384 孔板。拖动卡片上的圆点可以回看这次实验较早的时候，拖到最右边就回到实时。</p>
+<p>结束超过 7 天的实验会从数据列表里收起；要看时在“实验”里打开。</p>
+<p><b>操作者</b>默认是实验开始时登录这台电脑的 Windows 用户。可以在“设置”里定一个默认操作者，也可以在每个实验的标注里修改。</p>
+
+<h2 id="zh-files">3. 实验和实验文件</h2>
+<h3>什么时候写文件</h3>
+<ul>
+<li><b>.pk</b>：测量中每完成一轮写一次，实验结束时再写一次。实验结束后，原始数据就封存了：以后只可能补上漏掉的轮（从仪器软件的文件里读回），已有的数值永远不会再改。</li>
+<li><b>.xlsx</b>：实验结束时生成；保存标注以后按第 5 节的规则更新。</li>
+</ul>
+<h3>文件名</h3>
+<pre>Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.pk
+Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</pre>
+<p>即开始时间、实验名、仪器型号和序列号，按开始的年月放在子文件夹里。实验名依次取自：“设置 → 下一个实验”里定的名字；Omega 里填的 ID1，没填就用方案名；Archimed 的实验文件名。Windows 不允许的字符会被去掉；和别的实验重名时，后面加“ (2)”“ (3)”。</p>
+
+<h3>.pk 实验文件</h3>
+<p>.pk 是一个实验的完整记录，双击就用 Plate Kinetics Live 打开。它是一个 zip 压缩包，里面有：</p>
+<div class="tw"><table>
+<tr><th>文件</th><th>内容</th></tr>
+<tr><td>README.txt</td><td class="wrap-ok">一页中英文说明</td></tr>
+<tr><td>info.json</td><td class="wrap-ok">基本信息：实验编号（每个实验唯一，改名也不变）、实验名、仪器型号、序列号、仪器软件和版本、开始和结束时间（带时区，例如 <code>2026-11-20T14:05:32+08:00</code>）、状态、完成和计划的轮数、中断原因、操作者、原始数据的 SHA-256 校验值、封存时间</td></tr>
+<tr><td>run.json</td><td class="wrap-ok">原始数据：每一轮每个孔的读数、时间、温度、方案设置和事件</td></tr>
+<tr><td>analysis.json</td><td class="wrap-ok">保存的标注和分析结果（没保存过就没有这个文件）</td></tr>
+</table></div>
+<p>请不要手工改动 .pk 里的文件。较新版本的 Plate Kinetics Live 做的 .pk 如果用的是新格式，旧版本会提示“由更新的 Plate Kinetics Live 制作，请更新程序”。</p>
+
+<h3>Excel 文件</h3>
+<p>和 .pk 同名的 .xlsx 有三张表：</p>
+<ul>
+<li><b>Full record</b>（完整记录）：实验的全部信息——实验名和编号、仪器、软件、方案、起止时间和时区、状态、中断原因、轮数、目标温度、每个通道的滤光片和增益、操作者、原始数据的校验值；样本（孔号、内容、保存的样本名和分组）；每个通道一张数据表（轮次、时间 (s)、温度 (°C)、每孔一列，孔号下面一行是样本名）；保存的分析结果；事件。</li>
+<li><b>Basic data</b>（基本数据）：只有数字——轮次、时间 (s)、温度 (°C)、每孔一列，每个通道一块。Excel、WPS、Prism 等都可以直接用。</li>
+<li><b>Protocol</b>（方案）：方案详情（见下），英文名称、中文名称、数值各占一列；读板仪的实验另有“Omega 原始值”：Omega 保存的每一项设置原样列出（不含 Omega 的用户账号）。</li>
+</ul>
+<p>Excel 是副本，原始记录以 .pk 为准。Excel 文件丢了或被改乱了，在“实验”列表里点“重新生成 Excel”。</p>
+
+<h3>方案详情</h3>
+<p>程序为每个实验记下重复这个实验需要的设置，在分析页面的实验信息旁点“方案详情”展开查看，也写在 Excel 的“Protocol”表里：</p>
+<ul>
+<li><b>读板仪（Omega）</b>：方案名称、板型、测量模式、方案最后保存时间、Omega 版本；循环次数 × 每轮时间、每孔闪光次数；每个通道的激发 / 发射滤光片和增益；振板设置；目标温度。取自实验开始时 Omega 的方案设置。</li>
+<li><b>PCR（Archimed）</b>：反应体积、热盖温度、运行模式、染料和检测项目；温度程序，每个阶段一行，例如“阶段 1 · 循环 99 次：80.0 °C 10:00 → 4.0 °C 5:00 (采光)”。取自实验文件（.qps / .qpt），找到后就存进程序的记录，之后实验文件再改也不影响；以前的实验在程序找到它的实验文件时补上。</li>
+</ul>
+<p>Omega 有几项设置（读板位置、读板方向、振板方式、振板频率、定位延迟、速度）的代码含义还没有核对，暂时显示为“Omega 代码 1”这样的数字，核对后会换成文字。旧版本记录的实验、或者找不到实验文件的 PCR 实验，显示“没有记录”。</p>
+
+<h3>实验的状态</h3>
+<div class="tw"><table>
+<tr><th>状态</th><th>意思</th></tr>
+<tr><td>测量中</td><td class="wrap-ok">还在测量</td></tr>
+<tr><td>已完成</td><td class="wrap-ok">测完了计划的所有轮</td></tr>
+<tr><td>提前停止</td><td class="wrap-ok">在仪器软件里被停止，例如“提前停止（第 98/300 轮）”</td></tr>
+<tr><td>中断</td><td class="wrap-ok">意外结束，或测量中电脑或程序重启过；写明时间和原因（见下表）</td></tr>
+<tr><td>没看到结束</td><td class="wrap-ok">程序没能确定实验是怎么结束的，例如结束时程序没在运行，仪器软件的文件里也看不出来。已经记下的数据照常可用</td></tr>
+</table></div>
+
+<h3>中断的原因</h3>
+<p>实验意外结束，或测量中电脑或程序重启过时，程序在 Windows 自己的事件日志里查出原因，写在卡片上、.pk 里和 Excel 的“Full record”表里：</p>
+<div class="tw"><table>
+<tr><th>显示为</th><th>Windows 里看到的</th></tr>
+<tr><td>电脑断电或意外停止</td><td class="wrap-ok">电脑没有正常关机就重新启动了</td></tr>
+<tr><td>电脑因 Windows 更新重启</td><td class="wrap-ok">Windows 更新要求的重启</td></tr>
+<tr><td>电脑重启 / 电脑关机</td><td class="wrap-ok">有人或某个程序让电脑重启或关机（括号里写明是哪个程序）</td></tr>
+<tr><td>电脑进入睡眠</td><td class="wrap-ok">电脑睡眠了</td></tr>
+<tr><td>仪器软件出错退出</td><td class="wrap-ok">Omega 或 Archimed Analyzer 崩溃</td></tr>
+<tr><td>仪器软件被关闭</td><td class="wrap-ok">测量中仪器软件被关掉了</td></tr>
+<tr><td>记录程序被停止</td><td class="wrap-ok">Plate Kinetics Live 的后台服务（或便携版）被停止了</td></tr>
+<tr><td>原因不明</td><td class="wrap-ok">没找到线索</td></tr>
+</table></div>
+
+<h3>“实验”列表</h3>
+<p>“实验”里列出数据文件夹中的所有实验。可以按名字、样本名、仪器、日期搜索，按仪器、日期和状态筛选。对每个实验可以：</p>
+<ul>
+<li><b>打开</b>：在分析页面里打开，连同保存的标注；</li>
+<li><b>在文件夹中显示</b>；</li>
+<li><b>改名</b>：同时改 .pk 和 .xlsx 的文件名（实验编号不变）；</li>
+<li><b>重新生成 Excel</b>；</li>
+<li><b>删除</b>：把 .pk 和 .xlsx 移到回收站；</li>
+<li><b>恢复</b>：删掉的实验单独列出，可以用程序自己保存的记录重新生成 .pk、.xlsx 和保存过的标注；</li>
+<li><b>导出当前数据</b>：实验还在测量时，把到目前为止的数据导出成 Excel 文件。</li>
+</ul>
+<p>也可以直接在资源管理器里改名，在 Experiments 里移动或删除文件：程序靠文件里的实验编号认文件，不靠文件名。已经结束的实验，文件被删后不会自动再生成；需要时在列表里恢复。</p>
+
+<h3>打开 .pk</h3>
+<p>双击 .pk 文件（安装版），或在“实验”里点“打开”。从别处拷来的 .pk（U 盘、邮件附件）也能打开；在这样的文件里做的标注保存进这个文件本身。</p>
+
+<h3>全部 BMG 实验（读板仪程序）</h3>
+<p>列出这台电脑上 Omega 数据库里的所有实验（Omega 的每个用户），包括装本程序之前做的。可以在分析页面里打开，也可以存成实验文件（.pk 和 .xlsx）。已验证 Omega 6.20 和 6.40 的板模式动力学、96 孔和 384 孔板；其他版本或模式的实验也会列出，但不保证能正确打开。</p>
+
+<h3>导出</h3>
+<p>在分析页面里导出表格、图片或报告时，“另存为”对话框直接打开这个实验所在的文件夹。导出的每个表、图和报告都注明数据来自哪个实验或文件，以及分析页面的版本。</p>
+
+<h2 id="zh-folder">4. 数据文件夹</h2>
+<p>数据文件夹 <code>PlateKineticsLive-data</code> 和程序放在一起。安装版默认在：</p>
+<ul>
+<li><code>C:\Program Files\Plate Kinetics Live (BMG)\PlateKineticsLive-data</code></li>
+<li><code>C:\Program Files\Plate Kinetics Live (Archimed)\PlateKineticsLive-data</code></li>
+</ul>
+<p>便携版的数据文件夹在 exe 旁边。打开它的办法：窗口里的“打开数据文件夹”，托盘菜单的“打开数据文件夹”，或开始菜单里的“Plate Kinetics Live Experiments”。</p>
+<div class="tw"><table>
+<tr><th>位置</th><th>内容</th></tr>
+<tr><td>README.txt</td><td class="wrap-ok">中英文说明：什么在哪里、该备份什么</td></tr>
+<tr><td>Experiments\年-月\</td><td class="wrap-ok">实验文件（.pk 和 .xlsx）。这是大家自己的文件：可以改名、在 Experiments 里移动、删除</td></tr>
+<tr><td>System\（隐藏）</td><td class="wrap-ok">程序自己的文件：原始记录（runs）、日志（log）、坏文件（recovery）、保存的标注的副本（analysis）、孔板布局（layouts）、设置（settings.json）、每个 Windows 用户的窗口数据（users）。请不要改动</td></tr>
+</table></div>
+<h3>谁能改什么（安装版）</h3>
+<ul>
+<li>Experiments：这台电脑的所有用户都可以在里面新建、改名、移动、删除文件和文件夹。</li>
+<li>System：用户只能看，只有后台服务和管理员能写。</li>
+</ul>
+<h3>备份</h3>
+<p>请备份<b>整个</b> PlateKineticsLive-data 文件夹，包括隐藏的 System 文件夹：原始记录和恢复所需的一切都在 System 里，只备份 Experiments 不够。恢复时把整个文件夹放回程序旁边（安装版请 IT 先停止后台服务，见 IT 指南第 3 节）。</p>
+<h3>断电和坏文件</h3>
+<p>程序写文件时先写一个临时文件，确认写到磁盘上并读回核对后才替换原文件，同时留着上一版（.bak），所以断电不会留下写了一半的记录。启动时如果发现坏文件，程序把它挪到 <code>System\recovery\日期-时间\</code>（程序从不删除那里的文件），然后从 .bak 恢复；没有 .bak 就从仪器软件的文件重建。做了什么，窗口顶部的蓝色提示会说明。</p>
+<h3>磁盘空间</h3>
+<p>数据文件夹所在磁盘的剩余空间少于 5 GB 时出现警告，少于 1 GB 时出现错误。请尽快腾出空间，否则新数据可能无法保存。</p>
+
+<h2 id="zh-annotations">5. 标注和自动保存</h2>
+<p>你在分析页面里给一个实验做的标注——样本名、分组、备注、操作者，以及分析设置（阈值、截断值等）——保存在这个实验里（.pk 里的 analysis.json），System 里另存一份用来恢复。原始读数永远不会被改动。</p>
+<h3>自动保存</h3>
+<ul>
+<li>最后一次改动约 3 秒后自动保存，窗口里显示“已保存 14:32”。</li>
+<li>按 <kbd>Ctrl</kbd>+<kbd>S</kbd>（或点“保存”）立即保存。</li>
+<li>打开一个实验时，它保存的标注自动载入。读板仪的实验还没保存过标注时，样本名先用 Omega 里输入的样本信息（如果有）。</li>
+</ul>
+<h3>Excel 什么时候更新</h3>
+<p>自动保存只写 .pk，不会每次都重写 Excel。Excel 在这些时候更新：按 <kbd>Ctrl</kbd>+<kbd>S</kbd> 时；离开或关闭这个实验时；有改动时最多每 10 分钟一次。</p>
+<p>如果 Excel 文件正开着，或者有人改过它，程序不会覆盖，而是在旁边另写一个 <code>实验名 (analysis 2026-11-20 15-42).xlsx</code>。Excel 出问题不会影响 .pk 的保存。</p>
+<h3>状态标签</h3>
+<p>分析旁边的状态标签说明你看到的标注是否已经存进了实验：</p>
+<div class="tw"><table>
+<tr><th>标签</th><th>意思</th></tr>
+<tr><td><span class="chip green">与仪器端一致</span></td><td class="wrap-ok">你看到的就是实验里保存的版本。</td></tr>
+<tr><td><span class="chip orange">有改动只在这台设备上</span></td><td class="wrap-ok">你的改动还没有存进实验，例如暂时连不上记录程序。程序每 30 秒重试一次。</td></tr>
+<tr><td><span class="chip blue">仪器端有更新</span></td><td class="wrap-ok">你还有没存进去的改动时，别人保存了一个更新的版本。</td></tr>
+</table></div>
+<p>自己没有未保存的改动时，别人保存的新版本会自动载入。</p>
+<h3>恢复到仪器端</h3>
+<p>点“恢复到仪器端”：丢掉这台设备上还没存进实验的改动，载入实验里当前保存的版本。</p>
+<h3>退回上一版</h3>
+<p>点“退回上一版”：标注回到最后一次保存之前的样子（只能退一步）。这个按钮只在仪器电脑上的程序窗口里有。页面里的撤销（<kbd>Ctrl</kbd>+<kbd>Z</kbd>）撤销的是刚做的一步编辑；“退回上一版”撤销的是一次保存。</p>
+<h3>几个人标注同一个实验</h3>
+<p>每个实验只有一份共享的标注。几个人（例如这台电脑上的不同 Windows 用户）改同一个实验时，以最后一次保存为准；程序记下最后是谁（Windows 用户和电脑）、什么时候保存的。程序不保存修改历史。</p>
+<h3>数据文件夹以外的 .pk</h3>
+<p>从别处打开的 .pk（不在 Experiments 里），标注由窗口直接存进那个文件。</p>
+
+<h2 id="zh-layouts">6. 孔板布局</h2>
+<p>测量之前可以先准备好孔板布局：每个孔的样本名和分组。</p>
+<ul>
+<li>在“孔板布局”里新建、修改、删除布局；在孔板图上填样本名和分组（96 孔：8 行 × 12 列；384 孔：16 行 × 24 列）。</li>
+<li><b>从 Excel 导入</b>：表格里有一块孔板网格——行用字母（A–H 或 A–P），列用数字（1–12 或 1–24），格子里是样本名。导入后核对一下再保存。</li>
+<li><b>用于下一个实验</b>：在“设置 → 下一个实验”里给某台仪器选好名字和布局。这台仪器的下一个实验就用这个名字，样本名和分组按布局填好。用过一次就清除。</li>
+</ul>
+
+<h2 id="zh-notify">7. 通知</h2>
+<p>出现下面这些事时，程序会通知你：</p>
+<div class="tw"><table>
+<tr><th>通知</th><th>什么时候</th></tr>
+<tr><td>已完成</td><td class="wrap-ok">实验测完了所有轮</td></tr>
+<tr><td>提前停止</td><td class="wrap-ok">实验在仪器软件里被停止</td></tr>
+<tr><td>中断</td><td class="wrap-ok">实验意外结束（写明原因）</td></tr>
+<tr><td>长时间没有新数据</td><td class="wrap-ok">测量中的实验很久没有新读数</td></tr>
+<tr><td>没能保存</td><td class="wrap-ok">程序没能把数据写到磁盘上</td></tr>
+</table></div>
+<ul>
+<li><b>安装版</b>：每个登录的用户在屏幕右下角有一个托盘图标，用 Windows 通知报告这些事，可以带提示音；点通知打开窗口。登录时，补报最近 12 小时里还没报过的事。后台服务 3 分钟没有回应时，托盘也会提醒（这时可能没有在记录）。</li>
+<li>窗口开着时，页面里也显示这些通知（安装版在页面里不再响铃，托盘已经响过）。</li>
+<li><b>便携版</b>：只在窗口里通知，可以带提示音。</li>
+</ul>
+<p>托盘菜单有：打开窗口、打开数据文件夹、退出。“退出”只关掉托盘图标，不影响记录；下次登录时它会自动出现。</p>
+<p>在“设置”里选择通知哪些事、是否响铃。Windows 的“勿扰”或“专注”打开时，通知可能不弹出，但仍在通知中心里。</p>
+
+<h2 id="zh-settings">8. 设置</h2>
+<p>设置对这台电脑的所有用户都有效。</p>
+<div class="tw"><table>
+<tr><th>设置</th><th>说明</th></tr>
+<tr><td>仪器名称</td><td class="wrap-ok">每台仪器在屏幕上显示的名字。只用于显示，不会写进文件名。</td></tr>
+<tr><td>通知</td><td class="wrap-ok">通知哪些事，是否响铃。</td></tr>
+<tr><td>保持唤醒</td><td class="wrap-ok">有实验在测量时不让电脑睡眠（默认打开）。没有实验测量时，电脑照常按电源设置睡眠；程序不改电源计划。</td></tr>
+<tr><td>下一个实验</td><td class="wrap-ok">每台仪器下一个实验用的名字和孔板布局（见第 6 节）。</td></tr>
+<tr><td>默认操作者</td><td class="wrap-ok">新实验的操作者；不填就是登录电脑的 Windows 用户。</td></tr>
+<tr><td>数据文件夹</td><td class="wrap-ok">位置和剩余空间。</td></tr>
+<tr><td>电脑检查</td><td class="wrap-ok">插电时电脑会不会自动睡眠、有没有等着重启的 Windows 更新、磁盘空间够不够。</td></tr>
+<tr><td>版本</td><td class="wrap-ok">程序和分析页面的版本。</td></tr>
+<tr><td>支持文件</td><td class="wrap-ok">生成一个 zip（日志、版本、设置、程序当前状态和电脑检查结果），发给帮你解决问题的人。只有勾选时才包含实验文件。里面有实验名、仪器名和 Windows 用户名，发之前请确认可以发。</td></tr>
+</table></div>
+<p>“关于”里有版本号、许可、科研用途声明和第三方组件说明；“帮助”打开这份说明书。</p>
+
+<h2 id="zh-problems">9. 问题和处理办法</h2>
+<p>有问题时，窗口顶部出现横幅：<span class="sev err">错误</span> 需要马上处理，<span class="sev wrn">警告</span> 需要留意，<span class="sev inf">提示</span> 看过可以关掉。</p>
+<div class="tw"><table>
+<tr><th>横幅说的是</th><th>怎么办</th></tr>
+<tr><td class="wrap-ok"><span class="sev err">错误</span> 数据无法保存</td><td class="wrap-ok">程序没能把数据写到磁盘上。看一下数据文件夹所在磁盘是不是满了或出错了，并告诉 IT。程序会一直重试。</td></tr>
+<tr><td class="wrap-ok"><span class="sev wrn">警告</span> 磁盘空间不足（少于 5 GB）</td><td class="wrap-ok">删除或移走不需要的文件。</td></tr>
+<tr><td class="wrap-ok"><span class="sev err">错误</span> 磁盘空间严重不足（少于 1 GB）</td><td class="wrap-ok">马上腾出空间，否则新数据可能无法保存。</td></tr>
+<tr><td class="wrap-ok"><span class="sev inf">提示</span> 启动时修复了文件</td><td class="wrap-ok">断电或崩溃之后，程序启动时修复了记录，横幅里写了修复了什么；坏文件在 <code>System\recovery</code> 里。看完可以关掉。</td></tr>
+<tr><td class="wrap-ok">记录程序卡住</td><td class="wrap-ok">仪器还在测量，但程序这边不再前进。程序会在 10 分钟内自动重启自己；如果一直这样，实验结束后重启电脑，并把支持文件发给支持人员。它和卡片上的“很久没有新数据，请看一下仪器”不同：那是仪器软件自己没写新数据。</td></tr>
+<tr><td class="wrap-ok">仪器软件版本未验证</td><td class="wrap-ok">这个版本的 Omega 或 Archimed Analyzer 还没有验证过，记录可能不完整或不对。请用仪器软件核对结果，并把版本号告诉支持人员。</td></tr>
+<tr><td class="wrap-ok">无法读取</td><td class="wrap-ok">程序读不了仪器软件的文件。看一下仪器软件是否装好、能否正常运行；不行就发支持文件。</td></tr>
+<tr><td class="wrap-ok">电脑会自动睡眠</td><td class="wrap-ok">电源设置让电脑插着电也会睡眠。测量中程序会阻止睡眠，但最好请 IT 把插电时的“睡眠”设成“从不”。</td></tr>
+<tr><td class="wrap-ok">等待重启</td><td class="wrap-ok">Windows 更新在等着重启电脑。请在没有实验测量时重启，免得 Windows 在测量中途自己重启。</td></tr>
+<tr><td class="wrap-ok">无法保持唤醒</td><td class="wrap-ok">程序没能让电脑在测量中保持唤醒。请检查电源设置，测量期间别让电脑睡眠。</td></tr>
+<tr><td class="wrap-ok">程序出错后已重启</td><td class="wrap-ok">程序因错误停止，Windows 已经自动重启它；漏掉的读数会从仪器软件的文件里补回。反复出现时请发支持文件。</td></tr>
+</table></div>
+<h3>其他情况</h3>
+<div class="tw"><table>
+<tr><th>情况</th><th>怎么办</th></tr>
+<tr><td class="wrap-ok">“后台程序没有响应”</td><td class="wrap-ok">安装版：后台服务停了。重启电脑，或请 IT 启动服务“Plate Kinetics Live”。便携版：程序没在运行，重新打开它。</td></tr>
+<tr><td class="wrap-ok">端口被占用</td><td class="wrap-ok">别的程序占用了 47815（Archimed 程序是 47825）端口，窗口和日志里写着是哪个程序。关掉它，或请 IT 处理。</td></tr>
+<tr><td class="wrap-ok">没有曲线</td><td class="wrap-ok">实验还不满 2 轮；或者不是 96 孔或 384 孔板。</td></tr>
+<tr><td class="wrap-ok">“由更新的 Plate Kinetics Live 制作”</td><td class="wrap-ok">这个 .pk 是新版本做的，请更新程序。</td></tr>
+<tr><td class="wrap-ok">Excel 里没有最新的标注</td><td class="wrap-ok">按 <kbd>Ctrl</kbd>+<kbd>S</kbd>。如果 Excel 文件开着或被改过，新的内容在旁边“(analysis …)”那个文件里。</td></tr>
+<tr><td class="wrap-ok">找不到实验文件</td><td class="wrap-ok">在“实验”里搜索；被删掉的实验可以恢复，也可以从回收站还原。</td></tr>
+<tr><td class="wrap-ok">窗口一片空白或卡住</td><td class="wrap-ok">页面出错时窗口会自动重新载入。还不行就关掉窗口再打开（安装版不影响记录）。</td></tr>
+</table></div>
+<p>需要别人帮忙时，在“设置”里生成支持文件，发给 IT 或程序的提供者。</p>
+
+<h2 id="zh-update">10. 更新</h2>
+<ul>
+<li><b>安装版</b>：以管理员身份运行新版本的安装程序。它装进原来的文件夹，数据文件夹保持不动。</li>
+<li>可以在测量中更新：安装程序会先说明“记录会停约 10 秒，不丢数据”，点“继续”才做。漏掉的读数从仪器软件的文件里补回，仪器软件不受影响。</li>
+<li>开着的窗口会被关掉，更新后从开始菜单重新打开；托盘自己换成新版本。</li>
+<li>更新失败时，原来的版本照常运行和记录。</li>
+<li><b>便携版</b>：在没有实验测量时关掉程序，把新版本解压到原来的文件夹（覆盖程序文件，保留 PlateKineticsLive-data），再启动。</li>
+<li>当前版本号在“关于”里。</li>
+</ul>
+
+<h2 id="zh-uninstall">11. 卸载</h2>
+<ul>
+<li>在 Windows“设置 → 应用”里找到 Plate Kinetics Live，选“卸载”（需要管理员）。</li>
+<li>卸载会删掉程序、后台服务、托盘、快捷方式和 .pk 的文件关联。</li>
+<li>数据文件夹 PlateKineticsLive-data 留在原处，里面的实验和记录都还在。不再需要时自己删除（先备份）。</li>
+<li>便携版：关掉程序，删除它的文件夹（需要的话先把 PlateKineticsLive-data 拷出来）。</li>
+</ul>
+
+<h2 id="zh-faq">12. 常见问题</h2>
+<dl class="faq">
+<dt>程序会控制仪器，或者改动仪器软件的文件吗？</dt>
+<dd>不会。它只读取仪器软件写下的文件（与仪器软件共享读取），从不写入、锁住或改动它们，也从不向仪器发送命令。</dd>
+<dt>数据会被发到网上吗？</dt>
+<dd>不会。程序没有联网功能，不收集使用统计，不检查更新；它的网页服务只对这台电脑本身开放。数据只在你自己拷走或发出去时才会离开这台电脑。</dd>
+<dt>关掉窗口还会记录吗？</dt>
+<dd>安装版会：记录的是后台服务，窗口只用来看。便携版不会：关窗口就停止记录，关之前会提醒。</dd>
+<dt>测量中停电或电脑重启了怎么办？</dt>
+<dd>记录的写法是断电安全的。电脑重新开机后，安装版自动启动，从仪器软件的文件里补回漏掉的读数，实验标为“中断”并写明原因和时间。</dd>
+<dt>可以改实验文件的名字、把它们挪到别的文件夹吗？</dt>
+<dd>在 Experiments 里可以随意改名、移动、建子文件夹。挪出 Experiments 的文件，程序不再列出和管理，但双击仍可以打开，标注会存进那个文件。</dd>
+<dt>误删了实验怎么办？</dt>
+<dd>在“实验”列表里找到已删除的实验并恢复；也可以从回收站还原。</dd>
+<dt>Excel 和 .pk 哪个算数？</dt>
+<dd>.pk 是原始记录，Excel 是方便使用的副本。两者对不上时，在“实验”列表里重新生成 Excel。</dd>
+<dt>怎么在别的电脑上看一个实验？</dt>
+<dd>把 .pk 拷过去，用装了 Plate Kinetics Live（或便携版）的电脑打开；或者直接用 .xlsx。</dd>
+<dt>几个人共用一台仪器电脑可以吗？</dt>
+<dd>可以。后台服务不管谁登录都在记录；每个 Windows 用户有自己的窗口设置和托盘；每个实验的标注大家共用，以最后一次保存为准。</dd>
+<dt>能在同一台电脑上装两个程序吗？</dt>
+<dd>可以。读板仪程序用端口 47815，Archimed 程序用 47825，数据文件夹也各自分开。</dd>
+<dt>同一个程序的便携版和安装版能同时运行吗？</dt>
+<dd>不能，它们用同一个端口。安装程序发现便携版在运行时会停下来，请先关掉便携版。</dd>
+<dt>时间是哪个时区的？</dt>
+<dd>文件里的时间都带着电脑的时区，例如 <code>2026-11-20T14:05:32+08:00</code>，换到别的时区看也不会弄错。</dd>
+<dt>可以用于临床诊断或受监管的记录吗？</dt>
+<dd>不可以。本程序仅供科研使用，不是医疗器械软件，也不符合 21 CFR Part 11 等电子记录法规；它不保存修改历史，没有电子签名。需要合规记录时，以仪器软件自己的记录为准。</dd>
+</dl>
+</section>
+
+<!-- ---------------------------------------------------------------- IT 指南 -->
+<section class="part" id="zh-it">
+<p class="kicker">IT 指南</p>
+<h1>IT 指南</h1>
+<p class="lead">给安装和维护仪器电脑的人：要求、安装、权限、服务、网络、卸载和日志。</p>
+
+<h2 id="zh-it-req">1. 系统要求</h2>
+<div class="tw"><table>
+<tr><th>项目</th><th>要求</th></tr>
+<tr><td>操作系统</td><td class="wrap-ok">64 位 Windows 10 或 Windows 11</td></tr>
+<tr><td>.NET Framework 4.8</td><td class="wrap-ok">Windows 10 1903 及以后的版本和 Windows 11 自带</td></tr>
+<tr><td>WebView2 运行时</td><td class="wrap-ok">Microsoft Edge WebView2 运行时（窗口用来显示页面）。Windows 11 自带；Windows 10 一般随 Microsoft Edge 装好。缺少时装微软的运行时，或用离线安装包</td></tr>
+<tr><td>权限</td><td class="wrap-ok">安装、更新、搬家和卸载需要管理员；日常使用不需要</td></tr>
+<tr><td>仪器软件</td><td class="wrap-ok">同一台电脑上的 BMG Omega（已验证 6.20、6.40），或 RocGene Archimed Analyzer（已验证 1.5.5）</td></tr>
+<tr><td>磁盘</td><td class="wrap-ok">程序只要几 MB。每个实验通常几百 KB 到几 MB（384 孔、轮数很多时更大）。数据文件夹所在磁盘剩余少于 5 GB 时程序会警告</td></tr>
+<tr><td>网络</td><td class="wrap-ok">不需要</td></tr>
+</table></div>
+<p>安装程序在改动任何东西之前先检查以上几项；缺什么就说清楚并给出微软的下载页（退出码 7）。离线安装包会先从自带的 redist 文件夹把缺的装上（第 8 节）。</p>
+
+<h2 id="zh-it-install">2. 安装和静默安装</h2>
+<p>安装程序 <code>PlateKineticsLive-Setup.exe</code>（BMG）和 <code>PlateKineticsLive-Archimed-Setup.exe</code>（Archimed）各约 1 MB，以管理员身份运行。窗口里的文字是中文，下面附英文。</p>
+<ul>
+<li>默认装到 <code>C:\Program Files\Plate Kinetics Live (BMG)</code> 或 <code>C:\Program Files\Plate Kinetics Live (Archimed)</code>。已经装过的，装回原来的文件夹；要换文件夹用 <code>--move-to</code>（第 10 节）。</li>
+<li>为整台电脑登记：“应用”列表里的条目（发布者 hx_mao）；所有用户的开始菜单快捷方式（程序本身和“<i>程序名</i> Experiments”）和桌面快捷方式；.pk 文件类型（双击运行 <code>"&lt;exe&gt;" --open "&lt;文件&gt;"</code>）；登录时启动的托盘；Windows 服务。安装完在安装者的会话里马上启动托盘。</li>
+<li>每次安装和更新都设置数据文件夹的权限（第 3 节），不改动里面的文件。</li>
+<li>安装程序和程序都<b>没有代码签名</b>。Windows SmartScreen 可能提示“Windows 已保护你的电脑”：点“更多信息”→“仍要运行”。请只使用来源可信的安装程序，需要时核对文件的 SHA-256；杀毒软件可能需要放行。</li>
+<li>有仪器正在测量时：窗口先说明“记录会停约 10 秒，不丢数据”，点“继续”才做；静默安装不问，只记进日志。</li>
+<li>有一个自己在记录的副本（例如便携版）正在运行时，安装会停下（退出码 2），请先关掉它。安装程序不会关掉它。</li>
+</ul>
+<h3>命令行</h3>
+<div class="tw"><table>
+<tr><th>参数</th><th>作用</th></tr>
+<tr><td><code>/S</code></td><td class="wrap-ok">静默：不显示任何窗口；结果看退出码和日志</td></tr>
+<tr><td><code>/NODESKTOP</code></td><td class="wrap-ok">不新建桌面快捷方式（已有的保留）</td></tr>
+<tr><td><code>/D=&lt;文件夹&gt;</code></td><td class="wrap-ok">装到这个文件夹。必须放在命令行最后，路径不用加引号</td></tr>
+<tr><td><code>--move-to [&lt;文件夹&gt;]</code></td><td class="wrap-ok">把已经装好的程序连同数据搬到这个文件夹（不写就是 Program Files 里的标准位置），见第 10 节</td></tr>
+</table></div>
+<pre>PlateKineticsLive-Setup.exe /S /NODESKTOP
+PlateKineticsLive-Archimed-Setup.exe /S /D=D:\Programs\Plate Kinetics Live (Archimed)</pre>
+<h3>退出码</h3>
+<div class="tw"><table>
+<tr><th>码</th><th>意思</th></tr>
+<tr><td>0</td><td class="wrap-ok">装好了</td></tr>
+<tr><td>1</td><td class="wrap-ok">失败（原来的版本照常运行）</td></tr>
+<tr><td>2</td><td class="wrap-ok">程序正在运行（便携版或旧程序在自己记录），或服务停不下来</td></tr>
+<tr><td>3</td><td class="wrap-ok">文件夹不能用</td></tr>
+<tr><td>4</td><td class="wrap-ok">安装程序不完整</td></tr>
+<tr><td>5</td><td class="wrap-ok">安装窗口被关掉，没有安装</td></tr>
+<tr><td>6</td><td class="wrap-ok">装好了，但服务没能启动</td></tr>
+<tr><td>7</td><td class="wrap-ok">缺少 .NET Framework 4.8 或 WebView2 运行时（什么都没改）</td></tr>
+<tr><td>8</td><td class="wrap-ok">磁盘空间不够（什么都没改）</td></tr>
+<tr><td>9</td><td class="wrap-ok">没搬成，已经全部换回原样</td></tr>
+</table></div>
+<p>日志：<code>%TEMP%\&lt;程序名&gt;-setup.log</code>，例如 <code>%TEMP%\PlateKineticsLive-setup.log</code>（以 SYSTEM 账户运行时在 <code>C:\Windows\Temp</code>）。最后一行是结果，前面有各个文件夹的权限，搬家时还有每个文件的核对结果。静默安装时结果也写到标准输出。</p>
+
+<h2 id="zh-it-folders">3. 文件夹和权限</h2>
+<div class="tw"><table>
+<tr><th>文件夹</th><th>权限</th></tr>
+<tr><td>程序文件夹</td><td class="wrap-ok">和 Program Files 一样：管理员和系统可以改，用户只能读和运行。装在 Program Files 以外时，安装程序显式设置同样的权限（不继承磁盘根目录给普通用户的写权限），因为服务以系统账户运行这个文件夹里的程序</td></tr>
+<tr><td>PlateKineticsLive-data</td><td class="wrap-ok">同程序文件夹：用户只读</td></tr>
+<tr><td>Experiments</td><td class="wrap-ok">用户可以在里面新建、改名、移动、删除文件和文件夹（Experiments 本身不能删）</td></tr>
+<tr><td>System（隐藏）</td><td class="wrap-ok">用户只读；SYSTEM 和管理员完全控制。只有后台服务写</td></tr>
+<tr><td>System\users</td><td class="wrap-ok">每个用户可以在这里建自己的文件夹（窗口的网页配置、窗口大小、窗口日志），只有他自己（CREATOR OWNER）、SYSTEM 和管理员能动</td></tr>
+</table></div>
+<p>权限按众所周知的 SID 设置，与 Windows 的显示语言无关；管理员另外给其他组的权限会保留。用户不能写 System\users 时，窗口数据放在 <code>%LOCALAPPDATA%\&lt;程序名&gt;</code>。</p>
+<p><b>备份</b>整个 PlateKineticsLive-data（含隐藏的 System）。<b>恢复</b>：停止服务，把整个文件夹放回程序旁边，再启动服务。</p>
+
+<h2 id="zh-it-service">4. 后台服务</h2>
+<div class="tw"><table>
+<tr><th>项目</th><th>BMG / Archimed</th></tr>
+<tr><td>服务名</td><td class="wrap-ok"><code>PlateKineticsLive</code> / <code>PlateKineticsLive-Archimed</code></td></tr>
+<tr><td>显示名称</td><td class="wrap-ok">Plate Kinetics Live / Plate Kinetics Live (Archimed)</td></tr>
+<tr><td>命令行</td><td class="wrap-ok"><code>"&lt;程序文件夹&gt;\PlateKineticsLive.exe" --service</code></td></tr>
+<tr><td>账户</td><td class="wrap-ok">本地系统（LocalSystem）</td></tr>
+<tr><td>启动类型</td><td class="wrap-ok">自动</td></tr>
+<tr><td>优先级</td><td class="wrap-ok">低于正常（仪器软件优先）</td></tr>
+<tr><td>失败后的操作</td><td class="wrap-ok">10 秒后重启，30 秒后重启，之后每 60 秒重启；1 天后重新计数。服务以错误退出（不只是崩溃）时也重启</td></tr>
+</table></div>
+<ul>
+<li><b>看门狗</b>：服务看仪器的循环 10 分钟没有前进时，写日志并以错误退出，由 Windows 重启。未处理的错误写进 <code>System\log\crash-&lt;时间&gt;.txt</code>；重启后窗口里出现一次“程序出错后已重启”。</li>
+<li>服务重新启动后，从仪器软件自己的文件里补回停着时漏掉的读数。</li>
+<li><b>保持唤醒</b>：有实验在测量、设置里又打开了“保持唤醒”时，服务向 Windows 请求系统保持运行（<code>powercfg /requests</code> 里能看到），没有实验测量时撤销。不改电源计划。</li>
+<li><b>电脑检查</b>每 10 分钟一次：插电时的睡眠设置、等待重启的 Windows 更新、磁盘空间。</li>
+<li><b>操作者</b>：实验开始时登录在电脑控制台上的用户。</li>
+<li>BMG 程序在 Program Files\BMG 下面和注册表记录的位置找 Omega，读 Omega 测量中的读数文件和各个 Omega 用户的数据库。Archimed 程序在 C–G 盘上找 Archimed Analyzer 的数据文件夹，读它的日志，并在这台电脑每个用户的桌面上找实验文件。都只读。</li>
+<li>窗口只显示服务记录的东西。服务没在运行时，窗口会说明，并可以请求启动它（需要管理员）。</li>
+</ul>
+<pre>sc query PlateKineticsLive
+sc stop PlateKineticsLive
+sc start PlateKineticsLive</pre>
+<p>停止服务就停止记录；重新启动后会补回漏掉的读数，但请尽量在没有实验测量时操作。</p>
+
+<h2 id="zh-it-ports">5. 端口和网络</h2>
+<ul>
+<li>BMG 程序用 TCP 端口 <b>47815</b>，Archimed 程序用 <b>47825</b>，只监听 <b>127.0.0.1</b>（本机回环地址）。其他电脑访问不到；不需要、也不会添加防火墙规则。</li>
+<li>每个请求都检查 Host 头（必须是 <code>127.0.0.1:&lt;端口&gt;</code> 或 <code>localhost:&lt;端口&gt;</code>），<code>/api/</code> 请求还要带 <code>System\api-token</code> 里的令牌（本机用户可读）。这样网上的网页不能借浏览器读取或改动数据。</li>
+<li>程序不主动连接任何地方：没有使用统计，不检查更新，也不向仪器发送任何东西。WebView2 运行时是 Windows 的组件，由微软像 Edge 一样更新。</li>
+<li>端口被别的程序占用时，程序在日志和窗口里写出占用端口的进程。</li>
+<li>要从别的电脑查看，请用远程桌面。</li>
+</ul>
+
+<h2 id="zh-it-tray">6. 托盘</h2>
+<ul>
+<li>注册表 <code>HKLM\Software\Microsoft\Windows\CurrentVersion\Run</code> 里有一个以程序名命名的值（例如 <code>PlateKineticsLive</code>）：每个用户登录时运行 <code>"&lt;exe&gt;" --tray</code>，每个用户会话只有一个。</li>
+<li>它每 10 秒读一次本机的状态，把新事件显示成 Windows 通知（按设置响铃）；服务 3 分钟没有回应时提醒一次。</li>
+<li>菜单：打开窗口、打开数据文件夹、退出。记录不需要托盘。</li>
+<li>已经报过的事记在 <code>System\users\&lt;用户&gt;\tray.json</code>（或 <code>%LOCALAPPDATA%\&lt;程序名&gt;\tray.json</code>）。</li>
+<li>个别用户不需要时，可以在任务管理器的“启动应用”里关掉。</li>
+<li>更新或搬家后，托盘自己换成新程序；卸载时结束。</li>
+</ul>
+
+<h2 id="zh-it-uninstall">7. 卸载</h2>
+<ul>
+<li>“设置 → 应用”，或者以管理员身份运行 <code>"&lt;程序文件夹&gt;\PlateKineticsLive.exe" --uninstall</code>；加 <code>/S</code> 静默（这时必须已经是管理员）。不是管理员时，它会请求提升一次权限。</li>
+<li>删除：服务、托盘和登录时的启动项、快捷方式、“应用”列表里的条目、.pk 文件类型、安装程序放进去的文件（包括更新时改名放在一边的 <code>*.replaced-N</code>）。</li>
+<li>保留：数据文件夹 PlateKineticsLive-data，以及不是安装程序放进去的文件。</li>
+<li>退出码：0 已卸载，1 失败，2 还有程序窗口开着（例如在另一个用户的会话里），3 取消，4 没有安装，5 服务删不掉。日志同样写进 <code>%TEMP%\&lt;程序名&gt;-setup.log</code>。</li>
+</ul>
+
+<h2 id="zh-it-offline">8. 离线安装包</h2>
+<p><code>PlateKineticsLive-offline.zip</code> 给不能上网的电脑用。里面有两个安装程序、一个 README.txt，和 redist 文件夹里微软原样的安装程序：<code>ndp48-x86-x64-allos-enu.exe</code>（.NET Framework 4.8）和 <code>MicrosoftEdgeWebView2RuntimeInstallerX64.exe</code>（WebView2 运行时）。</p>
+<ul>
+<li>把整个文件夹拷到仪器电脑上（不要只拷安装程序），以管理员身份运行要装的那个安装程序。</li>
+<li>电脑缺 .NET 4.8 或 WebView2 时，安装程序先从 redist 静默装上（只用带微软有效签名的文件）。这需要几分钟，装 .NET 后可能要重启电脑；请不要在仪器测量时安装。</li>
+</ul>
+
+<h2 id="zh-it-portable">9. 便携版</h2>
+<ul>
+<li><code>PlateKineticsLive-portable.zip</code> 和 <code>PlateKineticsLive-Archimed-portable.zip</code>：解压到当前用户能写的文件夹（不要放在 Program Files 里，也不要直接在 zip 里运行），运行里面的 exe。</li>
+<li>一个进程做所有事：只在程序开着时记录，关窗口前会提醒。没有服务、托盘、文件关联，也不设权限。</li>
+<li>数据文件夹在 exe 旁边，结构和安装版一样。</li>
+<li>.pk 可以用“打开方式”选这个 exe；程序已经开着时，文件交给开着的那个。</li>
+<li>同一个程序的便携版和安装版不能同时运行（端口相同）。</li>
+</ul>
+
+<h2 id="zh-it-move">10. 搬到别的文件夹</h2>
+<p>用 <code>PlateKineticsLive-Setup.exe --move-to [&lt;文件夹&gt;]</code>（不写文件夹就搬到 Program Files 里的标准位置），或在安装窗口里选别的文件夹。</p>
+<ol>
+<li>新文件夹必须是新的或空的。磁盘空间不够、路径会超过 260 个字符，都事先拒绝，什么都不改。</li>
+<li>程序文件写进新文件夹；数据文件夹（记录、日志、设置；不含网页缓存）在照常记录时先复制一遍，停下服务后再补上变了的。每个文件都和原件核对大小和 SHA-256。</li>
+<li>新服务先注册为“手动启动”，等它回应并显示原来的每一台仪器后，才改为自动启动、删掉旧服务；快捷方式、“应用”条目、.pk 关联和托盘跟到新位置。</li>
+<li>任何一步失败都全部换回（退出码 9）：新服务和新文件夹删掉，旧服务从旧文件夹照常运行。</li>
+<li>旧文件夹一点不动，留作备份；确认没问题后自己删除。记录停约 10–20 秒，不丢数据。</li>
+</ol>
+
+<h2 id="zh-it-logs">11. 日志和隐私</h2>
+<div class="tw"><table>
+<tr><th>日志</th><th>内容</th></tr>
+<tr><td><code>System\log\&lt;程序名&gt;.log</code></td><td class="wrap-ok">程序（服务）做了什么：启动和停止、找到的仪器、看到的实验和它们的结束、写了哪些文件、改名和删到回收站、错误。有实验名、文件名和 Windows 用户名，没有测量数值。超过 10 MB 换新文件，保留 4 个旧的（.1 到 .4）</td></tr>
+<tr><td><code>System\log\crash-&lt;时间&gt;.txt</code></td><td class="wrap-ok">未处理的错误</td></tr>
+<tr><td><code>System\users\&lt;用户&gt;\window.log</code></td><td class="wrap-ok">这个用户的窗口</td></tr>
+<tr><td><code>%TEMP%\&lt;程序名&gt;-setup.log</code></td><td class="wrap-ok">安装、更新、搬家、卸载</td></tr>
+<tr><td>Windows 事件日志</td><td class="wrap-ok">服务控制管理器记录服务的启动、停止和失败。程序读取（不写）系统和应用程序日志来查实验中断的原因</td></tr>
+</table></div>
+<p><b>隐私</b>：程序不向外发送任何数据。只有你自己保存并发出去的支持文件才会离开这台电脑：它包含日志、版本、设置、程序状态和电脑检查结果，只有勾选时才包含实验文件。</p>
+<p>程序只读取仪器软件的文件（共享读取），从不写入、锁住或改动它们，也从不向仪器发送命令。</p>
+
+<h2 id="zh-it-former">12. 从 SAAControl 升级</h2>
+<p>2.2 以前的版本叫 SAAControl（服务 <code>SAAControl</code>、<code>SAAControl-Archimed</code>，数据文件夹 <code>SAAControl-data</code>）。新安装程序在原来的文件夹里替换它：先停旧服务，注册并启动新服务，新服务正常工作后才删除旧程序；中途失败就把旧程序放回去并启动。数据文件夹改名为 PlateKineticsLive-data；旧的记录、日志和设置在第一次启动时整理进 System，旧的网页缓存挪到 <code>System\old-cache</code>（程序不删）。之后可以用 <code>--move-to</code> 搬到 Program Files 里的标准位置。</p>
+
+<h2 id="zh-it-cmd">13. 程序的命令行</h2>
+<div class="tw"><table>
+<tr><th>参数</th><th>作用</th></tr>
+<tr><td><code>--open &lt;文件.pk&gt;</code></td><td class="wrap-ok">在窗口里打开这个实验文件（双击 .pk 时就是这样）；程序已经开着时交给它，并把窗口带到前面</td></tr>
+<tr><td><code>--tray</code></td><td class="wrap-ok">托盘（登录时自动运行）</td></tr>
+<tr><td><code>--uninstall [/S]</code></td><td class="wrap-ok">卸载</td></tr>
+<tr><td><code>--install-service [--demand-start]</code></td><td class="wrap-ok">注册并启动服务（管理员；安装程序用）</td></tr>
+<tr><td><code>--uninstall-service</code></td><td class="wrap-ok">停止并删除服务（管理员）</td></tr>
+<tr><td><code>--start-service</code></td><td class="wrap-ok">启动服务（管理员）</td></tr>
+<tr><td><code>--service</code></td><td class="wrap-ok">由 Windows 启动服务时使用，不要手动运行</td></tr>
+</table></div>
+</section>
+
+<!-- ---------------------------------------------------------------- 许可与声明 -->
+<section class="part" id="zh-legal">
+<p class="kicker">许可与声明</p>
+<h1>许可与声明</h1>
+<ul>
+<li>Plate Kinetics Live 版权所有 © 2026 hx_mao，按 MIT 许可证提供，见 <a href="LICENSE.txt">LICENSE.txt</a>。</li>
+<li><b>仅供科研使用，不用于临床诊断。</b>它不是医疗器械软件，也不是符合 21 CFR Part 11 等法规的电子记录系统；需要合规记录时，以仪器软件自己的记录为准。</li>
+<li><b>不提供任何担保。</b>重要结果请用仪器软件核对。</li>
+<li><b>与 BMG LABTECH、RocGene 无关</b>，也没有得到它们的认可或支持。文中提到的产品和公司名称属于各自的所有者，只用来说明程序读取哪些软件的文件。</li>
+<li><b>隐私</b>：程序不向任何地方发送数据。</li>
+<li><b>第三方组件</b>：Microsoft Edge WebView2 SDK 和运行时、Microsoft .NET Framework 4.8，以及分析页面里的 SheetJS Community Edition，见 <a href="THIRD-PARTY-NOTICES.txt">THIRD-PARTY-NOTICES.txt</a>。</li>
+<li>分析页面 Plate Kinetics Analysis 另有网站版，可在任何电脑上分析导出的数据文件（不打开 .pk）：<a href="https://tools.fow.mobi/kinetics/">https://tools.fow.mobi/kinetics/</a></li>
+</ul>
+<p class="files">完整文本：<a href="LICENSE.txt">LICENSE.txt</a> · <a href="NOTICE.txt">NOTICE.txt</a> · <a href="THIRD-PARTY-NOTICES.txt">THIRD-PARTY-NOTICES.txt</a></p>
+</section>
+
+</main>
+</div>
+
+<!-- =====================================================================================================
+     English
+     ===================================================================================================== -->
+<div class="wrap lang-en" lang="en">
+<nav class="toc" aria-label="Contents">
+<details open>
+<summary>Contents</summary>
+<a href="#en-quick">Quick start</a>
+<div class="grp">User guide</div>
+<a href="#en-overview">1. Overview</a>
+<a href="#en-live">2. Watching a run</a>
+<a href="#en-files">3. Experiments and their files</a>
+<a href="#en-folder">4. The data folder</a>
+<a href="#en-annotations">5. Annotations and automatic saving</a>
+<a href="#en-layouts">6. Plate layouts</a>
+<a href="#en-notify">7. Notifications</a>
+<a href="#en-settings">8. Settings</a>
+<a href="#en-problems">9. Problems and what to do</a>
+<a href="#en-update">10. Updating</a>
+<a href="#en-uninstall">11. Uninstalling</a>
+<a href="#en-faq">12. FAQ</a>
+<div class="grp">IT guide</div>
+<a href="#en-it-req">1. Requirements</a>
+<a href="#en-it-install">2. Installing, silent installs</a>
+<a href="#en-it-folders">3. Folders and permissions</a>
+<a href="#en-it-service">4. The service</a>
+<a href="#en-it-ports">5. Ports and network</a>
+<a href="#en-it-tray">6. The tray</a>
+<a href="#en-it-uninstall">7. Uninstalling</a>
+<a href="#en-it-offline">8. Offline package</a>
+<a href="#en-it-portable">9. Portable edition</a>
+<a href="#en-it-move">10. Moving to another folder</a>
+<a href="#en-it-logs">11. Logs and privacy</a>
+<a href="#en-it-former">12. Upgrading from SAAControl</a>
+<a href="#en-it-cmd">13. Command line</a>
+<div class="grp">More</div>
+<a href="#en-legal">Licence and notices</a>
+</details>
+</nav>
+
+<main class="doc">
+
+<!-- ---------------------------------------------------------------- Quick start -->
+<section class="part quick" id="en-quick">
+<p class="kicker">Quick start</p>
+<h1>Plate Kinetics Live quick start</h1>
+<p class="lead">Plate Kinetics Live runs on the PC that drives the instrument. It reads the files the instrument software writes, records every measurement automatically, shows the curves while the plate is measured and keeps each experiment as one <b>.pk experiment file</b> and one <b>Excel workbook</b>. It never controls the instrument and never changes any file of the instrument software.</p>
+<p>There are two programs that work the same way: <b>Plate Kinetics Live</b> for BMG LABTECH plate readers run by the Omega software, and <b>Plate Kinetics Live (Archimed)</b> for the RocGene Archimed real-time PCR instrument.</p>
+<ol class="steps">
+<li><b>Install.</b> Run <code>PlateKineticsLive-Setup.exe</code> (plate readers) or <code>PlateKineticsLive-Archimed-Setup.exe</code> (PCR) as administrator and accept the defaults. Recording starts right away in a background service, which starts with Windows from then on: nobody needs to be signed in and no window needs to be open.</li>
+<li><b>Measure as usual.</b> Start the run in Omega or Archimed Analyzer. The experiment is named after ID1 typed in Omega (else the protocol) or after the Archimed experiment file. You can also set a name and a plate layout in advance under Settings &gt; Next experiment.</li>
+<li><b>Watch the curves.</b> Open Plate Kinetics Live from the Start menu. Each instrument has a card with the cycle and the expected end. Once 2 cycles are done, click “Open in Analysis”: the curves update as new data arrive.</li>
+<li><b>Annotate.</b> In the analysis page, enter sample names, groups and notes, and adjust settings such as the threshold. Changes are saved into the experiment about 3 seconds after you stop typing (“Saved 14:32”). <kbd>Ctrl</kbd>+<kbd>S</kbd> saves at once and also updates the Excel file.</li>
+<li><b>Find the files.</b> Click “Open data folder”. Each experiment has two files in <code>Experiments\year-month\</code>: the <code>.pk</code> (the complete record; double-click to open it) and an <code>.xlsx</code> of the same name with the sheets “Full record” and “Basic data”.</li>
+<li><b>Watch for notifications.</b> When a run completes, is stopped early, is interrupted, gets no new data for a long time or cannot be saved, a Windows notification appears at the bottom right. Banners at the top of the window say what is wrong and what to do.</li>
+</ol>
+<div class="callout">
+<h3>Three things to remember</h3>
+<ul>
+<li>Installed edition: closing the window does not stop recording. The portable edition records only while it is open.</li>
+<li>Back up the whole <code>PlateKineticsLive-data</code> folder, including the hidden System folder, not only Experiments.</li>
+<li>Deleted an experiment file by mistake? Restore it from the Experiments list.</li>
+</ul>
+</div>
+<p class="fine">For research use only, not for diagnostic use. The user guide has the details; the IT guide covers installation and maintenance.</p>
+</section>
+
+<!-- ---------------------------------------------------------------- User guide -->
+<section class="part" id="en-guide">
+<p class="kicker">User guide</p>
+<h1>User guide</h1>
+
+<h2 id="en-overview">1. Overview</h2>
+<p>Plate Kinetics Live gives every kinetic measurement on the instrument PC a complete, reliable record, and lets you watch the curves while the plate is measured.</p>
+<ul>
+<li><b>Automatic recording.</b> The program follows the files the instrument software writes and records every cycle. A run that ended while the program was not running is completed from the instrument software's own files at the next start.</li>
+<li><b>Live curves.</b> A run in progress opens straight in the analysis page (Plate Kinetics Analysis): curves, kinetic parameters, group statistics, figures and reports. The analysis page also imports data files exported by other instruments.</li>
+<li><b>Experiment files.</b> Every run gets a .pk file (the complete record) and an Excel file, filed by month in the data folder.</li>
+<li><b>Read only.</b> The program never sends commands to an instrument and never writes or locks the instrument software's files.</li>
+<li><b>Offline.</b> The program sends no data anywhere.</li>
+</ul>
+
+<h3>Two programs</h3>
+<div class="tw"><table>
+<tr><th>Program</th><th>Instrument</th><th>Reads</th></tr>
+<tr><td>Plate Kinetics Live</td><td class="wrap-ok">BMG LABTECH plate readers run by the Omega control software. Verified: Omega 6.20 and 6.40, plate-mode kinetics, 96- and 384-well plates.</td><td class="wrap-ok">Omega's file of the readings in progress; the databases of every Omega user</td></tr>
+<tr><td>Plate Kinetics Live (Archimed)</td><td class="wrap-ok">RocGene Archimed real-time PCR instrument. Verified: Archimed X4 with Archimed Analyzer 1.5.5.</td><td class="wrap-ok">Archimed Analyzer's log; the experiment files on the Desktop</td></tr>
+</table></div>
+<p>Both programs can be installed on the same PC; each has its own port and data folder.</p>
+
+<h3>Installed and portable edition</h3>
+<div class="tw"><table>
+<tr><th></th><th>Installed</th><th>Portable (zip)</th></tr>
+<tr><td>Who records</td><td class="wrap-ok">A Windows service: starts with Windows, needs no sign-in and no window</td><td class="wrap-ok">The program itself: only while it is open</td></tr>
+<tr><td>The window</td><td class="wrap-ok">Only shows; closing it does not stop recording</td><td class="wrap-ok">Closing it stops recording (you are asked first)</td></tr>
+<tr><td>Notifications</td><td class="wrap-ok">Windows notifications from a tray icon</td><td class="wrap-ok">In the window only</td></tr>
+<tr><td>Double-click a .pk</td><td class="wrap-ok">Yes</td><td class="wrap-ok">Use “Open with” and choose the program</td></tr>
+<tr><td>Meant for</td><td class="wrap-ok">Everyday use</td><td class="wrap-ok">Trying it out, or PCs where nothing may be installed</td></tr>
+</table></div>
+
+<h3>The window</h3>
+<p>Open Plate Kinetics Live from the Start menu or the desktop. The side bar has Overview (the state of all instruments), one entry per instrument, Analysis (the analysis page), Experiments (all experiment files), Plate layouts, Settings, About and Help; the plate reader program also has “All BMG experiments”. The window remembers its size, language and page settings for each Windows user.</p>
+
+<h3>Terms</h3>
+<div class="tw"><table>
+<tr><th>English</th><th>中文</th><th>Meaning</th></tr>
+<tr><td>experiment</td><td>实验</td><td class="wrap-ok">One measurement, from start to end</td></tr>
+<tr><td>instrument</td><td>仪器</td><td class="wrap-ok">A plate reader or a PCR instrument</td></tr>
+<tr><td>protocol</td><td>方案</td><td class="wrap-ok">The measurement settings in the instrument software</td></tr>
+<tr><td>cycle</td><td>轮</td><td class="wrap-ok">One reading of the whole plate in a kinetic run</td></tr>
+<tr><td>completed</td><td>已完成</td><td class="wrap-ok">All planned cycles were measured</td></tr>
+<tr><td>stopped early</td><td>提前停止</td><td class="wrap-ok">Stopped in the instrument software before all planned cycles</td></tr>
+<tr><td>interrupted</td><td>中断</td><td class="wrap-ok">Ended unexpectedly because of the PC or the software (the reason is given)</td></tr>
+<tr><td>end not seen</td><td>没看到结束</td><td class="wrap-ok">The program could not tell how the run ended</td></tr>
+<tr><td>operator</td><td>操作者</td><td class="wrap-ok">Who ran the experiment</td></tr>
+<tr><td>annotation</td><td>标注</td><td class="wrap-ok">Sample names, groups, notes and analysis settings</td></tr>
+</table></div>
+
+<h2 id="en-live">2. Watching a run</h2>
+<p>Each instrument has a card that shows:</p>
+<ul>
+<li>its state: Idle, Measuring, Finished, Ended early or Cannot be read;</li>
+<li>the experiment name, protocol, start time, operator, cycle (for example “Cycle 12 / 300”), expected end, temperature and the time of the latest data;</li>
+<li>when a run ended unexpectedly, the time and the reason, for example “Ended early: 03:10 the PC restarted for a Windows update” (see section 3).</li>
+</ul>
+<p>“No new data for …: please check the instrument and the Omega software” means the instrument software has written no new reading for a long time: check whether the instrument or its software is paused, shows an error or waits for someone.</p>
+<p>Click “Open in Analysis” to open the run's curves in the analysis page; they follow new data by themselves until you switch off “Load curves automatically”. Curves appear once 2 cycles are done, for 96- and 384-well plates. Drag the dot on the card to look back at an earlier moment of the run; at the right end it is live again.</p>
+<p>Runs that ended more than 7 days ago are folded away in the data list; open them from Experiments.</p>
+<p>The <b>operator</b> is the Windows user signed in at the PC when the run started. A default operator can be set in Settings, and each experiment's operator can be changed in its annotation.</p>
+
+<h2 id="en-files">3. Experiments and their files</h2>
+<h3>When the files are written</h3>
+<ul>
+<li><b>.pk</b>: after every completed cycle while the run measures, and once more at its end. From then on the raw data are sealed: only cycles that were missed can still be added (read back from the instrument software's files); values already recorded are never changed.</li>
+<li><b>.xlsx</b>: at the end of the run; after annotations are saved, as described in section 5.</li>
+</ul>
+<h3>File names</h3>
+<pre>Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.pk
+Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</pre>
+<p>That is the start time, the experiment name, the instrument model and its serial number, in a folder for the month the run started. The experiment name is, in this order: the name set under Settings &gt; Next experiment; ID1 typed in Omega, else the protocol; the Archimed experiment file's name. Characters Windows does not allow are left out; a name another experiment has already gets “ (2)”, “ (3)”.</p>
+
+<h3>The .pk experiment file</h3>
+<p>A .pk is the complete record of one experiment; double-click it to open it in Plate Kinetics Live. It is a zip file holding:</p>
+<div class="tw"><table>
+<tr><th>File</th><th>Content</th></tr>
+<tr><td>README.txt</td><td class="wrap-ok">One page about the file, in Chinese and English</td></tr>
+<tr><td>info.json</td><td class="wrap-ok">The facts: the experiment id (unique, kept when the file is renamed), name, instrument model, serial number, software and version, start and end with the time zone (for example <code>2026-11-20T14:05:32+08:00</code>), status, cycles done and planned, why it was interrupted, operator, the SHA-256 checksum of the raw data, when it was sealed</td></tr>
+<tr><td>run.json</td><td class="wrap-ok">The raw data: every reading of every well and cycle, times, temperatures, the protocol's settings and the events</td></tr>
+<tr><td>analysis.json</td><td class="wrap-ok">The saved annotation and analysis results (absent until something is saved)</td></tr>
+</table></div>
+<p>Do not change the files inside a .pk by hand. A .pk in a newer format made by a later version is refused by an older one with “Made by a newer version of Plate Kinetics Live - please update”.</p>
+
+<h3>The Excel file</h3>
+<p>The .xlsx beside the .pk has three sheets:</p>
+<ul>
+<li><b>Full record</b>: everything about the run: experiment name and id, instrument, software, protocol, start and end with the time zone, status, why it was interrupted, cycles, target temperature, filters and gain per channel, operator, the checksum of the raw data; the samples (well, content, saved names and groups); per channel a table (Cycle, Time (s), Temperature (°C), one column per well, with the sample names in the row under the well ids); the saved analysis results; the events.</li>
+<li><b>Basic data</b>: only the numbers: Cycle, Time (s), Temperature (°C), one column per well, one block per channel; ready for Excel, WPS, Prism and the like.</li>
+<li><b>Protocol</b>: the protocol details (see below), with the English name, the Chinese name and the value in columns of their own; for a plate-reader run also “Omega original values”: every setting Omega stored, as it stored it (without Omega’s user accounts).</li>
+</ul>
+<p>The workbook is a copy; the .pk is the original record. If the workbook is lost or was changed, use “Regenerate Excel” in the Experiments list.</p>
+
+<h3>Protocol details</h3>
+<p>For every experiment the program records the settings needed to repeat it. Click “Protocol details” next to the experiment’s information in the analysis page to see them; they are also in the Excel sheet “Protocol”:</p>
+<ul>
+<li><b>Plate reader (Omega)</b>: protocol name, plate, mode, when the protocol was last saved, Omega version; cycles × cycle time, flashes per well; excitation / emission filters and gain of each channel; shaking; target temperature. Taken from Omega’s protocol settings at the start of the run.</li>
+<li><b>PCR (Archimed)</b>: sample volume, cover temperature, run mode, dyes and detectors; the temperature program, one line per stage, e.g. “Stage 1 · Cycling × 99: 80.0 °C 10:00 → 4.0 °C 5:00 (data collected)”. Taken from the experiment file (.qps / .qpt) and stored in the program’s record once found, so a later change of the file does not alter it; earlier runs get it when the program finds their experiment file.</li>
+</ul>
+<p>The meaning of some Omega codes (read from top/bottom, reading direction, shaking mode, shaking frequency, positioning delay, speed) is not confirmed yet: they are shown as numbers such as “Omega code 1” until they are. Runs recorded by an earlier version, and PCR runs whose experiment file is not found, show “No record”.</p>
+
+<h3>The status of an experiment</h3>
+<div class="tw"><table>
+<tr><th>Status</th><th>Meaning</th></tr>
+<tr><td>Measuring</td><td class="wrap-ok">Still measuring</td></tr>
+<tr><td>Completed</td><td class="wrap-ok">All planned cycles were measured</td></tr>
+<tr><td>Stopped early</td><td class="wrap-ok">Stopped in the instrument software, for example “Stopped early at cycle 98 of 300”</td></tr>
+<tr><td>Interrupted</td><td class="wrap-ok">Ended unexpectedly, or the PC or the program restarted during the run; with the time and the reason (table below)</td></tr>
+<tr><td>End not seen</td><td class="wrap-ok">The program could not tell how the run ended, for example it was not running at the end and the instrument software's files do not say. The data recorded are fine to use</td></tr>
+</table></div>
+
+<h3>Why a run was interrupted</h3>
+<p>When a run ended unexpectedly, or the PC or the program restarted during it, the program looks up the reason in Windows' own event logs and shows it on the card, in the .pk and in the “Full record” sheet:</p>
+<div class="tw"><table>
+<tr><th>Shown as</th><th>What Windows recorded</th></tr>
+<tr><td class="wrap-ok">the PC lost power or stopped unexpectedly</td><td class="wrap-ok">The PC started again without a proper shutdown</td></tr>
+<tr><td class="wrap-ok">the PC restarted for a Windows update</td><td class="wrap-ok">A restart asked for by Windows Update</td></tr>
+<tr><td class="wrap-ok">the PC was restarted / shut down</td><td class="wrap-ok">Someone or a program restarted or shut down the PC (the program is named in brackets)</td></tr>
+<tr><td class="wrap-ok">the PC went to sleep</td><td class="wrap-ok">The PC slept</td></tr>
+<tr><td class="wrap-ok">the instrument software stopped with an error</td><td class="wrap-ok">Omega or Archimed Analyzer crashed</td></tr>
+<tr><td class="wrap-ok">the instrument software was closed</td><td class="wrap-ok">The instrument software was closed during the run</td></tr>
+<tr><td class="wrap-ok">the recording program was stopped</td><td class="wrap-ok">The Plate Kinetics Live service (or the portable program) was stopped</td></tr>
+<tr><td class="wrap-ok">reason unknown</td><td class="wrap-ok">Nothing was found</td></tr>
+</table></div>
+
+<h3>The Experiments list</h3>
+<p>Experiments lists every experiment in the data folder. Search by name, sample name, instrument or date; filter by instrument, date and status. For each experiment you can:</p>
+<ul>
+<li><b>Open</b> it in the analysis page, with its saved annotation;</li>
+<li><b>Show in folder</b>;</li>
+<li><b>Rename</b> it: the .pk and the .xlsx together (the experiment id stays);</li>
+<li><b>Regenerate Excel</b>;</li>
+<li><b>Delete</b> it: the .pk and the .xlsx go to the Recycle Bin;</li>
+<li><b>Restore</b> it: deleted experiments are listed separately and can be made again, with their saved annotation, from the program's own records;</li>
+<li><b>Export current data</b> of a run still measuring, as an Excel file.</li>
+</ul>
+<p>You may also rename files in Explorer, and move or delete them within Experiments: the program knows the files by the experiment id inside them, not by their names. The files of an ended run that were deleted are not made again by themselves; restore them from the list when needed.</p>
+
+<h3>Opening a .pk</h3>
+<p>Double-click a .pk file (installed edition), or click Open in Experiments. A .pk from elsewhere (a USB stick, an e-mail) opens too; annotations made in it are saved into that file itself.</p>
+
+<h3>All BMG experiments (plate reader program)</h3>
+<p>Lists every run in the Omega databases on this PC (of every Omega user), also those made before the program was installed. Open one in the analysis page, or save it as experiment files (.pk and .xlsx). Verified with Omega 6.20 and 6.40, plate-mode kinetics, 96- and 384-well plates; runs of other versions or modes are listed too, but may not open correctly.</p>
+
+<h3>Exporting</h3>
+<p>When you export a table, figure or report from the analysis page, the Save As dialog opens in the experiment's folder. Every exported table, figure and report names the experiment or file its data came from and the version of the analysis page.</p>
+
+<h2 id="en-folder">4. The data folder</h2>
+<p>The data folder <code>PlateKineticsLive-data</code> lives beside the program. In the installed edition it is by default:</p>
+<ul>
+<li><code>C:\Program Files\Plate Kinetics Live (BMG)\PlateKineticsLive-data</code></li>
+<li><code>C:\Program Files\Plate Kinetics Live (Archimed)\PlateKineticsLive-data</code></li>
+</ul>
+<p>The portable edition keeps it beside its exe. To open it: “Open data folder” in the window or in the tray menu, or “Plate Kinetics Live Experiments” in the Start menu.</p>
+<div class="tw"><table>
+<tr><th>Item</th><th>Content</th></tr>
+<tr><td>README.txt</td><td class="wrap-ok">What is where and what to back up, in Chinese and English</td></tr>
+<tr><td>Experiments\year-month\</td><td class="wrap-ok">The experiment files (.pk and .xlsx). These are yours: rename, move within Experiments, delete</td></tr>
+<tr><td>System\ (hidden)</td><td class="wrap-ok">The program's own files: the original records (runs), logs (log), damaged files put aside (recovery), copies of saved annotations (analysis), plate layouts (layouts), settings (settings.json), each Windows user's window data (users). Please do not change anything in it</td></tr>
+</table></div>
+<h3>Who may change what (installed edition)</h3>
+<ul>
+<li>Experiments: every user of the PC may add, rename, move and delete files and folders in it.</li>
+<li>System: users may only read it; only the service and administrators write.</li>
+</ul>
+<h3>Backup</h3>
+<p>Back up the <b>whole</b> PlateKineticsLive-data folder, including the hidden System folder: the original records and everything needed to restore are in System, so Experiments alone is not enough. To restore, put the whole folder back beside the program (installed edition: IT stops the service first, see IT guide section 3).</p>
+<h3>Power cuts and damaged files</h3>
+<p>The program writes a temporary file first, makes sure it is on the disk and reads it back before it replaces the file, and keeps the previous version (.bak): a power cut never leaves a half-written record. A damaged file found at start-up is moved to <code>System\recovery\date-time\</code> (the program never deletes anything there) and the file is restored from its .bak, else rebuilt from the instrument software's files. A blue note at the top of the window says what was done.</p>
+<h3>Disk space</h3>
+<p>Below 5 GB free on the data folder's disk a warning appears, below 1 GB an error: free some space soon, or new data may not be saved.</p>
+
+<h2 id="en-annotations">5. Annotations and automatic saving</h2>
+<p>What you add to an experiment in the analysis page (sample names, groups, notes, the operator and the analysis settings such as threshold or cut-off) is saved in the experiment itself (analysis.json in the .pk), with a copy in System for restoring. The raw readings are never changed.</p>
+<h3>Automatic saving</h3>
+<ul>
+<li>About 3 seconds after your last change it is saved; the window shows “Saved 14:32”.</li>
+<li><kbd>Ctrl</kbd>+<kbd>S</kbd> (or Save) saves at once.</li>
+<li>When an experiment is opened, its saved annotation is applied. For a plate reader run with nothing saved yet, the sample information entered in Omega (where there is any) gives the first sample names.</li>
+</ul>
+<h3>When the Excel file is updated</h3>
+<p>Automatic saving writes the .pk only, not the workbook every time. The workbook is updated when you press <kbd>Ctrl</kbd>+<kbd>S</kbd>, when you leave or close the experiment, and at most every 10 minutes while there are changes.</p>
+<p>If the workbook is open in Excel or someone changed it, the program never overwrites it: it writes <code>name (analysis 2026-11-20 15-42).xlsx</code> beside it instead. A problem with the workbook never stops the .pk from being saved.</p>
+<h3>The status chip</h3>
+<p>The chip next to the analysis tells whether the annotation you see is the one saved in the experiment:</p>
+<div class="tw"><table>
+<tr><th>Chip</th><th>Meaning</th></tr>
+<tr><td><span class="chip green">Same as the instrument</span></td><td class="wrap-ok">What you see is the version saved in the experiment.</td></tr>
+<tr><td><span class="chip orange">Changes only on this device</span></td><td class="wrap-ok">Your changes are not in the experiment yet, for example because the recording program cannot be reached at the moment. It is tried again every 30 seconds.</td></tr>
+<tr><td><span class="chip blue">Newer on the instrument</span></td><td class="wrap-ok">Someone else saved a newer version while you had changes that were not saved yet.</td></tr>
+</table></div>
+<p>When you have no unsaved changes, a newer version saved by someone else is loaded by itself.</p>
+<h3>Restore from instrument</h3>
+<p>“Restore from instrument” drops the changes on this device that are not in the experiment yet and loads the version saved in the experiment.</p>
+<h3>Undo last save</h3>
+<p>“Undo last save” brings the annotation back to what it was before the last save (one step). It is in the program window on the instrument PC only. Undo in the page (<kbd>Ctrl</kbd>+<kbd>Z</kbd>) takes back your last edit; “Undo last save” takes back a save.</p>
+<h3>Several people annotating one experiment</h3>
+<p>Each experiment has one shared annotation. When several people (for example different Windows users of the PC) change the same experiment, the last save wins; the program keeps who saved last (Windows user and PC) and when. It keeps no history of changes.</p>
+<h3>A .pk outside the data folder</h3>
+<p>For a .pk opened from elsewhere (not in Experiments), the window saves the annotation into that file itself.</p>
+
+<h2 id="en-layouts">6. Plate layouts</h2>
+<p>A plate layout (the sample name and group of each well) can be prepared before the run.</p>
+<ul>
+<li>Under Plate layouts, create, edit and delete layouts; type names and groups on the plate (96 wells: 8 rows × 12 columns; 384 wells: 16 × 24).</li>
+<li><b>Import from Excel</b>: a sheet with a plate grid, rows lettered (A–H or A–P), columns numbered (1–12 or 1–24), the sample names in the cells. Check the result, then save it.</li>
+<li><b>Use for the next experiment</b>: under Settings &gt; Next experiment, choose a name and a layout for an instrument. The next run of that instrument gets that name, and the layout's sample names and groups. The plan is used once.</li>
+</ul>
+
+<h2 id="en-notify">7. Notifications</h2>
+<p>The program tells you when:</p>
+<div class="tw"><table>
+<tr><th>Notification</th><th>When</th></tr>
+<tr><td>completed</td><td class="wrap-ok">a run measured all its cycles</td></tr>
+<tr><td>stopped early</td><td class="wrap-ok">a run was stopped in the instrument software</td></tr>
+<tr><td>interrupted</td><td class="wrap-ok">a run ended unexpectedly (with the reason)</td></tr>
+<tr><td>no new data</td><td class="wrap-ok">a run in progress has had no new reading for a long time</td></tr>
+<tr><td>could not be saved</td><td class="wrap-ok">the program could not write data to the disk</td></tr>
+</table></div>
+<ul>
+<li><b>Installed edition</b>: every signed-in user has a tray icon at the bottom right that shows these as Windows notifications, with a sound if you like; a click on one opens the window. At sign-in it reports what happened in the last 12 hours and was not reported yet. When the service has not answered for 3 minutes, the tray says so too (nothing may be recording then).</li>
+<li>While the window is open, the page shows them as well (in the installed edition without sound: the tray has sounded already).</li>
+<li><b>Portable edition</b>: in the window only, with a sound if you like.</li>
+</ul>
+<p>The tray menu has Open window, Open data folder and Quit. Quit only removes the tray icon; recording goes on, and the icon comes back at the next sign-in.</p>
+<p>Choose which events are notified, and the sound, in Settings. With Windows' Do not disturb or Focus on, notifications may not pop up but are still in the notification centre.</p>
+
+<h2 id="en-settings">8. Settings</h2>
+<p>Settings apply to every user of the PC.</p>
+<div class="tw"><table>
+<tr><th>Setting</th><th>What it does</th></tr>
+<tr><td>Instrument names</td><td class="wrap-ok">The name each instrument has on screen. Shown only, never used in file names.</td></tr>
+<tr><td>Notifications</td><td class="wrap-ok">Which events are notified, and the sound.</td></tr>
+<tr><td>Keep awake</td><td class="wrap-ok">The PC does not sleep while a run is measuring (on by default). When nothing measures, the PC sleeps as its power settings say; the program does not change the power plan.</td></tr>
+<tr><td>Next experiment</td><td class="wrap-ok">The name and plate layout of each instrument's next run (section 6).</td></tr>
+<tr><td>Default operator</td><td class="wrap-ok">The operator of new runs; empty means the Windows user signed in at the PC.</td></tr>
+<tr><td>Data folder</td><td class="wrap-ok">Where it is and the free space.</td></tr>
+<tr><td>PC checks</td><td class="wrap-ok">Whether the PC sleeps on mains power by itself, whether a Windows update waits for a restart, whether the disk has room.</td></tr>
+<tr><td>Versions</td><td class="wrap-ok">The versions of the program and of the analysis page.</td></tr>
+<tr><td>Support bundle</td><td class="wrap-ok">A zip (logs, versions, settings, the program's current state and the PC checks) for whoever helps you. Experiment files are in it only when you tick that box. It holds experiment names, instrument names and Windows user names: check that it may be sent.</td></tr>
+</table></div>
+<p>About shows the version, the licence, the research-use statement and the third-party notices; Help opens this manual.</p>
+
+<h2 id="en-problems">9. Problems and what to do</h2>
+<p>Problems appear as banners at the top of the window: <span class="sev err">error</span> needs action now, <span class="sev wrn">warning</span> needs attention, <span class="sev inf">info</span> can be dismissed once read.</p>
+<div class="tw"><table>
+<tr><th>The banner says</th><th>What to do</th></tr>
+<tr><td class="wrap-ok"><span class="sev err">error</span> The data could not be saved</td><td class="wrap-ok">The program could not write to the disk. Check whether the data folder's disk is full or failing and tell IT. The program keeps trying.</td></tr>
+<tr><td class="wrap-ok"><span class="sev wrn">warning</span> Disk space low (below 5 GB)</td><td class="wrap-ok">Delete or move files you do not need.</td></tr>
+<tr><td class="wrap-ok"><span class="sev err">error</span> Disk space critical (below 1 GB)</td><td class="wrap-ok">Free space now, or new data may not be saved.</td></tr>
+<tr><td class="wrap-ok"><span class="sev inf">info</span> Files were repaired at start-up</td><td class="wrap-ok">After a power cut or a crash the program repaired records when it started; the banner says what it did. Damaged files are in <code>System\recovery</code>. Dismiss it once read.</td></tr>
+<tr><td class="wrap-ok">The recorder is stuck</td><td class="wrap-ok">The instrument still measures but the program no longer moves on. It restarts itself within 10 minutes; if it stays, restart the PC after the run and send the support bundle. This is not the card's “No new data … please check the instrument”, which means the instrument software itself wrote nothing new.</td></tr>
+<tr><td class="wrap-ok">This version of the instrument software is not verified</td><td class="wrap-ok">This Omega or Archimed Analyzer version has not been verified; the record may be incomplete or wrong. Check the results in the instrument software and report the version.</td></tr>
+<tr><td class="wrap-ok">Cannot be read</td><td class="wrap-ok">The program cannot read the instrument software's files. Check that the instrument software is installed and works; else send the support bundle.</td></tr>
+<tr><td class="wrap-ok">The PC goes to sleep by itself</td><td class="wrap-ok">The power settings let the PC sleep on mains power. The program keeps it awake while a run measures, but ask IT to set sleep on mains power to Never.</td></tr>
+<tr><td class="wrap-ok">A restart is pending</td><td class="wrap-ok">A Windows update waits to restart the PC. Restart while no run measures, before Windows does it in the middle of one.</td></tr>
+<tr><td class="wrap-ok">The PC cannot be kept awake</td><td class="wrap-ok">The program could not keep the PC awake during a run. Check the power settings and keep the PC from sleeping while it measures.</td></tr>
+<tr><td class="wrap-ok">The program restarted after an error</td><td class="wrap-ok">The program stopped with an error and Windows restarted it; readings it missed are read back from the instrument software's files. If it happens again, send the support bundle.</td></tr>
+</table></div>
+<h3>Other situations</h3>
+<div class="tw"><table>
+<tr><th>Situation</th><th>What to do</th></tr>
+<tr><td class="wrap-ok">“The background program does not answer”</td><td class="wrap-ok">Installed edition: the service has stopped. Restart the PC, or ask IT to start the service “Plate Kinetics Live”. Portable edition: the program is not running; start it.</td></tr>
+<tr><td class="wrap-ok">The port is in use</td><td class="wrap-ok">Another program holds port 47815 (47825 for the Archimed program); the window and the log name it. Close it, or ask IT.</td></tr>
+<tr><td class="wrap-ok">No curves</td><td class="wrap-ok">Fewer than 2 cycles so far, or the plate is not a 96- or 384-well plate.</td></tr>
+<tr><td class="wrap-ok">“Made by a newer version of Plate Kinetics Live”</td><td class="wrap-ok">The .pk was made by a later version: update the program.</td></tr>
+<tr><td class="wrap-ok">The Excel file lacks the latest annotation</td><td class="wrap-ok">Press <kbd>Ctrl</kbd>+<kbd>S</kbd>. If the workbook was open or changed, the new content is in the “(analysis …)” workbook beside it.</td></tr>
+<tr><td class="wrap-ok">An experiment file is missing</td><td class="wrap-ok">Search in Experiments; deleted experiments can be restored there, or from the Recycle Bin.</td></tr>
+<tr><td class="wrap-ok">The window is blank or frozen</td><td class="wrap-ok">The window reloads the page by itself after a page failure. Otherwise close it and open it again (the installed edition keeps recording).</td></tr>
+</table></div>
+<p>When you need help, make a support bundle in Settings and send it to IT or to whoever supplied the program.</p>
+
+<h2 id="en-update">10. Updating</h2>
+<ul>
+<li><b>Installed edition</b>: run the newer installer as administrator. It installs into the same folder and leaves the data folder as it is.</li>
+<li>You may update while an instrument measures: the installer first says “Recording pauses about 10 seconds; no data is lost” and goes on when you click Continue. Readings missed meanwhile are read back from the instrument software's files; the instrument software is not affected.</li>
+<li>Open windows are closed; open the program from the Start menu again afterwards. The tray changes to the new version by itself.</li>
+<li>If an update fails, the previous version goes on running and recording.</li>
+<li><b>Portable edition</b>: while no run measures, close the program, unzip the new version into the same folder (replacing the program files, keeping PlateKineticsLive-data) and start it again.</li>
+<li>The version in use is shown under About.</li>
+</ul>
+
+<h2 id="en-uninstall">11. Uninstalling</h2>
+<ul>
+<li>In Windows Settings &gt; Apps, find Plate Kinetics Live and choose Uninstall (administrator rights needed).</li>
+<li>This removes the program, the service, the tray, the shortcuts and the .pk file association.</li>
+<li>The data folder PlateKineticsLive-data stays where it is, with every experiment and record. Delete it yourself (after a backup) when it is no longer needed.</li>
+<li>Portable edition: close the program and delete its folder (copy PlateKineticsLive-data elsewhere first if you need it).</li>
+</ul>
+
+<h2 id="en-faq">12. FAQ</h2>
+<dl class="faq">
+<dt>Does the program control the instrument or change the instrument software's files?</dt>
+<dd>No. It only reads the files the instrument software writes (sharing them for reading), never writes, locks or changes them, and never sends commands to an instrument.</dd>
+<dt>Is any data sent over the internet?</dt>
+<dd>No. The program has no online features, collects no usage statistics and does not check for updates; its web server is open to this PC only. Data leave the PC only when you copy or send them yourself.</dd>
+<dt>Does it still record when I close the window?</dt>
+<dd>Installed edition: yes, the service records and the window only shows. Portable edition: no, closing the window stops recording (you are asked first).</dd>
+<dt>What if the power fails or the PC restarts during a run?</dt>
+<dd>Records are written power-safely. When the PC is back, the installed edition starts by itself, reads the missed readings back from the instrument software's files, and marks the run as interrupted with the time and the reason.</dd>
+<dt>May I rename experiment files or move them to other folders?</dt>
+<dd>Within Experiments, rename, move and make subfolders as you like. A file moved out of Experiments is no longer listed or managed, but a double-click still opens it and annotations are saved into it.</dd>
+<dt>I deleted an experiment by mistake.</dt>
+<dd>Find it among the deleted experiments in the Experiments list and restore it, or take it back from the Recycle Bin.</dd>
+<dt>Which counts, the Excel file or the .pk?</dt>
+<dd>The .pk is the original record; the workbook is a copy for convenience. If they differ, regenerate the workbook from the Experiments list.</dd>
+<dt>How do I look at an experiment on another PC?</dt>
+<dd>Copy the .pk and open it on a PC with Plate Kinetics Live (installed or portable), or use the .xlsx.</dd>
+<dt>Can several people share one instrument PC?</dt>
+<dd>Yes. The service records whoever is signed in; each Windows user has their own window settings and tray; the annotation of each experiment is shared, and the last save wins.</dd>
+<dt>Can both programs be installed on one PC?</dt>
+<dd>Yes. The plate reader program uses port 47815, the Archimed program 47825, and each has its own data folder.</dd>
+<dt>Can the portable and the installed edition of the same program run together?</dt>
+<dd>No, they use the same port. The installer stops when it finds the portable edition running: close it first.</dd>
+<dt>Which time zone are the times in?</dt>
+<dd>Every time in the files carries the PC's UTC offset, for example <code>2026-11-20T14:05:32+08:00</code>, so they read correctly anywhere.</dd>
+<dt>May it be used for diagnosis or regulated records?</dt>
+<dd>No. The program is for research use only. It is not medical device software and not an electronic records system under 21 CFR Part 11 or similar rules: it keeps no change history and has no electronic signatures. Where records must comply, the instrument software's own records are the reference.</dd>
+</dl>
+</section>
+
+<!-- ---------------------------------------------------------------- IT guide -->
+<section class="part" id="en-it">
+<p class="kicker">IT guide</p>
+<h1>IT guide</h1>
+<p class="lead">For the people who install and look after the instrument PCs: requirements, installation, permissions, the service, network, removal and logs.</p>
+
+<h2 id="en-it-req">1. Requirements</h2>
+<div class="tw"><table>
+<tr><th>Item</th><th>Requirement</th></tr>
+<tr><td>Operating system</td><td class="wrap-ok">Windows 10 or Windows 11, 64-bit</td></tr>
+<tr><td>.NET Framework 4.8</td><td class="wrap-ok">Part of Windows 10 version 1903 and later, and of Windows 11</td></tr>
+<tr><td>WebView2 Runtime</td><td class="wrap-ok">Microsoft Edge WebView2 Runtime (the window shows the page with it). Part of Windows 11; on Windows 10 usually installed with Microsoft Edge. If missing, install Microsoft's runtime or use the offline package</td></tr>
+<tr><td>Rights</td><td class="wrap-ok">Administrator to install, update, move and uninstall; none for everyday use</td></tr>
+<tr><td>Instrument software</td><td class="wrap-ok">On the same PC: BMG Omega (verified 6.20, 6.40) or RocGene Archimed Analyzer (verified 1.5.5)</td></tr>
+<tr><td>Disk</td><td class="wrap-ok">A few MB for the program. Usually a few hundred KB to a few MB per experiment (more for 384 wells with many cycles). The program warns below 5 GB free on the data folder's disk</td></tr>
+<tr><td>Network</td><td class="wrap-ok">None needed</td></tr>
+</table></div>
+<p>The installer checks these before it changes anything; what is missing is named, with Microsoft's download page (exit code 7). The offline package installs what is missing from its redist folder first (section 8).</p>
+
+<h2 id="en-it-install">2. Installing, silent installs</h2>
+<p>The installers <code>PlateKineticsLive-Setup.exe</code> (BMG) and <code>PlateKineticsLive-Archimed-Setup.exe</code> (Archimed), about 1 MB each, run as administrator. Their window shows Chinese with the English beneath.</p>
+<ul>
+<li>Default folder: <code>C:\Program Files\Plate Kinetics Live (BMG)</code> or <code>C:\Program Files\Plate Kinetics Live (Archimed)</code>. An existing installation is updated where it is; to change its folder use <code>--move-to</code> (section 10).</li>
+<li>Registered for the whole PC: an entry in the list of apps (publisher hx_mao); Start menu shortcuts for all users (the program and “<i>name</i> Experiments”) and a desktop shortcut; the .pk file type (a double-click runs <code>"&lt;exe&gt;" --open "&lt;file&gt;"</code>); the tray at every sign-in; the Windows service. The tray is started in the installing user's session right away.</li>
+<li>Every install and update sets the data folder's permissions (section 3); the files in it are not changed.</li>
+<li>The installers and programs are <b>not code-signed</b>. Windows SmartScreen may say “Windows protected your PC”: choose More info, then Run anyway. Use installers from a source you trust only, and compare the file's SHA-256 if needed; antivirus software may need an exception.</li>
+<li>While an instrument measures, the window first explains “Recording pauses about 10 seconds; no data is lost” and goes on with Continue; a silent install does not ask and notes it in the log.</li>
+<li>When a copy that records by itself (for example the portable edition) is running, the installer stops (exit code 2): close that copy first. The installer does not close it.</li>
+</ul>
+<h3>Command line</h3>
+<div class="tw"><table>
+<tr><th>Option</th><th>Effect</th></tr>
+<tr><td><code>/S</code></td><td class="wrap-ok">Silent: no window at all; the exit code and the log tell the result</td></tr>
+<tr><td><code>/NODESKTOP</code></td><td class="wrap-ok">No new desktop shortcut (an existing one is kept)</td></tr>
+<tr><td><code>/D=&lt;folder&gt;</code></td><td class="wrap-ok">Install into this folder. Must be last on the command line; no quotes needed</td></tr>
+<tr><td><code>--move-to [&lt;folder&gt;]</code></td><td class="wrap-ok">Move the installed program with its data into this folder (none: the standard one under Program Files), see section 10</td></tr>
+</table></div>
+<pre>PlateKineticsLive-Setup.exe /S /NODESKTOP
+PlateKineticsLive-Archimed-Setup.exe /S /D=D:\Programs\Plate Kinetics Live (Archimed)</pre>
+<h3>Exit codes</h3>
+<div class="tw"><table>
+<tr><th>Code</th><th>Meaning</th></tr>
+<tr><td>0</td><td class="wrap-ok">Installed</td></tr>
+<tr><td>1</td><td class="wrap-ok">Failed (the previous version goes on running)</td></tr>
+<tr><td>2</td><td class="wrap-ok">The program is running (a portable copy or an old program records by itself), or the service could not be stopped</td></tr>
+<tr><td>3</td><td class="wrap-ok">The folder cannot be used</td></tr>
+<tr><td>4</td><td class="wrap-ok">The installer is incomplete</td></tr>
+<tr><td>5</td><td class="wrap-ok">The installer's window was closed; nothing installed</td></tr>
+<tr><td>6</td><td class="wrap-ok">Installed, but the service did not start</td></tr>
+<tr><td>7</td><td class="wrap-ok">.NET Framework 4.8 or the WebView2 Runtime is missing (nothing changed)</td></tr>
+<tr><td>8</td><td class="wrap-ok">Not enough disk space (nothing changed)</td></tr>
+<tr><td>9</td><td class="wrap-ok">The move was not done; everything was put back</td></tr>
+</table></div>
+<p>Log: <code>%TEMP%\&lt;name&gt;-setup.log</code>, for example <code>%TEMP%\PlateKineticsLive-setup.log</code> (<code>C:\Windows\Temp</code> when run as SYSTEM). The last line is the result; the lines before give each folder's permissions and, for a move, the check of every file. A silent install also writes the result to the standard output.</p>
+
+<h2 id="en-it-folders">3. Folders and permissions</h2>
+<div class="tw"><table>
+<tr><th>Folder</th><th>Permissions</th></tr>
+<tr><td>Program folder</td><td class="wrap-ok">As Program Files: administrators and Windows change it, users read and run it. Outside Program Files the installer sets the same rights explicitly (without the write rights a drive's root gives its users), because the service runs this folder's program as the SYSTEM account</td></tr>
+<tr><td>PlateKineticsLive-data</td><td class="wrap-ok">As the program folder: users read</td></tr>
+<tr><td>Experiments</td><td class="wrap-ok">Users may add, rename, move and delete files and folders in it (not Experiments itself)</td></tr>
+<tr><td>System (hidden)</td><td class="wrap-ok">Users read; SYSTEM and Administrators full control. Only the service writes</td></tr>
+<tr><td>System\users</td><td class="wrap-ok">Each user may create his own folder there (the window's web profile, window size, window log), which only he (CREATOR OWNER), SYSTEM and Administrators can change</td></tr>
+</table></div>
+<p>Rights are set by well-known SIDs, whatever the language of Windows; rights administrators gave other groups are kept. Where a user cannot write to System\users, the window data go to <code>%LOCALAPPDATA%\&lt;name&gt;</code>.</p>
+<p><b>Backup</b>: the whole PlateKineticsLive-data folder, including the hidden System. <b>Restore</b>: stop the service, put the whole folder back beside the program, start the service.</p>
+
+<h2 id="en-it-service">4. The service</h2>
+<div class="tw"><table>
+<tr><th>Item</th><th>BMG / Archimed</th></tr>
+<tr><td>Service name</td><td class="wrap-ok"><code>PlateKineticsLive</code> / <code>PlateKineticsLive-Archimed</code></td></tr>
+<tr><td>Display name</td><td class="wrap-ok">Plate Kinetics Live / Plate Kinetics Live (Archimed)</td></tr>
+<tr><td>Command</td><td class="wrap-ok"><code>"&lt;program folder&gt;\PlateKineticsLive.exe" --service</code></td></tr>
+<tr><td>Account</td><td class="wrap-ok">LocalSystem</td></tr>
+<tr><td>Start type</td><td class="wrap-ok">Automatic</td></tr>
+<tr><td>Priority</td><td class="wrap-ok">Below normal (the instrument software comes first)</td></tr>
+<tr><td>Recovery</td><td class="wrap-ok">Restart after 10 s, after 30 s, then every 60 s; the count resets after 1 day. Also when the service ends with an error (not only on a crash)</td></tr>
+</table></div>
+<ul>
+<li><b>Watchdog</b>: when the service's instrument loop has not moved on for 10 minutes, it logs this and exits with an error, and Windows restarts it. Unhandled errors go to <code>System\log\crash-&lt;time&gt;.txt</code>; after such a restart the window shows “The program restarted after an error” once.</li>
+<li>After a restart the service reads the readings it missed from the instrument software's own files.</li>
+<li><b>Keep awake</b>: while a run measures and Keep awake is on in Settings, the service asks Windows to keep the system running (visible in <code>powercfg /requests</code>) and withdraws the request when nothing measures. The power plan is not changed.</li>
+<li><b>PC checks</b> every 10 minutes: sleep on mains power in the active power plan, a restart pending from Windows Update, disk space.</li>
+<li><b>Operator</b>: the user signed in at the PC's console when the run started.</li>
+<li>The BMG program finds Omega under Program Files\BMG and where the registry says it is installed, and reads Omega's file of the readings in progress and every Omega user's database. The Archimed program looks for Archimed Analyzer's data folder on drives C to G, reads its log, and looks for experiment files on the Desktop of every user of the PC. All read only.</li>
+<li>The window only shows what the service records. When the service is not running, the window says so and can ask to start it (administrator).</li>
+</ul>
+<pre>sc query PlateKineticsLive
+sc stop PlateKineticsLive
+sc start PlateKineticsLive</pre>
+<p>Stopping the service stops recording; missed readings are read back when it starts again, but prefer to do it while no run measures.</p>
+
+<h2 id="en-it-ports">5. Ports and network</h2>
+<ul>
+<li>The BMG program uses TCP port <b>47815</b>, the Archimed program <b>47825</b>, listening on <b>127.0.0.1</b> (loopback) only. Other PCs cannot reach it; no firewall rule is needed or added.</li>
+<li>Every request must carry the Host <code>127.0.0.1:&lt;port&gt;</code> or <code>localhost:&lt;port&gt;</code>, and <code>/api/</code> requests also the token from <code>System\api-token</code> (readable by local users). Web pages from the internet therefore cannot read or change anything through a browser.</li>
+<li>The program opens no outgoing connections: no usage statistics, no update checks, nothing sent to the instruments. The WebView2 Runtime is a Windows component that Microsoft updates like Edge.</li>
+<li>When the port is held by another program, the log and the window name the process that holds it.</li>
+<li>To look from another PC, use Remote Desktop.</li>
+</ul>
+
+<h2 id="en-it-tray">6. The tray</h2>
+<ul>
+<li>A value named after the program (for example <code>PlateKineticsLive</code>) under <code>HKLM\Software\Microsoft\Windows\CurrentVersion\Run</code> runs <code>"&lt;exe&gt;" --tray</code> at every sign-in; one per user session.</li>
+<li>It reads the local state every 10 seconds and shows each new event as a Windows notification (with a sound if set); once when the service has not answered for 3 minutes.</li>
+<li>Menu: Open window, Open data folder, Quit. Recording does not need the tray.</li>
+<li>What it has shown is kept in <code>System\users\&lt;user&gt;\tray.json</code> (or <code>%LOCALAPPDATA%\&lt;name&gt;\tray.json</code>).</li>
+<li>A user who does not want it can switch it off under Startup apps in Task Manager.</li>
+<li>After an update or a move it changes to the new program by itself; an uninstall ends it.</li>
+</ul>
+
+<h2 id="en-it-uninstall">7. Uninstalling</h2>
+<ul>
+<li>Settings &gt; Apps, or as administrator <code>"&lt;program folder&gt;\PlateKineticsLive.exe" --uninstall</code>; <code>/S</code> makes it silent (then it must run as administrator already). Without administrator rights it asks for them once.</li>
+<li>Removed: the service, the tray and its sign-in entry, the shortcuts, the entry in the list of apps, the .pk file type, the files the installer put in place (including the <code>*.replaced-N</code> copies an update renamed aside).</li>
+<li>Kept: the data folder PlateKineticsLive-data and every file the installer did not put there.</li>
+<li>Exit codes: 0 removed, 1 failed, 2 a program window is still open (for example in another user's session), 3 cancelled, 4 not installed, 5 the service could not be removed. The log is <code>%TEMP%\&lt;name&gt;-setup.log</code> as well.</li>
+</ul>
+
+<h2 id="en-it-offline">8. Offline package</h2>
+<p><code>PlateKineticsLive-offline.zip</code> is for PCs without internet access. It holds both installers, a README.txt and, in the redist folder, Microsoft's own installers unchanged: <code>ndp48-x86-x64-allos-enu.exe</code> (.NET Framework 4.8) and <code>MicrosoftEdgeWebView2RuntimeInstallerX64.exe</code> (WebView2 Runtime).</p>
+<ul>
+<li>Copy the whole folder to the instrument PC (not only the installer) and run the installer you need as administrator.</li>
+<li>If the PC lacks .NET 4.8 or WebView2, the installer installs it silently from redist first (only files with Microsoft's valid signature). This takes a few minutes and .NET may need a restart: do not install while an instrument measures.</li>
+</ul>
+
+<h2 id="en-it-portable">9. Portable edition</h2>
+<ul>
+<li><code>PlateKineticsLive-portable.zip</code> and <code>PlateKineticsLive-Archimed-portable.zip</code>: unzip into a folder the user can write to (not under Program Files, and do not run it from inside the zip), then run the exe.</li>
+<li>One process does everything: it records only while it is open and asks before its window closes. No service, no tray, no file association, no permissions set.</li>
+<li>The data folder is beside the exe, laid out as in the installed edition.</li>
+<li>Open a .pk with “Open with” and the exe; when the program is running already, the file is handed to it.</li>
+<li>The portable and the installed edition of the same program cannot run together (same port).</li>
+</ul>
+
+<h2 id="en-it-move">10. Moving to another folder</h2>
+<p>Use <code>PlateKineticsLive-Setup.exe --move-to [&lt;folder&gt;]</code> (no folder: the standard one under Program Files), or choose another folder in the installer's window.</p>
+<ol>
+<li>The new folder must be new or empty. Too little disk space, or paths longer than 260 characters, are refused up front and nothing is changed.</li>
+<li>The program files are written into the new folder; the data folder (records, logs, settings; not the web caches) is copied once while recording goes on, then, with the service stopped, what changed meanwhile. Every copied file is checked against the original (size and SHA-256).</li>
+<li>The new service is first registered to start on demand; once it answers with every instrument the old one showed, it is set to start with Windows and the old service is removed; shortcuts, the apps entry, the .pk association and the tray follow the new folder.</li>
+<li>Any failure puts everything back (exit code 9): the new service and folder go, the old service runs again from the old folder.</li>
+<li>The old folder is never changed: it stays as a backup that you delete once all is well. Recording pauses about 10–20 seconds; nothing is lost.</li>
+</ol>
+
+<h2 id="en-it-logs">11. Logs and privacy</h2>
+<div class="tw"><table>
+<tr><th>Log</th><th>Content</th></tr>
+<tr><td><code>System\log\&lt;name&gt;.log</code></td><td class="wrap-ok">What the program (service) did: start and stop, the instruments found, the runs seen and how they ended, the files written, renames, moves to the Recycle Bin, errors. It holds experiment names, file names and Windows user names, but no measured values. Beyond 10 MB a new file is begun; 4 older ones are kept (.1 to .4)</td></tr>
+<tr><td><code>System\log\crash-&lt;time&gt;.txt</code></td><td class="wrap-ok">Unhandled errors</td></tr>
+<tr><td><code>System\users\&lt;user&gt;\window.log</code></td><td class="wrap-ok">That user's window</td></tr>
+<tr><td><code>%TEMP%\&lt;name&gt;-setup.log</code></td><td class="wrap-ok">Install, update, move, uninstall</td></tr>
+<tr><td>Windows event logs</td><td class="wrap-ok">The Service Control Manager logs the service's starts, stops and failures. The program reads (never writes) the System and Application logs to find why a run was interrupted</td></tr>
+</table></div>
+<p><b>Privacy</b>: the program sends no data anywhere. Only a support bundle that you save and send yourself leaves the PC: it holds the logs, versions, settings, the program's state and the PC checks, and experiment files only when that box is ticked.</p>
+<p>The program only reads the instrument software's files (shared reading); it never writes, locks or changes them and never sends commands to an instrument.</p>
+
+<h2 id="en-it-former">12. Upgrading from SAAControl</h2>
+<p>Versions before 2.2 were named SAAControl (services <code>SAAControl</code> and <code>SAAControl-Archimed</code>, data folder <code>SAAControl-data</code>). The new installer replaces such an installation in its folder: it stops the former service, registers and starts the new one, and removes the former program only once the new service works; on a failure the former program is put back and started again. The data folder is renamed PlateKineticsLive-data; at the first start the earlier records, logs and settings are arranged into System, and the earlier web caches go to <code>System\old-cache</code> (never deleted by the program). Afterwards <code>--move-to</code> moves the installation to the standard folder under Program Files.</p>
+
+<h2 id="en-it-cmd">13. Command line</h2>
+<div class="tw"><table>
+<tr><th>Option</th><th>Effect</th></tr>
+<tr><td><code>--open &lt;file.pk&gt;</code></td><td class="wrap-ok">Show this experiment file in the window (what a double-click on a .pk does); a program already running gets it and comes to the front</td></tr>
+<tr><td><code>--tray</code></td><td class="wrap-ok">The tray (started at every sign-in)</td></tr>
+<tr><td><code>--uninstall [/S]</code></td><td class="wrap-ok">Uninstall</td></tr>
+<tr><td><code>--install-service [--demand-start]</code></td><td class="wrap-ok">Register and start the service (administrator; used by the installer)</td></tr>
+<tr><td><code>--uninstall-service</code></td><td class="wrap-ok">Stop and remove the service (administrator)</td></tr>
+<tr><td><code>--start-service</code></td><td class="wrap-ok">Start the service (administrator)</td></tr>
+<tr><td><code>--service</code></td><td class="wrap-ok">Used by Windows to run the service; do not run it by hand</td></tr>
+</table></div>
+</section>
+
+<!-- ---------------------------------------------------------------- Licence -->
+<section class="part" id="en-legal">
+<p class="kicker">Licence and notices</p>
+<h1>Licence and notices</h1>
+<ul>
+<li>Plate Kinetics Live is copyright © 2026 hx_mao and licensed under the MIT License, see <a href="LICENSE.txt">LICENSE.txt</a>.</li>
+<li><b>For research use only, not for diagnostic use.</b> It is not medical device software and not an electronic records system under 21 CFR Part 11 or similar rules; where records must comply, the instrument software's own records are the reference.</li>
+<li><b>No warranty.</b> Check important results in the instrument software.</li>
+<li><b>Not affiliated with BMG LABTECH or RocGene</b>, nor endorsed or supported by them. Product and company names belong to their owners and are used only to say whose software's files the program reads.</li>
+<li><b>Privacy</b>: the program sends no data anywhere.</li>
+<li><b>Third-party components</b>: the Microsoft Edge WebView2 SDK and Runtime, the Microsoft .NET Framework 4.8 and, in the analysis page, SheetJS Community Edition; see <a href="THIRD-PARTY-NOTICES.txt">THIRD-PARTY-NOTICES.txt</a>.</li>
+<li>The analysis page, Plate Kinetics Analysis, is also a website for analysing exported data files on any computer (it does not open .pk files): <a href="https://tools.fow.mobi/kinetics/">https://tools.fow.mobi/kinetics/</a></li>
+</ul>
+<p class="files">Full texts: <a href="LICENSE.txt">LICENSE.txt</a> · <a href="NOTICE.txt">NOTICE.txt</a> · <a href="THIRD-PARTY-NOTICES.txt">THIRD-PARTY-NOTICES.txt</a></p>
+</section>
+
+</main>
+</div>
+
+<footer>
+<span class="lang-zh">Plate Kinetics Live · © 2026 hx_mao · MIT 许可 · 仅供科研使用，不用于临床诊断</span>
+<span class="lang-en">Plate Kinetics Live · © 2026 hx_mao · MIT License · For research use only, not for diagnostic use</span>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  function lang() { return root.getAttribute('data-lang') === 'en' ? 'en' : 'zh'; }
+  function block() { return document.querySelector('.wrap.lang-' + lang()); }
+
+  /* The heading nearest above the top of the window, in the language shown: its id without the language prefix. */
+  function here() {
+    var b = block(), found = null;
+    if (!b) return null;
+    var heads = b.querySelectorAll('h2[id], section.part[id]');
+    for (var i = 0; i < heads.length; i++) {
+      if (heads[i].getBoundingClientRect().top <= 96) found = heads[i]; else break;
+    }
+    return found ? found.id.replace(/^(zh|en)-/, '') : null;
+  }
+
+  function showButtons() {
+    var buttons = document.querySelectorAll('[data-set-lang]');
+    for (var i = 0; i < buttons.length; i++) buttons[i].setAttribute('aria-pressed', buttons[i].getAttribute('data-set-lang') === lang() ? 'true' : 'false');
+  }
+
+  function setLang(next, keepPlace) {
+    if (next !== 'zh' && next !== 'en') return;
+    var place = keepPlace ? here() : null, top = window.scrollY;
+    root.setAttribute('data-lang', next);
+    root.setAttribute('lang', next === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('plk.help.lang', next); } catch (e) { /* no storage */ }
+    showButtons();
+    if (keepPlace) {
+      var target = place ? document.getElementById(next + '-' + place) : null;
+      if (target) target.scrollIntoView(); else if (top < 10) window.scrollTo(0, 0);
+      if (target && history.replaceState) history.replaceState(null, '', '#' + target.id);
+    }
+    spy();
+  }
+
+  document.addEventListener('click', function (event) {
+    var b = event.target.closest ? event.target.closest('[data-set-lang]') : null;
+    if (b) { setLang(b.getAttribute('data-set-lang'), true); return; }
+    var p = event.target.closest ? event.target.closest('[data-print]') : null;
+    if (p) {
+      if (p.getAttribute('data-print') === 'quick') root.classList.add('print-quick'); else root.classList.remove('print-quick');
+      window.print();
+    }
+  });
+  window.addEventListener('afterprint', function () { root.classList.remove('print-quick'); });
+
+  /* A link to the other language's part (#en-... while Chinese is shown) switches the language. */
+  function followHash() {
+    var m = /^#(zh|en)-/.exec(location.hash);
+    if (m && m[1] !== lang()) {
+      setLang(m[1], false);
+      var target = document.getElementById(location.hash.slice(1));
+      if (target) target.scrollIntoView();
+    }
+  }
+  window.addEventListener('hashchange', followHash);
+
+  /* The contents: the part being read is marked. */
+  var ticking = false;
+  function spy() {
+    var b = block();
+    if (!b) return;
+    var id = here(), links = b.querySelectorAll('.toc a');
+    for (var i = 0; i < links.length; i++) {
+      var on = id !== null && links[i].getAttribute('href') === '#' + lang() + '-' + id;
+      links[i].classList.toggle('on', on);
+    }
+  }
+  window.addEventListener('scroll', function () {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () { ticking = false; spy(); });
+  }, { passive: true });
+
+  /* On a narrow screen the contents start folded; a choice in them folds them again. */
+  if (window.matchMedia && window.matchMedia('(max-width: 900px)').matches) {
+    var folds = document.querySelectorAll('.toc details');
+    for (var i = 0; i < folds.length; i++) folds[i].removeAttribute('open');
+  }
+  document.addEventListener('click', function (event) {
+    var a = event.target.closest ? event.target.closest('.toc a') : null;
+    if (a && window.matchMedia && window.matchMedia('(max-width: 900px)').matches) {
+      var d = a.closest('details');
+      if (d) d.removeAttribute('open');
+    }
+  });
+
+  showButtons();
+  followHash();
+  spy();
+})();
+</script>
+</body>
+</html>

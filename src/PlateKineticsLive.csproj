@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Plate Kinetics Live for BMG Omega readers. Built against the .NET Framework that Windows has
+       (no reference-assembly download): restore with an empty package source, see ..\build.ps1. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>PlateKineticsLive</AssemblyName>
+    <RootNamespace>SAAControl</RootNamespace>
+    <PlatformTarget>x64</PlatformTarget>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <FrameworkPathOverride>C:\Windows\Microsoft.NET\Framework64\v4.0.30319</FrameworkPathOverride>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Version>2.2.0</Version>
+    <Version Condition="'$(SAAControlVersion)' != ''">$(SAAControlVersion)</Version>
+    <Company>hx_mao</Company>
+    <Product>Plate Kinetics Live</Product>
+    <AssemblyTitle>Plate Kinetics Live</AssemblyTitle>
+    <Description>Live curves and run records for BMG Omega plate readers</Description>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon Condition="Exists('app.ico')">app.ico</ApplicationIcon>
+    <DebugType>none</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\out\PlateKineticsLive\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Common\*.cs" />
+    <Compile Include="Bmg\*.cs" />
+    <Compile Include="BmgProgram.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="Microsoft.Web.WebView2.Core"><HintPath>..\vendor\webview2\Microsoft.Web.WebView2.Core.dll</HintPath></Reference>
+    <Reference Include="Microsoft.Web.WebView2.WinForms"><HintPath>..\vendor\webview2\Microsoft.Web.WebView2.WinForms.dll</HintPath></Reference>
+    <None Include="..\vendor\webview2\WebView2Loader.dll" Link="WebView2Loader.dll" CopyToOutputDirectory="PreserveNewest" />
+    <!-- the page and the shell: every .html, .js and .css of the web folder (build.ps1 takes the same into the installer) -->
+    <None Include="..\web\*.html;..\web\*.js;..\web\*.css" Link="web\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

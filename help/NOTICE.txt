@@ -1,0 +1,67 @@
+﻿Plate Kinetics Live - 声明 / Notice
+===================================
+
+Plate Kinetics Live（BMG Omega 读板仪用的 PlateKineticsLive 和 RocGene Archimed qPCR 用的
+PlateKineticsLive-Archimed，包括它们的安装程序、分析页面和说明书）
+版权所有 (c) 2026 hx_mao，按 MIT 许可证提供，见 LICENSE.txt。
+
+1. 仅供科研使用，不用于临床诊断
+   本程序仅供科研使用，不用于临床诊断，也不能作为病人诊断或治疗决定的依据。
+   它不是医疗器械软件，也不是符合 21 CFR Part 11 等法规的电子记录系统：不保存修改历史，没有电子签名。
+   需要合规记录时，以仪器软件自己的记录为准。
+
+2. 不提供任何担保
+   本程序按“现状”提供，不附带任何明示或默示的担保，包括适销性、特定用途适用性和不侵权的担保
+   （见 LICENSE.txt）。作者不对使用本程序造成的任何损失负责。重要结果请用仪器软件核对。
+
+3. 与仪器厂商无关
+   本程序是独立开发的，与 BMG LABTECH 和 RocGene 没有任何关系，也没有得到它们的认可或支持。
+   文中提到的产品和公司名称属于各自的所有者，只用来说明本程序读取哪些软件的文件。
+
+4. 隐私：不向外发送任何数据
+   - 本程序不向任何地方发送数据：没有联网功能，不收集使用统计，不检查更新。
+   - 它的网页服务只监听本机地址 127.0.0.1，其他电脑访问不到。
+   - 它只读取仪器软件写下的文件，从不写入、锁住或改动它们，也从不向仪器发送命令。
+   - 所有数据都留在这台电脑的数据文件夹 PlateKineticsLive-data 里。只有你自己拷走或发出的文件
+     （例如“支持文件”）才会离开这台电脑。
+   - Microsoft Edge WebView2 运行时是 Windows 的组件，由微软按自己的规则更新。
+
+5. 第三方组件
+   本程序使用的第三方组件按各自的许可提供，见 THIRD-PARTY-NOTICES.txt。
+
+
+Plate Kinetics Live (PlateKineticsLive for BMG Omega plate readers and PlateKineticsLive-Archimed for the
+RocGene Archimed qPCR, with their installers, analysis page and manuals)
+Copyright (c) 2026 hx_mao, licensed under the MIT License, see LICENSE.txt.
+
+1. For research use only, not for diagnostic use
+   This program is for research use only. It is not for diagnostic use and must not be the basis of any
+   decision on the diagnosis or treatment of patients.
+   It is not medical device software and not an electronic records system under 21 CFR Part 11 or similar
+   rules: it keeps no change history and has no electronic signatures. Where records must comply, the
+   instrument software's own records are the reference.
+
+2. No warranty
+   The program is provided "as is", without warranty of any kind, express or implied, including the
+   warranties of merchantability, fitness for a particular purpose and noninfringement (see LICENSE.txt).
+   The author is not liable for any loss caused by its use. Check important results in the instrument
+   software.
+
+3. Not affiliated with the instrument makers
+   This program was developed independently. It is not affiliated with BMG LABTECH or RocGene, nor endorsed
+   or supported by them. Product and company names mentioned belong to their respective owners and are used
+   only to say whose software's files the program reads.
+
+4. Privacy: the program sends no data anywhere
+   - The program sends no data anywhere: it has no online features, collects no usage statistics and does
+     not check for updates.
+   - Its web server listens on the local address 127.0.0.1 only; other computers cannot reach it.
+   - It only reads the files the instrument software writes; it never writes, locks or changes them and
+     never sends commands to an instrument.
+   - All data stay in the data folder PlateKineticsLive-data on this PC. Only files that you copy or send
+     yourself (such as a support bundle) leave the PC.
+   - The Microsoft Edge WebView2 Runtime is a Windows component that Microsoft updates under its own terms.
+
+5. Third-party components
+   The third-party components the program uses are provided under their own licences, see
+   THIRD-PARTY-NOTICES.txt.

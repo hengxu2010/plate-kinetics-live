@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The installer of one Plate Kinetics Live program (Setup.cs). Built by ..\..\build.ps1, which passes the program's name
+       (SetupName), its version (SetupVersion, SetupFileVersion) and the two resources the installer carries:
+       SetupPayload (a zip of the program's files) and SetupSettings (name, exe, version, port). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <SetupName Condition="'$(SetupName)' == ''">PlateKineticsLive</SetupName>
+    <AssemblyName>$(SetupName)-Setup</AssemblyName>
+    <RootNamespace>SAAControl.Setup</RootNamespace>
+    <!-- build against the .NET Framework that Windows itself has: no reference-assembly download -->
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <FrameworkPathOverride>C:\Windows\Microsoft.NET\Framework64\v4.0.30319</FrameworkPathOverride>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- the programs' icon (src\app.ico), when there is one -->
+    <ApplicationIcon Condition="Exists('..\app.ico')">..\app.ico</ApplicationIcon>
+    <DebugType>none</DebugType>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Company>hx_mao</Company>
+    <Product>$(SetupName)</Product>
+    <AssemblyTitle>$(SetupName) Setup</AssemblyTitle>
+    <Copyright>hx_mao</Copyright>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <InformationalVersion Condition="'$(SetupVersion)' != ''">$(SetupVersion)</InformationalVersion>
+    <FileVersion Condition="'$(SetupFileVersion)' != ''">$(SetupFileVersion)</FileVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Setup.cs" />
+    <Compile Include="..\Common\Install.cs" />
+    <Compile Include="..\Common\Json.cs" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Numerics" />
+    <EmbeddedResource Include="$(SetupPayload)" LogicalName="payload.zip" Condition="'$(SetupPayload)' != ''" />
+    <EmbeddedResource Include="$(SetupSettings)" LogicalName="setup.settings" Condition="'$(SetupSettings)' != ''" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,545 @@
+/* Plate Kinetics Live - the look of the shell (web/shell.js). Loaded after the analysis page's own style sheet. The same
+   file serves both programs (BMG and Archimed).
+
+   Colours, fonts and controls are the page's: its custom properties (--surface, --ink, --accent ...) and its classes
+   (.btn, .seg, .hint, .chk, .modal ...), so light and dark follow the page's theme without anything here. Everything
+   made by the shell has a class beginning with "saa-"; rules for the page's own parts are written under .saa-shell
+   and only change where they sit and how much room they get. Nothing here is layered above the page's own floating
+   parts (tooltips 90, dialogs 100, popovers 120, toasts 200). */
+
+:root {
+  --saa-side: 232px;
+  --saa-shadow: 0 1px 2px rgba(14, 18, 19, .04), 0 6px 20px rgba(14, 18, 19, .05);
+  --saa-ok: var(--s3);
+  --saa-done: var(--s1);
+  --saa-alert-ink: #ffffff;              /* text on the red banner (--pos); dark text on the lighter red of the dark theme */
+  --saa-g: transparent;                  /* the colour of a well's group in the layout editor (set on each well) */
+  --saa-cols: 12;                        /* the columns of the plate in the layout editor (set on its grid) */
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --saa-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .28); --saa-alert-ink: #1a0909; } }
+:root[data-theme="dark"] { --saa-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .28); --saa-alert-ink: #1a0909; }
+
+#btnShare, #btnOffline { display: none !important; }      /* both need the author's web host */
+
+/* ===================== the frame ===================== */
+.saa-shell { display: grid; grid-template-columns: var(--saa-side) minmax(0, 1fr); min-height: 100vh; }
+.saa-main { min-width: 0; display: flex; flex-direction: column; }
+.saa-view { flex: 1; min-width: 0; }
+.saa-analysis { display: block; }
+.saa-mode-shell body { min-width: 0; }
+
+/* ---------- side bar ---------- */
+.saa-side {
+  position: sticky; top: 0; height: 100vh; min-width: 0;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 14px 10px 10px; overflow-y: auto; scrollbar-width: thin;
+  background: var(--surface); border-right: 1px solid var(--hair);
+}
+.saa-side .brand { padding: 2px 6px 14px; align-items: flex-start; }
+.saa-side .brand .mark { margin-top: 1px; }
+.saa-side .brand-name { font-size: 14.5px; gap: 3px 6px; }
+.saa-side .brand-sub { margin-top: 5px; letter-spacing: .1em; }
+.saa-nav { display: flex; flex-direction: column; gap: 2px; }
+.saa-nav-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; height: 36px; padding: 0 10px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--ink-2);
+  font-size: 13.5px; font-weight: 500; text-align: left; cursor: pointer;
+}
+.saa-nav-item svg { flex: none; width: 16px; height: 16px; }
+.saa-nav-item:hover { background: var(--surface-2); color: var(--ink); }
+.saa-nav-item.on { background: var(--accent-wash-2); color: var(--accent-strong); font-weight: 600; }
+.saa-sec {
+  display: flex; align-items: center; min-height: 26px; margin-top: 16px; padding: 0 4px 0 10px;
+  color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: .08em;
+}
+.saa-sec > span { flex: 1; }
+.saa-mini {
+  flex: none; display: grid; place-items: center; width: 26px; height: 26px; padding: 0;
+  border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer;
+}
+.saa-mini svg { width: 15px; height: 15px; }
+.saa-mini:hover { background: var(--hair); color: var(--ink); }
+.saa-side-foot { margin-top: auto; padding-top: 12px; display: flex; flex-direction: column; gap: 2px; border-top: 1px solid var(--hair); }
+.saa-side-note { margin: 0 4px 6px; padding: 7px 10px; font-size: 12px; line-height: 1.45; }
+.saa-shell[data-offline="1"] .saa-readers, .saa-shell[data-offline="1"] .saa-title span { opacity: .45; }
+/* the runs that ended more than a week ago and were not opened since: folded away, one line brings them back */
+.saa-side .ds-tabs:not(.saa-show-older) .ds-tab[data-folded] { display: none; }
+.saa-older {
+  align-self: flex-start; margin: 2px 0 0 6px; padding: 3px 6px; border: 0; border-radius: 6px; background: transparent;
+  color: var(--accent); font-size: 12px; cursor: pointer; text-align: left;
+}
+.saa-older:hover { background: var(--accent-wash); }
+
+/* an instrument in the side bar */
+.saa-readers { display: flex; flex-direction: column; gap: 2px; }
+.saa-reader { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
+.saa-reader:hover { background: var(--surface-2); }
+.saa-reader-main {
+  flex: 1; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0 10px;
+  padding: 7px 4px 7px 8px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; border-radius: 8px;
+}
+.saa-reader-text { min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.saa-reader-text b { font-size: 13px; font-weight: 600; }
+.saa-reader-text span { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saa-reader .saa-bar { grid-column: 2; height: 3px; margin-top: 5px; }
+
+/* the badge of an instrument, coloured by what it is doing */
+.saa-badge {
+  flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px;
+  background: var(--surface-2); border: 1px solid var(--hair-2); color: var(--ink-2);
+  font: 600 12px/1 var(--font-mono);
+}
+[data-s="measuring"] > .saa-badge, [data-s="measuring"] .saa-reader-main > .saa-badge, [data-s="measuring"] .saa-tile-head > .saa-badge { background: var(--saa-ok); border-color: var(--saa-ok); color: var(--accent-ink); }
+[data-s="finished"] > .saa-badge, [data-s="finished"] .saa-reader-main > .saa-badge, [data-s="finished"] .saa-tile-head > .saa-badge { background: var(--saa-done); border-color: var(--saa-done); color: var(--accent-ink); }
+[data-s="unreadable"] > .saa-badge, [data-s="unreadable"] .saa-reader-main > .saa-badge, [data-s="unreadable"] .saa-tile-head > .saa-badge { background: var(--warn); border-color: var(--warn); color: var(--accent-ink); }
+.saa-bar { display: block; height: 6px; border-radius: 999px; background: var(--hair); overflow: hidden; }
+.saa-bar > i { display: block; height: 100%; min-width: 3px; border-radius: 999px; background: var(--accent); transition: width .6s ease; }
+[data-s="finished"] .saa-bar > i { background: var(--saa-done); }
+[data-early="1"] .saa-bar > i { background: var(--warn); }
+
+/* the page's dataset tabs, as a list */
+.saa-side .ds-tabs { flex: 0 1 auto; order: 0; flex-direction: column; gap: 2px; overflow: visible; padding: 0; }
+.saa-side .ds-tabs:empty::after { content: attr(data-empty); padding: 4px 10px; color: var(--muted); font-size: 12px; }
+.saa-side .ds-tab, .saa-side .ds-tabs.measure .ds-tab {
+  flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0;
+  height: auto; min-width: 0; max-width: none; padding: 7px 4px 7px 10px;
+  border-color: transparent; background: transparent; position: relative;
+}
+.saa-side .ds-tab:hover { background: var(--surface-2); border-color: transparent; }
+.saa-side .ds-tab.on { background: var(--accent-wash-2); border-color: transparent; }
+/* every child of the page's tab has its place here: the notes button, the name, what it is, the close button */
+.saa-side .ds-tab .nb { grid-column: 1; grid-row: 1; align-self: start; margin: 0 4px 0 -4px; }
+.saa-side .ds-tab .nm { grid-column: 2; grid-row: 1; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.saa-side .ds-tab.on .nm { color: var(--accent-strong); font-weight: 600; }
+.saa-side .ds-tab .meta, .saa-side .ds-tabs.tight .ds-tab .meta { grid-column: 2; grid-row: 2; display: block; margin-top: 2px; font-size: 10.5px; }
+.saa-side .ds-tab .demo, .saa-side .ds-tabs.tight .ds-tab .demo { grid-column: 2; grid-row: 3; display: inline-block; justify-self: start; margin-top: 3px; }
+.saa-side .ds-tab .x { grid-column: 3; grid-row: 1 / span 2; margin-left: 4px; opacity: 0; }
+.saa-side .ds-tab:hover .x, .saa-side .ds-tab.on .x, .saa-side .ds-tab .x:focus-visible { opacity: 1; }
+.saa-side .ds-tab input { grid-column: 2; grid-row: 1; width: 100% !important; }
+/* a run of an instrument: its badge in front; coloured while it is being measured */
+.saa-side .ds-tab[data-reader] { padding-left: 34px; }
+.saa-side .ds-tab[data-reader]::before {
+  content: attr(data-reader); position: absolute; left: 8px; top: 8px; width: 18px; height: 18px; border-radius: 5px;
+  display: grid; place-items: center; background: var(--surface); border: 1px solid var(--hair-2); color: var(--ink-2);
+  font: 600 10.5px/1 var(--font-mono);
+}
+.saa-side .ds-tab[data-live]::before { background: var(--saa-ok); border-color: var(--saa-ok); color: var(--accent-ink); }
+
+/* ---------- top bar: the title of the view, then the page's own actions ---------- */
+.saa-shell .topbar { height: 56px; min-height: 56px; padding: 0 18px; gap: 16px; flex-wrap: nowrap; }
+.saa-shell .top-actions { flex: none; flex-wrap: nowrap; }
+.saa-title { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 12px; }
+.saa-title h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-wrap: nowrap; }
+.saa-title h1 { flex: 0 1 auto; min-width: 0; }
+.saa-title span { flex: 1 1 0; min-width: 0; color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* undo, save and export belong to the dataset of the analysis view */
+.saa-shell:not([data-view="analysis"]) :is(#btnUndo, #btnRedo, #btnSave, #btnExport, .top-sep) { display: none; }
+
+/* ---------- the analysis view: the page's cards ---------- */
+.saa-shell .workspace { grid-template-columns: clamp(420px, 45%, 700px) minmax(0, 1fr); gap: 16px; padding: 16px 18px 24px; }
+.saa-shell .col { gap: 16px; }
+.saa-shell .notice { margin: 14px 18px 0; }
+.saa-shell .card { border-radius: 13px; box-shadow: var(--saa-shadow); }
+.saa-shell .card-head h2 { font-size: 14px; }
+/* the analysis settings: a strip across the top, shown with the button in the top bar */
+.saa-shell .workspace > #settingsCard { grid-column: 1 / -1; scroll-margin-top: 72px; }
+.saa-shell #settingsCard .settings { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 24px; }
+.saa-toggle::after { content: ""; width: 6px; height: 6px; margin: -3px 1px 0 3px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); opacity: .7; }
+.saa-toggle[aria-pressed="true"] { background: var(--accent-wash-2); border-color: var(--accent); color: var(--accent-strong); }
+.saa-toggle[aria-pressed="true"]::after { transform: rotate(-135deg); margin-top: 3px; }
+.saa-shell:not([data-view="analysis"]) .saa-toggle { display: none; }
+@media (max-width: 1240px) {
+  .saa-shell .workspace { grid-template-columns: minmax(0, 1fr); }
+  .saa-shell #settingsCard .settings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---------- the experiment above its analysis: status, operator, Save ---------- */
+.saa-exp {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 14px 18px 0; padding: 8px 10px 8px 14px;
+  background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; box-shadow: var(--saa-shadow); font-size: 12.5px;
+}
+.saa-exp-state {
+  flex: none; display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 10px 0 8px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--hair); color: var(--ink-2); font-weight: 500;
+}
+.saa-exp-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--rule); }
+.saa-exp-state[data-status="measuring"]::before { background: var(--saa-ok); }
+.saa-exp-state[data-status="completed"]::before { background: var(--saa-done); }
+.saa-exp-state[data-status="stopped"], .saa-exp-state[data-status="unknown"] { color: var(--warn); }
+.saa-exp-state[data-status="stopped"]::before, .saa-exp-state[data-status="unknown"]::before { background: var(--warn); }
+.saa-exp-state[data-status="interrupted"] { color: var(--pos); }
+.saa-exp-state[data-status="interrupted"]::before { background: var(--pos); }
+.saa-exp-text { min-width: 0; color: var(--ink-2); }
+.saa-exp-op { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.saa-exp-op > svg { width: 14px; height: 14px; }
+.saa-exp-label { color: var(--muted); }
+.saa-exp-op .btn { font-weight: 600; color: var(--ink); }
+.saa-exp-op input[type="text"] { width: 180px; height: 26px; }
+.saa-exp-saved { min-width: 0; color: var(--muted); }
+.saa-exp-saved[data-state="dirty"] { color: var(--warn); font-weight: 500; }
+.saa-exp-saved[data-state="error"] { color: var(--pos); font-weight: 500; }
+/* where the annotation stands: the same as the instrument's (green), being saved (grey), changed only on this device
+   (orange), newer on the instrument (blue) */
+.saa-sync {
+  flex: 0 1 auto; min-width: 0; max-width: 100%; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px 0 8px;
+  border-radius: 999px; background: var(--surface-2); color: var(--muted); font-weight: 600; white-space: nowrap;
+}
+.saa-sync::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.saa-sync > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.saa-sync[data-sync="same"] { color: color-mix(in srgb, var(--s3) 62%, var(--ink)); background: color-mix(in srgb, var(--s3) 14%, transparent); }
+.saa-sync[data-sync="local"] { color: var(--warn); background: var(--warn-wash); }
+.saa-sync[data-sync="newer"] { color: color-mix(in srgb, var(--s1) 80%, var(--ink)); background: color-mix(in srgb, var(--s1) 13%, transparent); }
+.saa-sync[data-sync="saving"]::before { animation: saa-blink 1.2s ease-in-out infinite; }
+@keyframes saa-blink { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .saa-sync[data-sync="saving"]::before { animation: none; } }
+
+/* ---------- how a run was set up ("Protocol details"): collapsed, above its analysis and on its tile ---------- */
+.saa-pd > summary { cursor: pointer; color: var(--ink-2); font-weight: 500; width: max-content; max-width: 100%; }
+.saa-pd > summary:hover { color: var(--ink); }
+.saa-pd-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 10px 28px; }
+.saa-pd-sec { min-width: 0; }
+.saa-pd-sec h4 { margin: 0 0 5px; color: var(--muted); font-size: 11.5px; font-weight: 600; }
+.saa-pd-sec dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 14px; margin: 0; }
+.saa-pd-sec dt { color: var(--muted); }
+.saa-pd-sec dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.saa-pd-sec:has(.saa-pd-steps) { grid-column: 1 / -1; }
+.saa-pd-steps p { margin: 0 0 3px; color: var(--ink); overflow-wrap: anywhere; }
+.saa-pd-steps .saa-pd-ramp { color: var(--muted); }
+.saa-pd-none { margin: 0; color: var(--muted); }
+.saa-pd-card {
+  margin: 8px 18px 0; padding: 0 14px; background: var(--surface); border: 1px solid var(--hair); border-radius: 12px;
+  box-shadow: var(--saa-shadow); font-size: 12.5px;
+}
+.saa-pd-card > summary { padding: 8px 0; }
+.saa-pd-card[open] > summary { border-bottom: 1px solid var(--hair); margin-bottom: 10px; }
+.saa-pd-card > .saa-pd-body { padding-bottom: 12px; }
+.saa-pd-tile { font-size: 12px; }
+.saa-pd-tile > summary { color: var(--muted); }
+.saa-pd-tile > .saa-pd-body { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 8px 0 2px; }
+
+/* ===================== the overview ===================== */
+.saa-overview { padding: 18px; display: flex; flex-direction: column; gap: 18px; }
+.saa-note { padding: 10px 14px; border: 1px solid var(--hair); border-left: 3px solid var(--warn); border-radius: 8px; background: var(--warn-wash); color: var(--ink-2); }
+.saa-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 16px; align-items: stretch; }
+.saa-tile {
+  min-width: 0; display: flex; flex-direction: column; gap: 14px; padding: 16px 18px 14px;
+  background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; box-shadow: var(--saa-shadow);
+  container-type: inline-size;
+}
+.saa-tile.flash { animation: saa-flash 1.1s ease; }
+@keyframes saa-flash { 0%, 55% { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash-2); } }
+.saa-tile-head { display: flex; align-items: center; gap: 12px; }
+.saa-tile-head > .saa-badge { width: 34px; height: 34px; border-radius: 10px; font-size: 16px; }
+.saa-tile-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; line-height: 1.3; }
+.saa-tile-head .saa-tile-name { flex-direction: column; align-items: flex-start; gap: 0; }
+.saa-tile-name > div { min-width: 0; display: flex; flex-direction: column; }
+.saa-tile-name b { font-size: 16px; font-weight: 600; }
+.saa-tile-name span:not(.saa-badge) { color: var(--muted); font: 11.5px var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.saa-tile-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.saa-temp { color: var(--muted); font: 11.5px var(--font-mono); white-space: nowrap; }
+.saa-state {
+  flex: none; display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px 0 9px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--hair); color: var(--ink-2); font-size: 12.5px; font-weight: 500;
+}
+.saa-state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--rule); }
+[data-s="measuring"] .saa-state { color: var(--ink); }
+[data-s="measuring"] .saa-state::before { background: var(--saa-ok); animation: saa-pulse 1.8s ease-in-out infinite; }
+[data-s="finished"] .saa-state::before { background: var(--saa-done); }
+[data-early="1"] .saa-state { color: var(--warn); }
+[data-early="1"] .saa-state::before { background: var(--warn); }
+[data-s="unreadable"] .saa-state { background: var(--warn-wash); color: var(--warn); border-color: transparent; }
+[data-s="unreadable"] .saa-state::before { background: var(--warn); }
+@keyframes saa-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--saa-ok) 55%, transparent); } 60% { box-shadow: 0 0 0 6px transparent; } }
+@media (prefers-reduced-motion: reduce) { [data-s="measuring"] .saa-state::before, .saa-tile.flash { animation: none; } .saa-bar > i { transition: none; } }
+
+.saa-run { display: flex; flex-direction: column; gap: 7px; }
+.saa-proto { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 24px; }
+.saa-proto b { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saa-proto > span { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font: 11.5px var(--font-mono); }
+.saa-progress { display: flex; align-items: baseline; gap: 10px; margin-top: 3px; }
+.saa-progress b { font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.saa-progress span { color: var(--ink-2); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+/* looking back in a run: a dot on the progress bar of a tile (view only; at the right end it is live again) */
+.saa-tile .saa-bar.look { position: relative; overflow: visible; cursor: ew-resize; touch-action: pan-y; }
+.saa-tile .saa-bar.look::before { content: ''; position: absolute; left: 0; right: 0; top: -9px; bottom: -9px; }
+.saa-knob { position: absolute; top: 50%; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; border-radius: 50%; box-sizing: border-box; background: var(--surface); border: 2px solid var(--accent); box-shadow: 0 1px 2px rgba(0, 0, 0, .18); cursor: ew-resize; }
+.saa-knob:focus { outline: none; }
+.saa-knob:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.saa-progress span.look { color: var(--accent); font-weight: 600; }
+.saa-times { color: var(--muted); font-size: 12px; }
+.saa-op { display: flex; align-items: center; gap: 6px; color: var(--ink-2); font-size: 12px; }
+.saa-op svg { flex: none; width: 13px; height: 13px; color: var(--muted); }
+.saa-warn { color: var(--warn); white-space: pre-line; }      /* one line for each thing the tile has to say */
+.saa-err { color: var(--pos); }
+
+.saa-chart { position: relative; height: 190px; min-height: 0; border-radius: 10px; }
+.saa-chart.none { height: 120px; background: var(--surface-2); border: 1px dashed var(--hair-2); }
+.saa-chart-hit { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 10px; background: transparent; cursor: pointer; }
+.saa-chart-hit:hover { background: var(--accent-wash); }
+.saa-chart.none .saa-chart-hit { display: none; }
+.saa-chart canvas { display: block; width: 100%; height: 100%; }
+.saa-chart-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 12px; color: var(--muted); text-align: center; }
+.saa-channels { flex: none; margin-left: auto; }
+
+.saa-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.saa-stat { min-width: 0; display: flex; flex-direction: column; gap: 1px; padding: 9px 12px 8px; border-radius: 10px; background: var(--surface-2); }
+.saa-stat > span { color: var(--muted); font-size: 11.5px; }
+.saa-stat > b { font-size: 20px; font-weight: 600; line-height: 1.25; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.saa-stat > em { color: var(--muted); font-size: 11.5px; font-style: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saa-stat.pos.some > b { color: var(--pos); }
+.saa-stat > em:empty { display: none; }
+
+.saa-detail { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: start; }
+.saa-plate { display: flex; flex-direction: column; gap: 6px; min-width: 0; width: 184px; }
+.saa-plate canvas { display: block; }
+.saa-legend { display: flex; gap: 10px; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.saa-legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 4px; border-radius: 2px; background: var(--rule); opacity: .55; }
+.saa-legend .p::before { background: var(--pos); opacity: 1; }
+.saa-legend .e::before { background: transparent; border: 1px solid var(--hair-2); opacity: 1; }
+.saa-samples { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.saa-samples p { margin: 0; line-height: 1.55; }
+.saa-samples-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 3px; color: var(--muted); font-size: 11.5px; }
+:lang(zh) .saa-samples-head { white-space: nowrap; }      /* short in Chinese: one line; the English may wrap */
+.saa-sample { display: grid; grid-template-columns: auto minmax(0, 1fr) auto 34px; align-items: center; gap: 7px; min-height: 22px; font-size: 12.5px; }
+.saa-sample > i { width: 9px; height: 9px; border-radius: 3px; background: var(--rule); }
+.saa-sample > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.saa-sample > b { font: 500 11.5px var(--font-mono); color: var(--pos); }
+.saa-sample > em { font: 11.5px var(--font-mono); font-style: normal; color: var(--muted); text-align: right; }
+
+.saa-idle { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 28px 0 2px; text-align: center; }
+.saa-idle::before { content: ""; flex: 1; }
+.saa-idle p { margin: 0; color: var(--ink-2); line-height: 1.6; }
+.saa-next { display: flex; align-items: center; gap: 8px; max-width: 100%; padding: 5px 6px 5px 12px; border-radius: 9px; background: var(--accent-wash); color: var(--ink-2); font-size: 12.5px; text-align: left; }
+.saa-next > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.saa-last { flex: 1; align-self: stretch; display: flex; flex-direction: column; justify-content: flex-end; text-align: left; }
+.saa-last > span { padding-top: 12px; border-top: 1px solid var(--hair); }
+.saa-idle:has(> .saa-last[hidden])::after { content: ""; flex: 1; }
+.saa-last > span { color: var(--muted); font-size: 11.5px; }
+.saa-last .saa-runrow { border: 0; padding: 6px 0 0; }
+.saa-last .saa-runrow > .saa-badge { display: none; }
+
+.saa-live { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: -4px; }
+.saa-tile-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 2px; }
+.saa-tile-foot .chk { color: var(--muted); font-size: 12px; }
+
+.saa-recent { background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; box-shadow: var(--saa-shadow); }
+.saa-recent-head { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 6px 12px 6px 18px; border-bottom: 1px solid var(--hair); }
+.saa-recent-head h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.saa-recent .saa-runs { padding: 2px 18px 6px; }
+.saa-runrow { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--hair); }
+.saa-runrow:last-child { border-bottom: 0; }
+.saa-runrow > div { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.saa-runrow b { font-weight: 600; }
+/* the online view: an experiment's two files to download (.pk and Excel); a narrow row puts them under its name */
+.saa-dl, .saa-exp-dl { flex: none; display: inline-flex; align-items: center; gap: 6px; }
+.saa-dl .btn > svg { width: 13px; height: 13px; }
+.saa-runrow:has(> .saa-dl) { flex-wrap: wrap; row-gap: 6px; }
+.saa-runrow:has(> .saa-dl) > div { flex-basis: 180px; }
+
+/* the overview above a page that is not recognised */
+.saa-mode-classic .saa-overview { border-bottom: 1px solid var(--hair); }
+
+.saa-dialog { width: min(500px, 100%); }
+.saa-dialog-wide { width: min(720px, 100%); }
+.saa-dialog p { margin: 0 0 4px; line-height: 1.6; color: var(--ink-2); }
+.saa-dialog .saa-runs { display: flex; flex-direction: column; }
+.saa-dialog .saa-path { margin-top: 8px; }
+
+/* ===================== banners: the problems of the program, errors first ===================== */
+.saa-banners { display: flex; flex-direction: column; }
+.saa-banner {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 18px; border-bottom: 1px solid var(--hair);
+  font-size: 13px; font-weight: 500; line-height: 1.45; background: var(--accent-wash); color: var(--ink);
+}
+.saa-banner > svg { flex: none; width: 17px; height: 17px; color: var(--accent); }
+.saa-banner > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.saa-banner[data-sev="warning"] { background: var(--warn-wash); }
+.saa-banner[data-sev="warning"] > svg { color: var(--warn); }
+.saa-banner[data-sev="error"] { background: var(--pos); color: var(--saa-alert-ink); border-bottom-color: transparent; }
+.saa-banner[data-sev="error"] > svg { color: currentColor; }
+.saa-banner-x { flex: none; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; opacity: .75; }
+.saa-banner-x:hover { opacity: 1; background: rgba(127, 127, 127, .16); }
+.saa-banner-x svg { width: 14px; height: 14px; }
+.saa-mode-classic .saa-banner { border-radius: 8px; margin: 8px 18px 0; }
+
+/* ===================== notifications of the runs: cards at the bottom right ===================== */
+.saa-events { position: fixed; right: 18px; bottom: 18px; z-index: 80; display: flex; flex-direction: column; gap: 8px; width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+.saa-event {
+  pointer-events: auto; padding: 10px 12px 10px 14px; border: 1px solid var(--hair); border-left: 4px solid var(--saa-done); border-radius: 12px;
+  background: var(--surface); box-shadow: var(--shadow); font-size: 12.5px; animation: saa-in .25s ease;
+}
+.saa-event[data-kind="completed"] { border-left-color: var(--saa-ok); }
+.saa-event[data-kind="stopped"], .saa-event[data-kind="stuck"] { border-left-color: var(--warn); }
+.saa-event[data-kind="interrupted"], .saa-event[data-kind="save-failed"] { border-left-color: var(--pos); }
+@keyframes saa-in { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .saa-event { animation: none; } }
+.saa-event-head { display: flex; align-items: center; gap: 8px; }
+.saa-event-head > svg { flex: none; width: 15px; height: 15px; color: var(--muted); }
+.saa-event-head > b { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; }
+.saa-event-head > span { color: var(--muted); font: 11.5px var(--font-mono); }
+.saa-event-x { flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.saa-event-x:hover { background: var(--surface-2); color: var(--ink); }
+.saa-event-x svg { width: 13px; height: 13px; }
+.saa-event-name { margin-top: 3px; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.saa-event p { margin: 3px 0 0; color: var(--ink-2); line-height: 1.5; }
+.saa-event-foot { display: flex; justify-content: flex-end; margin-top: 6px; }
+
+/* ===================== Experiments, All BMG experiments, layouts: a list with a search box ===================== */
+.saa-list { padding: 18px; }
+.saa-list-card { background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; box-shadow: var(--saa-shadow); }
+.saa-list-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 50px; padding: 8px 12px 8px 18px; border-bottom: 1px solid var(--hair); }
+.saa-search {
+  flex: 0 1 360px; min-width: 0; height: 30px; padding: 0 10px; border: 1px solid var(--hair-2); border-radius: 7px;
+  background: var(--surface); color: var(--ink); font-size: 12.5px;
+}
+.saa-search::placeholder { color: var(--muted); }
+.saa-filters { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 8px 18px; border-bottom: 1px solid var(--hair); background: var(--surface-2); }
+.saa-select { height: 28px; max-width: 260px; font-size: 12.5px; }
+.saa-compat { margin: 0; padding: 9px 18px; border-bottom: 1px solid var(--hair); line-height: 1.5; }
+.saa-list .saa-runs { padding: 2px 18px 6px; }
+.saa-list .saa-runs > p { margin: 14px 0; }
+.saa-runrow > .saa-file { flex-direction: column; align-items: flex-start; gap: 2px; }
+.saa-file > b { overflow-wrap: anywhere; }
+.saa-tag { display: inline-block; margin-left: 8px; padding: 0 6px; border: 1px solid var(--hair-2); border-radius: 999px; font-size: 10.5px; font-weight: 500; line-height: 16px; color: var(--ink-2); vertical-align: 1px; }
+.saa-why { color: var(--warn); font-size: 12px; }
+.saa-exprow.bad > .saa-file > b { color: var(--ink-2); }
+.saa-list-foot { margin: 0; padding: 4px 18px 12px; }
+.saa-path { padding: 8px 10px; border: 1px solid var(--hair); border-radius: 7px; background: var(--surface-2); font: 12px/1.5 var(--font-mono); overflow-wrap: anywhere; user-select: all; }
+.saa-removed { border-top: 1px solid var(--hair); }
+.saa-removed > summary { padding: 11px 18px; color: var(--ink-2); font-size: 12.5px; cursor: pointer; }
+.saa-removed > summary:hover { color: var(--ink); }
+.saa-removed[open] > summary { border-bottom: 1px solid var(--hair); }
+.saa-menu {
+  position: fixed; z-index: 85; min-width: 210px; padding: 4px; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--hair-2); border-radius: 10px; box-shadow: var(--shadow);
+}
+.saa-menu button { display: block; width: 100%; padding: 7px 12px; border: 0; border-radius: 7px; background: transparent; color: var(--ink); font-size: 12.5px; text-align: left; cursor: pointer; }
+.saa-menu button:hover:not(:disabled), .saa-menu button:focus-visible { background: var(--surface-2); outline: none; }
+.saa-menu button:disabled { color: var(--muted); opacity: .55; cursor: default; }
+
+/* ---------- plate layouts ---------- */
+.saa-lay-intro { flex: 1 1 320px; margin: 0; line-height: 1.5; }
+.saa-next-use { color: var(--accent-strong); font-size: 12px; }
+.saa-lay-edit .saa-list-head input[type="text"] { flex: 0 1 320px; min-width: 160px; }
+.saa-lay-state { min-width: 0; }
+.saa-lay-body { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 18px; padding: 16px 18px 18px; align-items: start; }
+.saa-lay-plate { min-width: 0; overflow-x: auto; }
+.saa-lay-grid {
+  display: grid; grid-template-columns: 24px repeat(var(--saa-cols), minmax(34px, 1fr)); gap: 3px; min-width: 560px;
+  user-select: none; touch-action: none; outline: none; border-radius: 8px;
+}
+.saa-lay-grid[data-big="1"] { grid-template-columns: 22px repeat(var(--saa-cols), minmax(24px, 1fr)); gap: 2px; min-width: 720px; }
+.saa-lay-grid:focus-visible { box-shadow: 0 0 0 2px var(--accent-wash-2); }
+.saa-lay-head { padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font: 600 11px/1 var(--font-mono); cursor: pointer; min-height: 20px; }
+.saa-lay-head:hover { background: var(--surface-2); color: var(--ink); }
+.saa-lay-cell {
+  position: relative; display: flex; align-items: flex-end; min-width: 0; height: 38px; padding: 2px 4px 3px 7px;
+  border: 1px solid var(--hair); border-radius: 6px; background: var(--surface); box-shadow: inset 3px 0 0 var(--saa-g, transparent);
+  font-size: 10.5px; line-height: 1.2; color: var(--ink); cursor: cell;
+}
+.saa-lay-grid[data-big="1"] .saa-lay-cell { height: 22px; padding: 1px 2px 1px 5px; font-size: 8.5px; border-radius: 4px; }
+.saa-lay-cell > span { min-width: 0; width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.saa-lay-cell.grouped { background: color-mix(in srgb, var(--saa-g) 13%, var(--surface)); }
+.saa-lay-cell.sel { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--saa-g, transparent), 0 0 0 1.5px var(--accent); background: var(--accent-wash-2); }
+.saa-lay-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.saa-lay-side .saa-field { grid-template-columns: minmax(0, 1fr); gap: 4px; margin: 0; }
+.saa-lay-side .saa-field-row > input[type="text"] { min-width: 0; }
+.saa-lay-side > .btn { align-self: flex-start; }
+.saa-lay-side h4 { margin: 6px 0 0; font-size: 12.5px; font-weight: 600; }
+.saa-lay-side p { margin: 0; line-height: 1.5; }
+.saa-lay-selected { font-size: 12.5px; color: var(--ink-2); }
+.saa-lay-legend { display: flex; flex-wrap: wrap; gap: 6px; }
+.saa-lay-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border: 1px solid var(--hair); border-radius: 999px; font-size: 11.5px; }
+.saa-lay-chip::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--saa-g); }
+
+/* ===================== Settings and About: cards ===================== */
+.saa-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 16px; align-items: start; }
+.saa-card { min-width: 0; padding: 14px 18px 16px; background: var(--surface); border: 1px solid var(--hair); border-radius: 14px; box-shadow: var(--saa-shadow); }
+.saa-card > h2 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+.saa-card > p { margin: 6px 0; line-height: 1.55; color: var(--ink-2); }
+.saa-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.saa-field { display: grid; grid-template-columns: 140px minmax(0, 1fr); align-items: center; gap: 10px; margin: 8px 0; }
+.saa-field > span:first-child { color: var(--ink-2); font-size: 12.5px; }
+.saa-field input[type="text"], .saa-field select { width: 100%; min-width: 0; }
+.saa-field-row { display: flex; gap: 8px; min-width: 0; }
+.saa-field-row > input[type="text"] { flex: 1 1 auto; }
+.saa-field-row > select { flex: 0 1 200px; width: auto; }
+.saa-dialog .saa-field { grid-template-columns: 120px minmax(0, 1fr); }
+.saa-wide-input { width: 100%; }
+.saa-checks { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 8px; }
+.saa-check { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0; white-space: normal; line-height: 1.45; }
+.saa-check input { margin-top: 3px; }
+.saa-set-inst { padding: 10px 0 4px; border-top: 1px solid var(--hair); margin-top: 8px; }
+.saa-set-inst-head { display: flex; align-items: center; gap: 10px; }
+.saa-set-inst-head > b { font-size: 13px; }
+.saa-set-inst-head > .hint { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.saa-kv { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 7px 12px; align-items: baseline; font-size: 12.5px; }
+.saa-kv > span:nth-child(odd) { color: var(--muted); }
+.saa-kv .saa-path { padding: 4px 8px; }
+.saa-checklist { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }
+.saa-checklist li { display: flex; align-items: flex-start; gap: 8px; line-height: 1.45; }
+.saa-checklist svg { flex: none; width: 15px; height: 15px; margin-top: 2px; color: var(--saa-ok); }
+.saa-checklist li[data-ok="0"] { color: var(--warn); }
+.saa-checklist li[data-ok="0"] svg { color: var(--warn); }
+.saa-savebar {
+  position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; gap: 8px; margin: 16px -18px -18px; padding: 10px 18px;
+  background: var(--surface); border-top: 1px solid var(--hair); box-shadow: 0 -6px 18px rgba(14, 18, 19, .06); color: var(--warn); font-size: 12.5px; font-weight: 500;
+}
+.saa-notice { margin-top: 12px !important; padding: 10px 14px; border-left: 3px solid var(--accent); border-radius: 6px; background: var(--accent-wash); color: var(--ink) !important; }
+.saa-plain { margin: 4px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 12.5px; line-height: 1.55; }
+.saa-plain li { margin: 3px 0; }
+.saa-about a { color: var(--accent); }
+
+/* ===================== small windows ===================== */
+@media (max-width: 1180px) {
+  .saa-shell .topbar { height: auto; flex-wrap: wrap; padding: 8px 18px; }
+  .saa-shell .top-actions { flex: 1 1 auto; flex-wrap: wrap; }
+  .saa-title { flex: 1 1 220px; }
+  .saa-lay-body { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 1000px) {
+  .saa-shell { grid-template-columns: minmax(0, 1fr); }
+  .saa-side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 12px; border-right: 0; border-bottom: 1px solid var(--hair); }
+  .saa-side .brand { padding: 0 6px 0 0; }
+  .saa-side .brand-sub, .saa-sec { display: none; }
+  .saa-nav, .saa-readers, .saa-side-foot { flex-direction: row; }
+  .saa-nav { flex-wrap: wrap; }
+  .saa-nav-item { width: auto; white-space: nowrap; }
+  .saa-reader-text span, .saa-reader .saa-bar { display: none; }
+  .saa-side .ds-tabs { flex: 1 1 100%; flex-direction: row; flex-wrap: wrap; }
+  .saa-side-foot { margin: 0; padding: 0; border-top: 0; flex-wrap: wrap; }
+  .saa-side-note { flex: 1 1 100%; margin: 0; }
+}
+/* phones: the page's own spacing for small screens (its rules are weaker than the ones above) */
+@media (max-width: 720px) {
+  .saa-shell .topbar { padding: 8px 10px; }
+  .saa-shell .workspace { padding: 10px; gap: 10px; }
+  .saa-shell .col { gap: 10px; }
+  .saa-shell .notice { margin: 10px 10px 0; }
+  .saa-exp { margin: 10px 10px 0; }
+  .saa-list { padding: 10px; }
+  .saa-savebar { margin: 12px -10px -10px; }
+  .saa-banner { padding: 8px 10px 8px 12px; }
+  .saa-field { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .saa-kv { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .saa-kv > span:nth-child(odd) { margin-top: 6px; }
+}
+@media (max-width: 560px) {
+  .saa-shell #settingsCard .settings { grid-template-columns: minmax(0, 1fr); }
+  .saa-list-head { padding: 8px 12px; }
+  .saa-search { flex: 1 1 100%; }
+  .saa-list .saa-runs, .saa-compat, .saa-list-foot, .saa-filters { padding-left: 12px; padding-right: 12px; }
+  .saa-list .saa-runrow { flex-wrap: wrap; gap: 8px; }
+  .saa-list .saa-runrow > .saa-file { flex: 1 1 100%; }
+  .saa-field-row { flex-wrap: wrap; }
+}
+
+/* a narrow tile (three instruments side by side in a small window): smaller figures, the plate above the groups.
+   Last in the file: these rules have to come after the ones they change. */
+@container (max-width: 330px) {
+  .saa-detail { grid-template-columns: minmax(0, 1fr); }
+  .saa-stats { gap: 6px; }
+  .saa-stat { padding: 8px 9px 7px; }
+  .saa-stat > b { font-size: 16px; }
+  .saa-proto { flex-wrap: wrap; }
+}

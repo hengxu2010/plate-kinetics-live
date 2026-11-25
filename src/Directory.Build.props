@@ -1,0 +1,6 @@
+<Project>
+  <!-- Each project in src builds into its own obj folder (the two programs' project files share this folder). -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

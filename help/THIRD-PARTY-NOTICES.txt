@@ -1,0 +1,50 @@
+﻿Plate Kinetics Live - 第三方组件说明 / Third-party notices
+=========================================================
+
+Plate Kinetics Live 使用或附带下面这些第三方组件。它们按各自的许可提供，不受 LICENSE.txt（MIT 许可证）约束。
+Plate Kinetics Live uses or comes with the third-party components below. Each is provided under its own
+licence, not under LICENSE.txt (the MIT License).
+
+
+1. Microsoft Edge WebView2 SDK 1.0.4370.26
+   ----------------------------------------
+   Files:      Microsoft.Web.WebView2.Core.dll, Microsoft.Web.WebView2.WinForms.dll, WebView2Loader.dll
+               (beside the program, unchanged, signed by Microsoft)
+   Use:        the program's window shows the analysis page with them
+   Copyright:  Copyright (C) Microsoft Corporation. All rights reserved.
+   Licence:    a BSD-style licence (three clauses). Its full text is in LICENSE-WebView2.txt beside the
+               program, as the licence requires for binary redistribution.
+   Source:     NuGet package Microsoft.Web.WebView2, version 1.0.4370.26
+               https://www.nuget.org/packages/Microsoft.Web.WebView2
+
+2. Microsoft Edge WebView2 Runtime
+   -------------------------------
+   Not part of the program: a component of Windows (included in Windows 11; on Windows 10 usually installed
+   with Microsoft Edge). The program's window uses it. The offline package carries Microsoft's installer
+   MicrosoftEdgeWebView2RuntimeInstallerX64.exe, unchanged, in its redist folder; it is used under the
+   Microsoft Software License Terms that come with it.
+   https://developer.microsoft.com/microsoft-edge/webview2/
+
+3. Microsoft .NET Framework 4.8
+   ----------------------------
+   Not part of the program: a component of Windows 10 (version 1903 and later) and Windows 11, on which the
+   programs and their installers run. The offline package carries Microsoft's installer
+   ndp48-x86-x64-allos-enu.exe, unchanged, in its redist folder; it is used under the Microsoft Software
+   License Terms that come with it.
+   https://dotnet.microsoft.com/download/dotnet-framework/net48
+
+4. SheetJS Community Edition 0.20.3
+   --------------------------------
+   Where:      embedded in the analysis page (web\PlateKineticsAnalysis.html), which uses it to read and
+               write spreadsheet files
+   Copyright:  Copyright (C) 2013-present SheetJS LLC
+   Licence:    Apache License, Version 2.0. The full licence text is included in web\PlateKineticsAnalysis.html,
+               next to the embedded library, and at https://www.apache.org/licenses/LICENSE-2.0
+   Source:     https://git.sheetjs.com/sheetjs/sheetjs
+
+
+Everything else is the program's own code under LICENSE.txt. The programs use only the parts of the .NET
+Framework that come with Windows; the Excel workbooks (.xlsx) and the .pk experiment files are written by the
+program's own code, without other libraries.
+程序的其余部分都是本程序自己的代码，按 LICENSE.txt 提供。程序只用 Windows 自带的 .NET Framework；Excel 文件（.xlsx）
+和 .pk 实验文件由程序自己的代码写成，不用其他库。

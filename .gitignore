@@ -1,0 +1,23 @@
+# build output
+build/
+dist/
+obj/
+bin/
+out/
+redist/
+
+# program data and run records: never commit real experiment data
+PlateKineticsLive-data/
+*.pk
+*.xlsx
+*.abs
+*.DB
+*.log
+
+# editors and OS
+.vs/
+.vscode/
+*.user
+*.suo
+Thumbs.db
+desktop.ini
