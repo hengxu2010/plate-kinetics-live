@@ -26,7 +26,7 @@
 <meta name="description" content="Plate Kinetics Analysis: kinetic curves from 96- and 384-well plates. Import with automatic layout recognition, grouping, curve parameters, statistics, figures and reports. Runs in the browser, online or offline.">
 <meta name="author" content="hx_mao">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Crect width='26' height='26' rx='6' fill='%23077682'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='7' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='19' cy='9' r='2.7'/%3E%3Ccircle cx='7' cy='17' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='17' r='2.7'/%3E%3Ccircle cx='19' cy='17' r='2.7' fill-opacity='.45'/%3E%3C/g%3E%3C/svg%3E">
-<title>孔板动力学分析 · v3.16.0</title>
+<title>孔板动力学分析 · v3.16.1</title>
 <script>
 /* A light / dark choice made in this browser is applied before the first paint (the rest lives at the end of the page). */
 try { var pkUi = JSON.parse(localStorage.getItem('pk.ui.v1') || 'null'); if (pkUi && (pkUi.theme === 'light' || pkUi.theme === 'dark')) document.documentElement.setAttribute('data-theme', pkUi.theme); } catch (e) { /* storage unavailable */ }
@@ -46,8 +46,8 @@ try { var pkUi = JSON.parse(localStorage.getItem('pk.ui.v1') || 'null'); if (pkU
   setTimeout(function () { root.className = root.className.replace(/\s*\bpk-wait\b/, ''); }, 3000);
 })();
 </script>
-<meta name="application-version" content="v3.16.0">
-<meta name="application-build" content="pk-v3-16-0-d607704004dd">
+<meta name="application-version" content="v3.16.1">
+<meta name="application-build" content="pk-v3-16-1-12d050424b26">
 <style>
 :root {
   /* Layout idea: inputs on the left (plate, groups, settings), outputs on the right (curves, results).
@@ -199,7 +199,7 @@ h1, h2, h3 { text-wrap: balance; }
 .save-split #btnSave[hidden] + .save-more { display: none; }
 .pop.save-menu .mi { display: flex; align-items: baseline; gap: 14px; }
 .pop.save-menu .kb { margin-left: auto; font: 11px var(--font-mono); color: var(--muted); }
-.proj-name { flex: 0 1 auto; min-width: 0; max-width: min(280px, 30vw); display: flex; align-items: baseline; gap: 5px; font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+.proj-name { flex: 0 1 auto; min-width: 0; max-width: min(230px, 24vw); display: flex; align-items: baseline; gap: 5px; font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
 .proj-name .nm { overflow: hidden; text-overflow: ellipsis; }
 .proj-name .dot { flex: none; color: var(--warn); font-size: 11px; }
 .proj-name.dirty .nm { color: var(--ink); }
@@ -426,21 +426,26 @@ table.data td .sqs { margin-right: 7px; vertical-align: -1px; }
 table.data td .sqs .vq { width: 9px; height: 9px; }
 .tip .kv .vq { width: 9px; height: 9px; margin-right: 5px; vertical-align: -1px; }
 .tip .kv span.a { color: var(--accent-strong); font-weight: 600; }
-.top-actions { display: flex; gap: 8px; flex: none; align-items: center; }
+.top-actions { display: flex; gap: 6px; flex: none; align-items: center; }
 /* labels of the bar: the full wording in a wide window, otherwise the short wording or the icon alone, so that the
    dataset tabs keep their place */
 .top-actions .l-wide { display: none; }
 .top-actions .btn.fold { width: 30px; padding: 0; }
-@media (min-width: 1600px) {
+@media (min-width: 1760px) {
   .top-actions .l-wide { display: inline; }
   .top-actions .l-narrow { display: none; }
   .top-actions .btn.fold { width: auto; padding: 0 11px; }
 }
-@media (min-width: 1400px) {          /* Chinese labels are shorter and fit earlier */
+@media (min-width: 1520px) {          /* Chinese labels are shorter and fit earlier */
   :root:lang(zh) .top-actions .l-wide { display: inline; }
   :root:lang(zh) .top-actions .l-narrow { display: none; }
   :root:lang(zh) .top-actions .btn.fold { width: auto; padding: 0 11px; }
 }
+/* when the top bar has too little room left for dataset tabs, drop the tabs onto a clean full-width second row */
+.topbar.wrap { height: auto; min-height: 54px; flex-wrap: wrap; padding: 7px 16px; row-gap: 7px; }
+.topbar.wrap .ds-tabs { order: 3; flex: 1 0 100%; border-top: 1px solid var(--hair); padding: 6px 0 1px; }
+.topbar.wrap .ds-tabs:empty { display: none; }
+.topbar.wrap .top-actions { margin-left: auto; }
 .top-sep { width: 1px; height: 22px; background: var(--hair); margin: 0 2px; }
 .seg.lang button { min-width: 40px; }
 
@@ -1021,7 +1026,7 @@ html.pk-wait body { visibility: hidden; }
       <circle cx="7" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/><circle cx="13" cy="17" r="2.6" fill="var(--accent)" fill-opacity=".55"/><circle cx="19" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/>
     </svg>
     <div class="brand-copy">
-      <div class="brand-name"><span>Plate Kinetics Analysis</span><span class="brand-author" translate="no">by hx_mao</span><span class="brand-version" id="brandVersion" role="button" tabindex="0" translate="no" aria-label="Version v3.16.0">v3.16.0</span></div>
+      <div class="brand-name"><span>Plate Kinetics Analysis</span><span class="brand-author" translate="no">by hx_mao</span><span class="brand-version" id="brandVersion" role="button" tabindex="0" translate="no" aria-label="Version v3.16.1">v3.16.1</span></div>
       <div class="brand-sub">PLATE KINETICS · 96 / 384</div>
     </div>
   </div>
@@ -3462,6 +3467,8 @@ const LOCALES = {
       'Columns…': '显示列…',
       'Copy as tab-separated text to paste into Excel / Prism': '复制为制表符分隔，可直接粘贴到 Excel / Prism',
       'Columns shown': '显示的参数列',
+      'Cross table parameters': '交叉表显示参数',
+      'Choose which parameters appear in each cell of the cross table (defaults to lag time only)': '选择交叉表每格中显示哪些参数（默认仅显示起峰时间）',
       'The control “{0}” has no values for this parameter (negative wells report no lag time, for example), so nothing can be compared: pick another parameter, or another control under “Significance tests…”.': '对照组“{0}”在这个参数上没有数值（例如阴性孔不报告起峰时间），所以无法比较：请换一个参数，或在“显著性检验…”里换一个对照组。',
       'New grouping set': '新建分组方案',
       'Each set keeps its own groups and colours; switch between sets at any time.': '每套方案独立保存分组与颜色，可在方案之间随时切换。',
@@ -7581,7 +7588,7 @@ const DEFAULT_VIEW = {
   axes: { x: { min: null, max: null, step: null }, y: {} }, exportW: 1000, exportH: 680,
   source: 'selected', yMode: 'sig', logY: false, smooth: false, markers: true, band: 'sd', reps: false, winShade: true, joins: true,
   plateMode: 'spark', timeUnit: 'h', sigLabel: 'Fluorescence (RFU)', tab: 'wells', onlySel: true, cmpParam: 'lag',
-  cols: ['lag', 't50', 'Fmax', 'tPlateau', 'maxSlope', 'tMaxSlope', 'sMaxSlope', 'auc'], colsVer: COLS_VER,
+  cols: ['lag', 't50', 'Fmax', 'tPlateau', 'maxSlope', 'tMaxSlope', 'sMaxSlope', 'auc'], xcols: ['lag'], colsVer: COLS_VER,
   // group table: which spread to show beside the mean; comparison plot: significance testing
   gstat: 'sd', stat: { mode: 'none', test: 'welch', adjust: 'holm', ctrl: '' }
 };
@@ -7605,6 +7612,7 @@ function migrateView(v) {
   if (!isParam(out.cmpParam) || out.cmpParam === 'thr') out.cmpParam = DEFAULT_VIEW.cmpParam;
   if (out.plateMode !== 'spark' && out.plateMode !== 'call' && !(typeof out.plateMode === 'string' && out.plateMode.startsWith('heat:') && isParam(out.plateMode.slice(5)))) out.plateMode = 'spark';
   out.cols = Array.isArray(out.cols) ? [...new Set(out.cols.filter(isParam))] : DEFAULT_VIEW.cols.slice();
+  out.xcols = Array.isArray(out.xcols) ? [...new Set(out.xcols.filter(isParam))] : DEFAULT_VIEW.xcols.slice();
   const numIn = (x, lo, hi, d) => (typeof x === 'number' && isFinite(x) ? clamp(x, lo, hi) : d);
   out.lineW = numIn(out.lineW, 0.5, 6, DEFAULT_VIEW.lineW);
   out.exportW = numIn(out.exportW, 300, 4000, DEFAULT_VIEW.exportW);
@@ -7677,7 +7685,17 @@ function makePresetGroups(ds, si, n) {
   n = n || PRESET_COUNT;
   const s = ds.sets[si], pal = COLLAB.active && palOf(s) === 'mark' ? 'cat' : palOf(s);
   const existing = si === ds.gs ? ds.groups : (s && s.groups) || [];
-  const usedColors = new Set(existing.map(g => g.color));
+  const normCol = c => (typeof c === 'string' && c.startsWith('#') ? c.toLowerCase() : c);
+  const usedColors = new Set(existing.map(g => normCol(g.color)));
+  const slotTaken = i => {
+    const sp = slotSpec(i);
+    if (usedColors.has(sp)) return true;
+    if (typeof resolveColor === 'function') {
+      const hex = resolveColor(sp, false);
+      if (hex && usedColors.has(normCol(hex))) return true;
+    }
+    return false;
+  };
   const usedNames = new Set(existing.map(g => g.name));
   const order = layerSlotOrder(ds, si);
   const base = ds.sets.length > 1 && s ? s.name + (/\d$/.test(s.name) ? '-' : ' ') : L('Group ');
@@ -7688,14 +7706,18 @@ function makePresetGroups(ds, si, n) {
     const name = base + k++;
     usedNames.add(name);
     let color = null;
-    if (pal === 'mark') color = 'mark:' + ((existing.length + j) % 4 + 1);
-    else if (pal === 'seq') color = rampSpec(okHue(s && s.hue), (existing.length + j) % 6, 6);
-    else {
-      while (oi < order.length && usedColors.has(slotSpec(order[oi]))) oi++;
+    if (pal === 'mark') {
+      const ms = MARKS.map((_, m) => 'mark:' + (m + 1));
+      color = ms.find(c => !usedColors.has(c)) || ms[(existing.length + j) % ms.length];
+    } else if (pal === 'seq') {
+      const rs = Array.from({ length: 6 }, (_, m) => rampSpec(okHue(s && s.hue), m, 6));
+      color = rs.find(c => !usedColors.has(c)) || rs[(existing.length + j) % rs.length];
+    } else {
+      while (oi < order.length && slotTaken(order[oi])) oi++;
       if (oi < order.length) color = slotSpec(order[oi++]);
-      else { let p = nPal(); while (usedColors.has(slotSpec(p))) p++; color = slotSpec(p); }
+      else { let p = nPal(); while (slotTaken(p)) p++; color = slotSpec(p); }
     }
-    usedColors.add(color);
+    usedColors.add(normCol(color));
     out.push({ id: uid('g'), name, color, visible: true });
   }
   return out;
@@ -7707,6 +7729,7 @@ function addPresetGroup(ds, opt) {
   pushUndo(ds);
   const g = { id: uid('g'), name: opt.name || newGroupName(ds), color: opt.color || nextSlot(ds), visible: true };
   ds.groups.push(g);
+  if (ds.sets[ds.gs]) ds.sets[ds.gs].groups = ds.groups;
   if (opt.focus) S.focusGroup = g.id;
   else if (opt.scroll) S.scrollGroup = g.id;
   ds.ver++;
@@ -7763,12 +7786,22 @@ const slotSpec = i => 'slot:' + (i + 1);
 function nextSlot(ds, si) {
   // (si: another layer than the active one, a new group put into it without switching: newGroupInto)
   if (si == null) si = ds.gs;
-  const used = new Set((si === ds.gs ? ds.groups : ds.sets[si].groups || []).map(g => g.color));
+  const normCol = c => (typeof c === 'string' && c.startsWith('#') ? c.toLowerCase() : c);
+  const used = new Set((si === ds.gs ? ds.groups : ds.sets[si].groups || []).map(g => normCol(g.color)));
   const own = layerNextColor(ds, used, si);             // (a layer of shades or of marks: its next one)
   if (own) return own;
+  const taken = i => {
+    const sp = slotSpec(i);
+    if (used.has(sp)) return true;
+    if (typeof resolveColor === 'function') {
+      const hex = resolveColor(sp, false);
+      if (hex && used.has(normCol(hex))) return true;
+    }
+    return false;
+  };
   // the colours of the palette that no other layer uses first, so that two layers do not look alike (layerSlotOrder)
-  for (const i of layerSlotOrder(ds, si)) if (!used.has(slotSpec(i))) return slotSpec(i);
-  for (let i = nPal(); ; i++) if (!used.has(slotSpec(i))) return slotSpec(i);
+  for (const i of layerSlotOrder(ds, si)) if (!taken(i)) return slotSpec(i);
+  for (let i = nPal(); ; i++) if (!taken(i)) return slotSpec(i);
 }
 
 /* ---------- grouping sets: the grouping layers of the page, up to 6 independent groupings of the same wells ----------
@@ -8079,10 +8112,27 @@ function newGroupName(ds, si) {
     like the first. */
 function layerSlotOrder(ds, si) {
   if (si == null) si = ds.gs;
+  const normCol = c => (typeof c === 'string' && c.startsWith('#') ? c.toLowerCase() : c);
   const other = new Set();
-  ds.sets.forEach((x, i) => { if (i !== si) (i === ds.gs ? ds.groups : x.groups || []).forEach(g => other.add(g.color)); });
+  ds.sets.forEach((x, i) => {
+    if (i === si) return;
+    const gs = i === ds.gs ? ds.groups : x.groups || [];
+    const assigned = new Set();
+    if (i === ds.gs) { for (const id of ds.order) { const gid = ds.wells[id].group; if (gid) assigned.add(gid); } }
+    else if (x.assign) { for (const gid of Object.values(x.assign)) if (gid) assigned.add(gid); }
+    gs.forEach(g => { if (assigned.has(g.id)) other.add(normCol(g.color)); });
+  });
+  const usedOther = i => {
+    const sp = slotSpec(i);
+    if (other.has(sp)) return true;
+    if (typeof resolveColor === 'function') {
+      const hex = resolveColor(sp, false);
+      if (hex && other.has(normCol(hex))) return true;
+    }
+    return false;
+  };
   const all = Array.from({ length: nPal() }, (_, i) => i);
-  return all.filter(i => !other.has(slotSpec(i))).concat(all.filter(i => other.has(slotSpec(i))));
+  return all.filter(i => !usedOther(i)).concat(all.filter(i => usedOther(i)));
 }
 /** The k-th colour of such an order (beyond the palette: slotSpec(k), as before). */
 function layerSlot(order, k) { return slotSpec(k < order.length ? order[k] : k); }
@@ -9244,7 +9294,7 @@ function crossTableData(ds, keys) {
   if (!oth.includes(ri)) { const k = M.keys.find(i => i !== gs); ri = M.facet != null ? M.facet : k != null && oth.includes(k) ? k : oth[0]; }
   const ii = oth.find(i => i !== ri && M.filt[i] == null), R = maps[ri], I = ii != null ? maps[ii] : null;
   const ids = ds.order.filter(id => ds.wells[id].y && layerPasses(maps, M.filt, id) && (!scope || scope.has(id)));
-  const pkeys = Array.isArray(keys) ? keys.filter(k => PARAMS[k]) : (typeof paramCols === 'function' ? paramCols() : (S.view.cols || []).filter(k => PARAMS[k]));
+  const pkeys = Array.isArray(keys) ? keys.filter(k => PARAMS[k]) : (typeof crossParamCols === 'function' ? crossParamCols() : (Array.isArray(S.view.xcols) ? S.view.xcols : ['lag']).filter(k => PARAMS[k]));
   const calcKeys = pkeys.includes('lag') ? pkeys : (PARAMS.lag ? ['lag'].concat(pkeys) : pkeys);
   const tf = TF();
   const stat = cids => {
@@ -11017,6 +11067,7 @@ function autoGroup(ds, quiet, noUndo, by) {
   const made = names.map((nm, i) => kept[i] || { id: uid('g'), name: nm, color: freeSlot(), visible: true });
   // (by: the groups the wells it does not name keep stay where they were, the new ones after them)
   ds.groups = !by ? made : ds.groups.filter(g => stay.has(g.id) || made.includes(g)).concat(made.filter(g => !ds.groups.includes(g)));
+  if (ds.sets[ds.gs]) ds.sets[ds.gs].groups = ds.groups;
   const byName = new Map(made.map(g => [g.name, g.id]));
   ds.order.forEach(id => { if (!named(id)) return; const n = nameOf(id); ds.wells[id].group = n ? byName.get(n) : null; });
   pruneRoles(ds);
@@ -11039,6 +11090,7 @@ function deleteGroups(ds, gids) {
   if (!kill.size) return;
   pushUndo(ds);
   ds.groups = ds.groups.filter(g => !kill.has(g.id));
+  if (ds.sets[ds.gs]) ds.sets[ds.gs].groups = ds.groups;
   ds.order.forEach(id => { if (kill.has(ds.wells[id].group)) ds.wells[id].group = null; });
   pruneRoles(ds);
   ds.ver++;
@@ -11290,6 +11342,7 @@ function setupGroups() {
       pushUndo(ds);
       const made = makePresetGroups(ds, ds.gs, PRESET_COUNT);
       ds.groups.push(...made);
+      if (ds.sets[ds.gs]) ds.sets[ds.gs].groups = ds.groups;
       ds.ver++;
       inv('groups', 'settings', 'sel');
       return;
@@ -11298,6 +11351,7 @@ function setupGroups() {
     if (act === 'clearall') confirmBox(...clearAllAsk(ds), 'Delete', () => {
       pushUndo(ds);
       ds.groups = [];
+      if (ds.sets[ds.gs]) ds.sets[ds.gs].groups = ds.groups;
       ds.order.forEach(id => { ds.wells[id].group = null; });
       pruneRoles(ds);
       ds.ver++;
@@ -11425,6 +11479,18 @@ function renderTabs() {
     that is too much the strip scrolls, with the current tab kept in sight. */
 function fitTabs() {
   const box = $('#dsTabs'), on = $('.ds-tab.on', box);
+  if (!box) return;
+  const bar = box.closest('.topbar');
+  if (bar) {
+    bar.classList.remove('wrap');
+    if (box.children.length > 0) {
+      box.classList.remove('tight');
+      box.classList.add('measure');
+      const need = Math.min(260, Math.max(180, box.scrollWidth));
+      box.classList.remove('measure');
+      if (box.clientWidth < need) bar.classList.add('wrap');
+    }
+  }
   box.classList.remove('tight');
   box.classList.add('measure');
   const tight = box.scrollWidth > box.clientWidth + 1;
@@ -13375,6 +13441,7 @@ function tableWells(ds) {
   return ws;
 }
 const paramCols = () => S.view.cols.filter(k => PARAMS[k]);
+const crossParamCols = () => (Array.isArray(S.view.xcols) ? S.view.xcols : ['lag']).filter(k => PARAMS[k]);
 /** Rows of numbers for copy / CSV / XLSX: per-well parameters. */
 function wellParamRows(ds, ws, keys, allSets) {
   const res = ds.res;
@@ -13469,8 +13536,10 @@ function renderResults() {
       <button class="btn sm" type="button" data-t="csv">${ICON.dl}CSV</button>`;
     renderWellTable(ds);
   } else if (tab === 'groups') {
+    const isCross = layerStack(ds) && lvOf(ds).statv === 'cross';
+    const colTip = isCross ? ` title="${esc(L('Choose which parameters appear in each cell of the cross table (defaults to lag time only)'))}"` : '';
     tools.innerHTML = `${onlySelBox}${layerStatTools(ds)}<label class="lbl" title="Which measure of spread the table shows beside the mean; copied and exported tables always contain mean, SD, SEM and n">Show <select id="gstat">${GSTAT.map(([v, t]) => `<option value="${v}"${v === S.view.gstat ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
-      <button class="btn sm" type="button" data-t="cols">Columns…</button><button class="btn sm" type="button" data-t="copy">${ICON.copy}Copy</button><button class="btn sm" type="button" data-t="csv">${ICON.dl}CSV</button>`;
+      <button class="btn sm" type="button" data-t="cols"${colTip}>Columns…</button><button class="btn sm" type="button" data-t="copy">${ICON.copy}Copy</button><button class="btn sm" type="button" data-t="csv">${ICON.dl}CSV</button>`;
     renderGroupTable(ds);
   } else if (tab === 'compare') {
     const testing = S.view.stat.mode !== 'none';
@@ -13941,11 +14010,15 @@ async function exportCompare(type) {
   try { await saveFile(base + '.png', await figurePng(d, ds)); } catch (e) { toast(L('PNG export failed: {~0}', e.message)); }
 }
 
-function colsPopover(anchor) {
-  const html = `<h4>Columns shown</h4><div style="display:grid;gap:5px">${PARAM_KEYS.map(k => `<label class="chk"><input type="checkbox" value="${k}"${S.view.cols.includes(k) ? ' checked' : ''}> ${esc(PARAMS[k].label)}${punit(k) ? ` <span class="unit" translate="no">${esc(punit(k))}</span>` : ''}</label>`).join('')}</div>`;
+function colsPopover(anchor, forCross) {
+  const cur = forCross ? crossParamCols() : S.view.cols;
+  const head = forCross ? 'Cross table parameters' : 'Columns shown';
+  const html = `<h4>${head}</h4><div style="display:grid;gap:5px">${PARAM_KEYS.map(k => `<label class="chk"><input type="checkbox" value="${k}"${cur.includes(k) ? ' checked' : ''}> ${esc(PARAMS[k].label)}${punit(k) ? ` <span class="unit" translate="no">${esc(punit(k))}</span>` : ''}</label>`).join('')}</div>`;
   openPop(anchor, html, p => {
     p.addEventListener('change', () => {
-      S.view.cols = $$('input:checked', p).map(i => i.value);
+      const picked = $$('input:checked', p).map(i => i.value);
+      if (forCross) S.view.xcols = picked;
+      else S.view.cols = picked;
       inv('results');
     });
   });
@@ -13967,7 +14040,7 @@ function setupResults() {
     const b = e.target.closest('[data-t]');
     if (!b) return;
     const ds = curDS(), tab = S.view.tab, t = b.dataset.t;
-    if (t === 'cols') return colsPopover(b);
+    if (t === 'cols') return colsPopover(b, tab === 'groups' && layerStack(ds) && lvOf(ds).statv === 'cross');
     if (t === 'stat') return statPopover(b);
     if (t === 'statcopy') return copyText(C.toTSV(trRows(statRows(ds, [S.view.cmpParam]))));
     if (t === 'imgcopy') return exportCompare('copy');
@@ -15568,6 +15641,7 @@ function openQuickGroup() {
     }
     const usedIds = new Set(ds.order.map(id => ds.wells[id].group).filter(Boolean));
     ds.groups = ds.groups.filter(g => usedIds.has(g.id));
+    if (ds.sets[ds.gs]) ds.sets[ds.gs].groups = ds.groups;
     pruneRoles(ds);
     ds.ver++;
     invAll();
@@ -16427,6 +16501,7 @@ function projShow() {
     el.title = dirty ? L('Changes not saved yet') : PROJ.name ? L('All changes are saved') : L('Not saved as a project file yet');
   }
   document.title = (on ? (dirty ? '● ' : '') + name + ' · ' : '') + L('Plate Kinetics Analysis') + ' · ' + APP.version;
+  if (typeof fitTabs === 'function') fitTabs();
 }
 /** Whether a file picker of the File System Access API can be used here (not in a frame of another site). */
 function fsPicker(name) {
@@ -16867,8 +16942,11 @@ function applyDatasetAnalysis(id, a, opt) {
     return set;
   });
   if (!ds.sets.length) ds.sets = [newSet(L('Layer 1'))];
-  if (typeof makePresetGroups === 'function') ds.sets.forEach((s, si) => { if (!s.groups.length) s.groups = makePresetGroups(ds, si, PRESET_COUNT); });
   loadSet(ds, clamp(active, 0, ds.sets.length - 1));      // (its frames with it)
+  if (typeof makePresetGroups === 'function') {
+    ds.sets.forEach((s, si) => { if (!s.groups.length) s.groups = makePresetGroups(ds, si, PRESET_COUNT); });
+    ds.groups = ds.sets[ds.gs].groups;
+  }
   // an analysis of the layout build (11-26, never released): the excluded wells of every layer on the plate
   const layerExcl = given.map(s => s.excluded).filter(Array.isArray);
   if (layerExcl.length) plateExclFromLayers(ds, layerExcl);
@@ -17307,6 +17385,7 @@ function applyLang() {
   // Composed live-status text has no single static translation key. Rebuild it
   // now, including when no new selection message arrives after a language change.
   COLLAB.renderBar();
+  if (typeof fitTabs === 'function') fitTabs();
 }
 /** The ready-made y-axis names follow the language as long as they were not edited. */
 function syncSigLabel() {
@@ -17450,7 +17529,7 @@ const PKCollabCore = (() => {
 })();
 
 const COLLAB = (() => {
-  const K = PKCollabCore, BUILD = 'pk-v3-16-0-d607704004dd', API = '/api/collab/rooms';
+  const K = PKCollabCore, BUILD = 'pk-v3-16-1-12d050424b26', API = '/api/collab/rooms';
   const route = /^\/share\/([A-Za-z0-9_-]{20,128})\/?$/.exec(typeof location === 'undefined' ? '' : location.pathname);
   const c = { active: !!route, roomId: route ? route[1] : null, state: null, connected: false, closed: false,
     intents: [], conflicts: [], inFlight: null, undoStack: [], redoStack: [], seen: new Set(), deferred: [],
