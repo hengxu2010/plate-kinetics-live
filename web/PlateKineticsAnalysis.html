@@ -26,7 +26,7 @@
 <meta name="description" content="Plate Kinetics Analysis: kinetic curves from 96- and 384-well plates. Import with automatic layout recognition, grouping, curve parameters, statistics, figures and reports. Runs in the browser, online or offline.">
 <meta name="author" content="hx_mao">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Crect width='26' height='26' rx='6' fill='%23077682'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='7' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='19' cy='9' r='2.7'/%3E%3Ccircle cx='7' cy='17' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='17' r='2.7'/%3E%3Ccircle cx='19' cy='17' r='2.7' fill-opacity='.45'/%3E%3C/g%3E%3C/svg%3E">
-<title>孔板动力学分析 · v3.10.0</title>
+<title>孔板动力学分析 · v3.15.0</title>
 <script>
 /* A light / dark choice made in this browser is applied before the first paint (the rest lives at the end of the page). */
 try { var pkUi = JSON.parse(localStorage.getItem('pk.ui.v1') || 'null'); if (pkUi && (pkUi.theme === 'light' || pkUi.theme === 'dark')) document.documentElement.setAttribute('data-theme', pkUi.theme); } catch (e) { /* storage unavailable */ }
@@ -46,8 +46,8 @@ try { var pkUi = JSON.parse(localStorage.getItem('pk.ui.v1') || 'null'); if (pkU
   setTimeout(function () { root.className = root.className.replace(/\s*\bpk-wait\b/, ''); }, 3000);
 })();
 </script>
-<meta name="application-version" content="v3.10.0">
-<meta name="application-build" content="pk-v3-10-0-a43c85f68b2a">
+<meta name="application-version" content="v3.15.0">
+<meta name="application-build" content="pk-v3-15-0-96adea8b6cfe">
 <style>
 :root {
   /* Layout idea: inputs on the left (plate, groups, settings), outputs on the right (curves, results).
@@ -324,18 +324,25 @@ h1, h2, h3 { text-wrap: balance; }
 .plate.p384.frall { --gap: 3px; }
 .plate.mrow { grid-template-columns: fit-content(var(--rmw)) 20px repeat(var(--cols), minmax(0, 1fr)); }
 .plate.p384.mrow { grid-template-columns: fit-content(var(--rmw)) 16px repeat(var(--cols), minmax(0, 1fr)); }
-.plate .mg { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; padding: 0 4px 0 2px; font: 400 10px/1.1 var(--font-sans); color: var(--ink-2); white-space: nowrap; overflow: hidden; cursor: default; }
-.plate .mg.run { margin: 2px 3px 2px 0; padding-right: 3px; border-right: 1px solid var(--rule); }
-.plate .mgh { display: flex; align-items: flex-end; justify-content: flex-end; min-width: 0; padding: 0 4px 2px 2px; font: 600 10px/1.1 var(--font-sans); color: var(--ink-2); white-space: nowrap; overflow: hidden; }
-.plate .mgh.top { justify-content: flex-start; padding: 0 0 1px calc(20px + var(--gap)); }
+.plate .mg, .mp-grid .mg { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; padding: 0 4px 0 2px; font: 400 10px/1.1 var(--font-sans); color: var(--ink-2); white-space: nowrap; overflow: hidden; cursor: default; }
+.plate .mg.run, .mp-grid .mg.run { margin: 2px 3px 2px 0; padding-right: 3px; border-right: 1px solid var(--rule); }
+.plate .mg.right, .mp-grid .mg.right { justify-content: flex-start; padding: 0 2px 0 4px; }
+.plate .mg.run.right, .mp-grid .mg.run.right { margin: 2px 0 2px 3px; padding-left: 3px; padding-right: 2px; border-right: 0; border-left: 1px solid var(--rule); }
+.plate .mgh, .mp-grid .mgh { display: flex; align-items: flex-end; justify-content: flex-end; min-width: 0; padding: 0 4px 2px 2px; font: 600 10px/1.1 var(--font-sans); color: var(--ink-2); white-space: nowrap; overflow: hidden; }
+.plate .mgh.right, .mp-grid .mgh.right { justify-content: flex-start; padding: 0 2px 2px 4px; }
+.plate .mgh.top, .mp-grid .mgh.top { justify-content: flex-start; padding: 0 0 1px calc(20px + var(--gap)); }
 .plate.p384 .mgh.top { padding-left: calc(16px + var(--gap)); }
-.plate .mg > span, .plate .mgb > span, .plate .mgh > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.plate .mg .vq, .plate .mgb .vq { width: 8px; height: 8px; border-radius: 2px; }
-.plate .mgb .vq { margin-top: 1.5px; }
-.plate .mgb { position: relative; display: flex; justify-content: center; align-items: flex-start; gap: 3px; min-width: 0; height: 16px; padding: 0 3px; font: 400 10px/11px var(--font-sans); color: var(--ink-2); white-space: nowrap; overflow: hidden; cursor: default; }
-.plate .mgb::after { content: ""; position: absolute; left: 3px; right: 3px; bottom: 1px; height: 3px; border: 1px solid var(--rule); border-bottom: 0; border-radius: 2px 2px 0 0; }
-.plate .mgb.e::after { display: none; }
-.plate .mg[data-hids]:hover, .plate .mgb[data-hids]:hover { color: var(--accent-strong); }
+.mp-grid .mgh.top, .mp-grid .mgh.bot { padding-left: 16px; }
+.plate .mg > span, .plate .mgb > span, .plate .mgh > span, .mp-grid .mg > span, .mp-grid .mgb > span, .mp-grid .mgh > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.plate .mg .vq, .plate .mgb .vq, .mp-grid .mg .vq, .mp-grid .mgb .vq { width: 8px; height: 8px; border-radius: 2px; }
+.plate .mgb .vq, .mp-grid .mgb .vq { margin-top: 1.5px; }
+.plate .mgb, .mp-grid .mgb { position: relative; display: flex; justify-content: center; align-items: flex-start; gap: 3px; min-width: 0; height: 16px; padding: 0 3px; font: 400 10px/11px var(--font-sans); color: var(--ink-2); white-space: nowrap; overflow: hidden; cursor: default; }
+.plate .mgb::after, .mp-grid .mgb::after { content: ""; position: absolute; left: 3px; right: 3px; bottom: 1px; height: 3px; border: 1px solid var(--rule); border-bottom: 0; border-radius: 2px 2px 0 0; }
+.plate .mgb.bot, .mp-grid .mgb.bot { align-items: flex-end; }
+.plate .mgb.bot::after, .mp-grid .mgb.bot::after { top: 1px; bottom: auto; border: 1px solid var(--rule); border-top: 0; border-radius: 0 0 2px 2px; }
+.plate .mgb.e::after, .mp-grid .mgb.e::after { display: none; }
+.plate .mg[data-hids], .plate .mgb[data-hids], .mp-grid .mg[data-hids], .mp-grid .mgb[data-hids] { cursor: pointer; }
+.plate .mg[data-hids]:hover, .plate .mgb[data-hids]:hover, .mp-grid .mg[data-hids]:hover, .mp-grid .mgb[data-hids]:hover { color: var(--accent-strong); }
 .plate.p384 .mg, .plate.p384 .mgb { font-size: 9px; }
 .plate.p384 .mg .vq, .plate.p384 .mgb .vq { width: 7px; height: 7px; }
 .plate.p384 .mgh { font-size: 9px; padding-right: 3px; }
@@ -356,7 +363,7 @@ h1, h2, h3 { text-wrap: balance; }
 .lkey .lk-g[data-lk]:hover { color: var(--ink); }
 .lkey .lk-n[data-lk]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .lkey .lk-v { display: flex; flex-wrap: wrap; gap: 2px 8px; min-width: 0; }
-.lgw { display: inline-flex; align-items: center; gap: 5px; padding: 1px 4px; margin: 0 -1px; border-radius: 4px; color: var(--ink-2); font-size: 12px; white-space: nowrap; cursor: default; }
+.lgw { display: inline-flex; align-items: center; gap: 5px; padding: 1px 4px; margin: 0 -1px; border-radius: 4px; color: var(--ink-2); font-size: 12px; white-space: nowrap; cursor: pointer; }
 .lgw:hover { background: var(--surface-2); color: var(--ink); }
 .lgw .vq { width: 11px; height: 11px; }
 .lgw .n { font: 11px var(--font-mono); color: var(--muted); }
@@ -540,17 +547,15 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); margi
   border-radius: var(--wr); overflow: hidden; cursor: cell;
 }
 .well:hover, .well.hov { border-color: var(--ink-2); }
-.well.sel { outline: 2px solid var(--accent); outline-offset: 1px; z-index: 1; }
+.well.sel { outline: 1.5px solid var(--accent); outline-offset: 0; z-index: 1; }
 .well.link {
-  z-index: 4; outline: 3px solid var(--hc, var(--accent)); outline-offset: 2px; transform: scale(1.14);
-  box-shadow: 0 0 0 7px color-mix(in srgb, var(--hc, var(--accent)) 30%, transparent), 0 6px 14px rgba(0, 0, 0, 0.28);
-  transition: transform 0.1s ease-out;
+  z-index: 3; outline: 2px solid var(--hc, var(--accent)); outline-offset: 0.5px;
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--hc, var(--accent)) 22%, transparent);
 }
-.plate.p384 .well.link { outline-width: 2px; outline-offset: 1px; transform: scale(1.3); }
-.plate .hd.link { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
-@media (prefers-reduced-motion: reduce) { .well.link { transition: none; } }
-.plate.p384 .well.sel { outline-width: 1.5px; outline-offset: 0; }
-.well.cur { box-shadow: inset 0 0 0 1px var(--ink); }
+.plate.p384 .well.link { outline-width: 1.5px; outline-offset: 0; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--hc, var(--accent)) 24%, transparent); }
+.plate .hd.link { background: var(--accent-wash-2); color: var(--accent-strong); font-weight: 600; }
+.plate.p384 .well.sel { outline-width: 1.25px; outline-offset: 0; }
+.well.cur { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 55%, transparent); }
 .well.nodata { background: transparent; border-style: dashed; border-color: var(--hair-2); }
 .well.excl::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -581,7 +586,9 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); margi
 .selinfo .rng { font: 11.5px var(--font-mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px; }
 .selbar .grp { display: inline-flex; align-items: center; gap: 6px; }
 .selbar .sep { width: 1px; height: 20px; background: var(--hair); }
-#selName { width: 150px; }
+.pop.name-pop { width: 256px; }
+.pop.name-pop .name-in { width: 100%; margin: 2px 0 8px; }
+.pop.name-pop .name-acts { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
 .selbar .row.chiprow { align-items: flex-start; flex-wrap: nowrap; }
 .rowlab { font-size: 12px; color: var(--muted); padding-top: 5px; flex: none; min-width: 28px; }
 .gchips { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; flex: 1; min-width: 0; }
@@ -890,18 +897,105 @@ html.pk-wait body { visibility: hidden; }
 .pop.fr-pop .sw.on { outline: 2px solid var(--ink); outline-offset: 1px; }
 .pop.fr-pop .fr-note { margin: 10px 0 0; }
 /* ---------- one card for the selection and the groups: what to do with the selected wells on top, the groups below ---------- */
-#groupCard > .selbar { border-top: 0; }
+#groupCard > .selbar { border-top: 0; padding: 8px 12px 9px; gap: 6px; }
 #groupCard > .card-head { border-top: 1px solid var(--hair); }
-#groupChips .newg { margin-left: 0; }
 .selbar .frgrp { gap: 4px; }
-/* the name keeps its room in a narrow card; the counts and tags go onto a second line instead of hiding it */
-.grow { grid-template-columns: 16px 22px minmax(5.5em, 1fr) minmax(0, max-content) auto; padding-left: 12px; cursor: pointer; }
-.grow .gmeta { flex-wrap: wrap; justify-content: flex-end; row-gap: 2px; white-space: normal; min-width: 0; text-align: right; }
-.grow .gtick { width: 15px; height: 15px; cursor: pointer; }
+/* compact group rows: tick assigns selected wells to the group; clicking the row selects the group's wells */
+.grow { grid-template-columns: 16px 18px minmax(5.5em, 1fr) minmax(0, max-content) auto; gap: 6px; padding: 2px 8px 2px 10px; min-height: 27px; cursor: pointer; }
+.grow .gsw { width: 17px; height: 17px; border-radius: 4px; }
+.grow .gsw .dash { left: 2px; right: 2px; top: 7px; }
+.grow .gname { height: 23px; padding: 0 5px; font-size: 12.5px; }
+.grow .gmeta { flex-wrap: wrap; justify-content: flex-end; row-gap: 2px; white-space: normal; min-width: 0; text-align: right; font-size: 11px; }
+.grow .gtick { width: 14px; height: 14px; cursor: pointer; }
+.grow .gtick:disabled { cursor: default; opacity: 0.4; }
 .grow.on { background: var(--accent-wash); }
 .grow.on:hover { background: var(--accent-wash-2); }
+.grow.empty { opacity: 0.72; }
+.grow.empty:hover, .grow.empty:focus-within { opacity: 1; }
+.grow.empty .gact .btn { opacity: 0.32; }
+.grow.empty:hover .gact .btn, .grow.empty:focus-within .gact .btn { opacity: 1; }
+.glist.segd .grow { grid-template-columns: 14px 16px 18px minmax(5.5em, 1fr) minmax(0, max-content) auto; padding-left: 6px; }
+.glist.segd .grow.gsr { grid-template-columns: 14px 16px minmax(18px, max-content) minmax(5.5em, 1fr) minmax(0, max-content) auto; min-height: 24px; }
 .gname::placeholder { color: transparent; }
 .grow:hover .gname::placeholder, .gname:focus::placeholder { color: var(--muted); }
+.gfoot { padding: 6px 12px 9px; gap: 6px 8px; }
+.add-split { display: inline-flex; align-items: center; flex: none; }
+.add-split .btn:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.add-split .btn:last-child { margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; width: 24px; padding: 0; }
+.pop .mk-sec { font-size: 11px; font-weight: 600; color: var(--muted); margin: 4px 0 2px; }
+/* ---------- plate view bar, 4-side multi-track outer margins, block badges, split mini-plates ---------- */
+.plate-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 12px 6px 14px; border-bottom: 1px solid var(--hair); background: var(--surface-2); font-size: 12px; }
+.plate-bar[hidden] { display: none; }
+.plate-bar .vseg button { padding: 0 9px; }
+.plate-bar .vseg button:disabled { opacity: 0.42; cursor: not-allowed; background: transparent; color: var(--ink-2); }
+.plate-bar .pl-pills { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; }
+.plate-bar .pl-pill { display: inline-flex; align-items: center; gap: 4px; height: 23px; padding: 0 7px 0 5px; border: 1px solid var(--hair-2); border-radius: 6px; background: var(--surface); color: var(--ink-2); font-size: 11.5px; max-width: 130px; }
+.plate-bar .pl-pill.on { border-color: var(--accent); background: var(--accent-wash); color: var(--accent-strong); font-weight: 600; }
+.plate-bar .pl-pill.off { opacity: 0.52; }
+.plate-bar .pl-pill input { width: 13px; height: 13px; cursor: pointer; flex: none; }
+.plate-bar .pl-pill .pl-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.plate-bar .pl-pill .pl-nm:hover { color: var(--ink); }
+.plate-bar .pl-opts { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.plate-bar .chk { font-size: 11.5px; gap: 4px; }
+.plate .mg[data-hids], .plate .mgb[data-hids] { cursor: pointer; }
+.plate .mg.right { justify-content: flex-start; padding: 0 2px 0 4px; }
+.plate .mg.run.right { margin: 2px 0 2px 3px; padding-left: 3px; padding-right: 2px; border-right: 0; border-left: 1px solid var(--rule); }
+.plate .mgb.bot { align-items: flex-end; }
+.plate .mgb.bot::after { top: 1px; bottom: auto; border: 1px solid var(--rule); border-top: 0; border-radius: 0 0 2px 2px; }
+.plate .mgh.right { justify-content: flex-start; padding: 0 2px 2px 4px; }
+.plate .mgh.bot { justify-content: flex-start; align-items: flex-start; padding: 1px 0 0 calc(20px + var(--gap)); }
+.plate.p384 .mgh.bot { padding-left: calc(16px + var(--gap)); }
+.plate .mgh .mr { font-weight: 400; color: var(--muted); margin-left: 2px; font-size: 9.5px; }
+.plate-frames { z-index: 3; }
+.plate-blocks-svg { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; z-index: 2; }
+.plate-blocks { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: visible; }
+.btag {
+  position: absolute; pointer-events: auto; display: inline-flex; align-items: center; gap: 3px;
+  height: 15px; padding: 0 5px 0 4px; border-radius: 4px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border: 1px solid var(--c, var(--rule)); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  font: 600 9.5px/1 var(--font-sans); color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+}
+.btag .vq { width: 7px; height: 7px; border-radius: 1.5px; }
+.btag > span { overflow: hidden; text-overflow: ellipsis; }
+.btag:hover { border-color: var(--accent); color: var(--accent-strong); z-index: 7; }
+/* split mini-plates (one plate per grouping layer side-by-side) */
+.plate-wrap.is-split { padding: 8px; }
+.split-plates { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; }
+.mp-card { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 7px 8px 8px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.mp-card.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-wash-2); }
+.mp-head { display: flex; align-items: center; gap: 6px; min-width: 0; cursor: pointer; }
+.mp-head .nm { font-weight: 600; font-size: 12.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-head .hint { font-size: 11px; white-space: nowrap; }
+.mp-head .btn { margin-left: auto; height: 22px; padding: 0 7px; font-size: 11px; }
+.mp-wrap { position: relative; background: var(--surface-2); border: 1px solid var(--hair); border-radius: 8px; padding: 4px 5px 5px 3px; }
+.mp-grid { display: grid; gap: 2px; user-select: none; -webkit-user-select: none; touch-action: none; --rmw: 62px; }
+.mp-grid.mp384 { gap: 1px; --rmw: 50px; }
+.mp-hd { display: flex; align-items: center; justify-content: center; font: 500 8.5px var(--font-mono); color: var(--muted); cursor: pointer; min-height: 11px; border-radius: 2px; }
+.mp-grid.mp384 .mp-hd { font-size: 7px; min-height: 8px; }
+.mp-hd:hover { color: var(--accent-strong); background: var(--accent-wash); }
+.mp-hd.link { background: var(--accent-wash-2); color: var(--accent-strong); font-weight: 600; }
+.mp-well { position: relative; aspect-ratio: 1.12; min-width: 0; border-radius: 3px; border: 1px solid var(--wbd, var(--hair)); background: var(--wbg, var(--surface)); cursor: cell; overflow: hidden; }
+.mp-grid.mp384 .mp-well { border-radius: 1.5px; aspect-ratio: 1; }
+.mp-well.nodata { background: transparent; border-style: dashed; border-color: var(--hair-2); }
+.mp-well.gc::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--gc); }
+.mp-grid.mp384 .mp-well.gc::before { height: 2px; }
+.mp-well.gc.m-h::before { background: transparent; box-shadow: inset 0 0 0 1px var(--gc); }
+.mp-well.gc.m-half::before { background: repeating-linear-gradient(90deg, var(--gc) 0 3px, transparent 3px 5px); }
+.mp-well.gc.m-dot::before { background: radial-gradient(circle, var(--gc) 0 1px, transparent 1.3px) 0 50% / 4px 4px repeat-x; }
+.mp-well.excl::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(135deg, transparent 0 3px, var(--hatch) 3px 4px); }
+.mp-well.sel { outline: 1.5px solid var(--accent); outline-offset: 0; z-index: 2; }
+.mp-well.link { outline: 2px solid var(--hc, var(--accent)); outline-offset: 0; z-index: 3; box-shadow: 0 0 0 2px color-mix(in srgb, var(--hc, var(--accent)) 22%, transparent); }
+.mp-grid .mg { font-size: 9px; padding: 0 2px; gap: 2px; }
+.mp-grid .mg .vq, .mp-grid .mgb .vq { width: 6px; height: 6px; border-radius: 1.5px; }
+.mp-grid .mgb { height: 13px; font-size: 8.5px; line-height: 9px; padding: 0 2px; gap: 2px; }
+.mp-grid .mgh { font-size: 8.5px; }
+.mp-leg { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: center; }
+.mp-leg .lgw { font-size: 11px; padding: 1px 3px; cursor: pointer; }
+.mp-leg .lgw .vq { width: 8px; height: 8px; }
+.lkey .lk-g input.lk-vis { width: 13px; height: 13px; cursor: pointer; margin-right: 4px; }
+.lkey .lk-g { display: inline-flex; align-items: center; }
 /* ---------- the kinetic curves as a square or tall plot: the legend at its right, the two in the middle of the card ---------- */
 #chartShape button { display: inline-flex; align-items: center; gap: 5px; }
 #chartShape i { display: block; border: 1.5px solid currentColor; border-radius: 2px; opacity: 0.8; }
@@ -923,7 +1017,7 @@ html.pk-wait body { visibility: hidden; }
       <circle cx="7" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/><circle cx="13" cy="17" r="2.6" fill="var(--accent)" fill-opacity=".55"/><circle cx="19" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/>
     </svg>
     <div class="brand-copy">
-      <div class="brand-name"><span>Plate Kinetics Analysis</span><span class="brand-author" translate="no">by hx_mao</span><span class="brand-version" id="brandVersion" role="button" tabindex="0" translate="no" aria-label="Version v3.10.0">v3.10.0</span></div>
+      <div class="brand-name"><span>Plate Kinetics Analysis</span><span class="brand-author" translate="no">by hx_mao</span><span class="brand-version" id="brandVersion" role="button" tabindex="0" translate="no" aria-label="Version v3.15.0">v3.15.0</span></div>
       <div class="brand-sub">PLATE KINETICS · 96 / 384</div>
     </div>
   </div>
@@ -968,8 +1062,9 @@ html.pk-wait body { visibility: hidden; }
           <option value="call">Wells: positive / negative</option>
         </select>
       </div>
+      <div class="plate-bar" id="plateBar" hidden></div>
       <div class="card-body">
-        <div class="plate-wrap"><div class="plate" id="plate" tabindex="0" role="grid" aria-label="Plate: click or drag to select wells; click a row or column header to select it"></div><svg class="plate-frames" id="plateFrames" aria-hidden="true"></svg></div>
+        <div class="plate-wrap" id="plateWrap"><div class="plate" id="plate" tabindex="0" role="grid" aria-label="Plate: click or drag to select wells; click a row or column header to select it"></div><svg class="plate-blocks-svg" id="plateBlocksSvg" aria-hidden="true"></svg><svg class="plate-frames" id="plateFrames" aria-hidden="true"></svg><div class="plate-blocks" id="plateBlocks"></div><div class="split-plates" id="splitPlates" hidden></div></div>
         <div class="plate-foot" id="plateFoot"></div>
       </div>
     </section>
@@ -983,17 +1078,10 @@ html.pk-wait body { visibility: hidden; }
           <button class="btn sm ghost" id="btnSelInv" type="button">Invert</button>
           <button class="btn sm ghost" id="btnSelNone" type="button">Clear selection</button>
         </div>
-        <div class="row chiprow">
-          <div class="gchips" id="groupChips" role="group" aria-label="New group from the selected wells"></div>
-        </div>
         <div class="row">
           <div class="grp">
-            <input type="text" id="selName" placeholder="Sample name" aria-label="Name the selected wells" data-i18n-keep="placeholder">
-            <label class="chk" title="Append 1, 2, 3… to the name"><input type="checkbox" id="selNumber"> Number</label>
-            <button class="btn sm" id="btnApplyName" type="button" data-i18n="verb">Name</button>
-          </div>
-          <span class="sep"></span>
-          <div class="grp">
+            <button class="btn sm ghost" id="btnUngroup" type="button" title="Remove the selected wells from their group (key 0)">Ungroup</button>
+            <button class="btn sm ghost" id="btnNamePop" type="button" aria-haspopup="true" title="Name the selected wells">Name…</button>
             <button class="btn sm ghost" id="btnSelColor" type="button" title="Changes only the display colour of the selected wells, not their group; choose “Follow group” in the colour panel to go back"><i class="swi"></i>Well colour</button>
             <button class="btn sm ghost" id="btnExclude" type="button" title="Leave out of analysis and statistics">Exclude</button>
             <button class="btn sm ghost" id="btnClearMeta" type="button" title="Clear the names, groups and colours of the selected wells">Clear labels</button>
@@ -1012,6 +1100,10 @@ html.pk-wait body { visibility: hidden; }
       <div class="card-head">
         <h2 data-i18n="heading">Groups <span class="count" id="groupCount"></span></h2>
         <span class="spacer"></span>
+        <span class="add-split">
+          <button class="btn sm" id="btnAddPreset" type="button" title="Add a new empty preset group with the next colour"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>Add preset group</button>
+          <button class="btn sm icon" id="btnAddPresetColor" type="button" aria-haspopup="true" title="Add preset group with chosen colour…" aria-label="Add preset group with chosen colour…"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>
+        </span>
         <button class="btn sm" id="btnQuickGroup" type="button" title="Build all groups at once from the replicate layout (every n wells down or across, whole rows or columns)">Quick groups…</button>
         <button class="btn sm" id="btnAutoGroup" type="button" title="Wells with the same name form one group">Group by name</button>
         <button class="btn sm" id="btnPasteLayout" type="button" title="Paste a plate layout (table of sample names) copied from Excel">Paste layout</button>
@@ -1129,6 +1221,7 @@ html.pk-wait body { visibility: hidden; }
         <label class="chk"><input type="checkbox" id="logY"> Log Y axis</label>
         <label class="chk"><input type="checkbox" id="showSmooth"> Show smoothed curves</label>
         <button class="btn sm" id="btnMarkers" type="button" aria-haspopup="true"><span>Parameter markers</span><span class="mk-n" translate="no"></span> ▾</button>
+        <label class="chk" id="spliceJoinWrap" hidden title="Show or hide dashed vertical lines at splice points on the chart"><input type="checkbox" id="showJoins"> Splice points</label>
         <label class="lbl" for="labelMode">Curve names <select id="labelMode"><option value="end">At curve ends</option><option value="below">Legend</option><option value="none">Hidden</option></select></label>
         <div class="lbl" id="chartShapeBox" title="Shape of the plot: wide, or square (1 : 1) with the legend at its right; exported images are arranged the same way">Shape <div class="seg sm" id="chartShape" role="group" aria-label="Chart shape"><button type="button" data-v="wide"><i style="width:14px;height:8px"></i>Wide</button><button type="button" data-v="square"><i style="width:10px;height:10px"></i>Square</button></div></div>
         <span class="lbl grp-only">Error band <select id="bandMode"><option value="sd">± SD</option><option value="sem">± SEM</option><option value="none" data-i18n="band">None</option></select></span>
@@ -4014,7 +4107,69 @@ const LOCALES = {
       'Splice points (h)': '拼接点（小时）',
       '{0} h': '{0} 小时',
       '{0} min': '{0} 分钟',
-      '{0} s': '{0} 秒'
+      '{0} s': '{0} 秒',
+      'Single': '单层',
+      'Split': '分板对照',
+      'Outer labels': '孔外标',
+      'Block badges': '区块标',
+      'Show row / column labels outside the plate (including left/right or top/bottom halves)': '在孔板外侧显示行/列分组标记（支持左右或上下半板分块）',
+      'Draw block borders and corner badges for contiguous non-row/col blocks': '对非整行/整列的连续区块绘制框线与角标',
+      'Show one layer at a time on the main plate, group list and curves (switch layers with the tabs on the left)': '主孔板、分组列表和曲线每次只显示当前选中的单个分组层（点左侧标签切换）',
+      'Show each grouping layer on its own mini-plate side by side (the group list below still edits the active layer)': '把每个分组层各自画成一块小孔板并排对照（下方分组列表仍编辑当前层）',
+      'Show each grouping layer on its own mini-plate side by side': '每个分组层各画一块小孔板并排对照',
+      'Only one layer; make a second one to split them': '只有一个分组层；新建第二个后可以分板对照',
+      ' · {0} layers split': ' · 分板对照 {0} 层',
+      'Show or hide “{0}” on the stacked plate': '在叠加孔板上显示或隐藏“{0}”',
+      'Focus': '单看',
+      'Show only “{0}” on the main plate': '切到单层模式放大查看“{0}”',
+      'Add preset group': '添加预制组',
+      'Add a new empty preset group with the next colour': '按色板下一颜色新增一个预制空组（无需先选孔）',
+      'Add preset group with chosen colour…': '选择颜色添加预制组…',
+      'Restore 6 presets': '恢复 6 个预制组',
+      'Added preset group “{0}”': '已添加预制组“{0}”',
+      'Tick to assign the selected wells to {0} (untick to remove them)': '勾选将选中孔归入“{0}”（取消勾选移出）',
+      'Select wells on the plate first, then tick to assign them to this group': '先在孔板上选孔，再勾选此框即可归入该组',
+      'Click row to select wells of this group (Ctrl/⌘ or Shift for more); tick the box after selecting wells to assign them here': '点击整行选中该组的孔（Ctrl/⌘ 或 Shift 多选）；在孔板选孔后勾选复选框即可定义该组',
+      'No wells assigned yet — select wells on the plate and tick the box to assign them here': '该组还没有孔——先在孔板上选孔，再勾选复选框即可归入',
+      '{0} presets': '{0} 个预制组',
+      '{0} / {1} presets': '{0} 组已用 / {1} 预制',
+      'No groups assigned yet: select wells on the plate, then tick a group below to assign them': '还没有分配分组：在孔板上选孔，再勾选下方对应分组即可',
+      'No groups yet. Click “+ Add preset group” above, or use “Quick groups…” / “Group by name”.': '还没有分组。点击上方“添加预制组”，或使用“快速分组…” / “按名称分组”。',
+      'Select its wells; {0}-click more groups or Shift-click for a range. To assign wells to a group, select wells on the plate and tick the group’s checkbox': '选中该组的孔；按住 {0} 或 Shift 可多选多个组。要给孔定义分组：先在孔板选孔，再勾选该组前的复选框',
+      'Add a new preset group (assigns selected wells if any are selected)': '新增一个预制组（若已选孔则同时归入该组）',
+      'beside rows (left & right)': '写在行号左右两侧',
+      'over & under columns': '写在列号上下两侧',
+      'also beside rows (left & right)': '也写在行号左右两侧',
+      'also over & under columns': '也写在列号上下两侧',
+      'block outlines & badges': '区块框线与角标',
+      'also block outlines & badges': '也以区块框线与角标显示',
+      'hidden on plate': '已在孔板隐藏',
+      'Click a group or margin label to select its wells (Ctrl/⌘ to add)': '点击分组或孔外标签可选中对应孔（按住 Ctrl/⌘ 加选）',
+      'Rows {0}–{1}, cols {2}–{3}': '第 {0}–{1} 行，第 {2}–{3} 列',
+      'Rows {0}–{1}, col {2}': '第 {0}–{1} 行，第 {2} 列',
+      'Row {0}, cols {1}–{2}': '第 {0} 行，第 {1}–{2} 列',
+      'Removed {0:well} from “{1}”': '已将 {0} 孔移出“{1}”',
+      'Empty': '空',
+      'Name…': '命名…',
+      'Name selected wells': '为选中孔命名',
+      'Number (1, 2, 3…)': '自动编号（1, 2, 3…）',
+      'Clear name': '清除名称',
+      'Subdivide': '叠层细分',
+      'None (active layer)': '不细分（当前层）',
+      'All layers': '全部叠层',
+      'Subdivide each group by another grouping layer': '按另一个分组层（或全部叠层）细分对比图中的每个分组',
+      'Subdivided by “{0}”.': '按“{0}”叠层细分。',
+      '{0} · {1} ({2}, mean ± SD)': '{0} · {1}（{2}，均值 ± SD）',
+      'Display': '显示',
+      'Splice points': '拼接点',
+      'Show splice points (dashed lines) on chart': '在曲线图上显示拼接点（虚线）',
+      'Show or hide dashed vertical lines at splice points on the chart': '显示或隐藏曲线图上的拼接点虚线',
+      'Time window shading': '时间窗口阴影',
+      'Chart overlays': '辅助线与显示',
+      'Add to current workspace (keep existing)': '添加到当前工作区（保留已有数据）',
+      'Replace all current datasets': '替换当前全部数据集',
+      'Added {0:dataset} from “{1}” (existing datasets kept)': '已从“{1}”添加 {0} 个数据集（原有数据已保留）',
+      '“{0}” contains {1:dataset}. Add them alongside your current datasets, or replace everything open?': '“{0}”包含 {1} 个数据集。要添加到当前工作区保留原有数据，还是替换当前打开的全部数据？'
     },
     patterns: [
       ['The instrument file lacks {0}', '仪器文件缺少 {0}'],
@@ -7417,7 +7572,7 @@ const VIEW_VER = 3;
 const DEFAULT_VIEW = {
   viewVer: VIEW_VER, palette: 'sci', grid: false, symbols: false, labels: 'end', lineW: 1.8, chartH: null,
   axes: { x: { min: null, max: null, step: null }, y: {} }, exportW: 1000, exportH: 680,
-  source: 'selected', yMode: 'sig', logY: false, smooth: false, markers: true, band: 'sd', reps: false, joins: true,
+  source: 'selected', yMode: 'sig', logY: false, smooth: false, markers: true, band: 'sd', reps: false, winShade: true, joins: true,
   plateMode: 'spark', timeUnit: 'h', sigLabel: 'Fluorescence (RFU)', tab: 'wells', onlySel: true, cmpParam: 'lag',
   cols: ['lag', 't50', 'Fmax', 'tPlateau', 'maxSlope', 'tMaxSlope', 'sMaxSlope', 'auc'], colsVer: COLS_VER,
   // group table: which spread to show beside the mean; comparison plot: significance testing
@@ -7427,7 +7582,7 @@ const VIEW_ENUMS = {
   source: ['selected', 'all', 'groups'], yMode: ['sig', 'base', 'norm', 'fold'], band: ['sd', 'sem', 'none'],
   labels: ['end', 'below', 'none'], timeUnit: ['h', 'min'], tab: ['wells', 'groups', 'compare', 'raw'], gstat: ['sd', 'sem', 'cv', 'median']
 };
-const VIEW_FLAGS = ['grid', 'symbols', 'logY', 'smooth', 'markers', 'reps', 'onlySel', 'joins'];
+const VIEW_FLAGS = ['grid', 'symbols', 'logY', 'smooth', 'markers', 'reps', 'onlySel', 'winShade', 'joins'];
 const STAT_ENUMS = { mode: ['none', 'ctrl', 'pairs'], test: ['welch', 'mwu', 'fisher'], adjust: ['holm', 'bonferroni', 'none'] };
 /** View preferences come from localStorage or from a project file that somebody else may have made,
     and several of them end up in markup: keep only well-formed values, fall back to the default otherwise. */
@@ -7437,7 +7592,7 @@ function migrateView(v) {
   if (out.viewVer !== VIEW_VER) { out.source = 'selected'; out.palette = 'sci'; out.viewVer = VIEW_VER; }
   if (out.source === 'supers') out.source = 'selected';
   for (const k in VIEW_ENUMS) if (!VIEW_ENUMS[k].includes(out[k])) out[k] = DEFAULT_VIEW[k];
-  for (const k of VIEW_FLAGS) out[k] = !!out[k];
+  for (const k of VIEW_FLAGS) out[k] = out[k] == null ? DEFAULT_VIEW[k] : !!out[k];
   if (!Object.prototype.hasOwnProperty.call(PALETTES, out.palette)) out.palette = DEFAULT_VIEW.palette;
   const isParam = k => typeof k === 'string' && Object.prototype.hasOwnProperty.call(PARAMS, k);
   if (!isParam(out.cmpParam) || out.cmpParam === 'thr') out.cmpParam = DEFAULT_VIEW.cmpParam;
@@ -7499,6 +7654,59 @@ function ensureWells(ds) {
     ds.order.push(id);
   }
 }
+const PRESET_COUNT = 6;
+/** Whether any well is assigned to a group in layer si (or any layer when si == null). */
+function hasAssignedGroups(ds, si) {
+  if (!ds) return false;
+  if (si != null) {
+    if (si === ds.gs) return ds.order.some(id => !!ds.wells[id].group);
+    const a = ds.sets[si] && ds.sets[si].assign;
+    return !!(a && Object.keys(a).length);
+  }
+  return ds.sets.some((_, i) => hasAssignedGroups(ds, i));
+}
+/** Create n empty preset groups for layer si using distinct free colours of that layer's palette. */
+function makePresetGroups(ds, si, n) {
+  n = n || PRESET_COUNT;
+  const s = ds.sets[si], pal = COLLAB.active && palOf(s) === 'mark' ? 'cat' : palOf(s);
+  const existing = si === ds.gs ? ds.groups : (s && s.groups) || [];
+  const usedColors = new Set(existing.map(g => g.color));
+  const usedNames = new Set(existing.map(g => g.name));
+  const order = layerSlotOrder(ds, si);
+  const base = ds.sets.length > 1 && s ? s.name + (/\d$/.test(s.name) ? '-' : ' ') : L('Group ');
+  const out = [];
+  let k = 1, oi = 0;
+  for (let j = 0; j < n; j++) {
+    while (usedNames.has(base + k)) k++;
+    const name = base + k++;
+    usedNames.add(name);
+    let color = null;
+    if (pal === 'mark') color = 'mark:' + ((existing.length + j) % 4 + 1);
+    else if (pal === 'seq') color = rampSpec(okHue(s && s.hue), (existing.length + j) % 6, 6);
+    else {
+      while (oi < order.length && usedColors.has(slotSpec(order[oi]))) oi++;
+      if (oi < order.length) color = slotSpec(order[oi++]);
+      else { let p = nPal(); while (usedColors.has(slotSpec(p))) p++; color = slotSpec(p); }
+    }
+    usedColors.add(color);
+    out.push({ id: uid('g'), name, color, visible: true });
+  }
+  return out;
+}
+/** Add one new empty preset group to the active layer (optionally with a chosen colour; never requires selected wells). */
+function addPresetGroup(ds, opt) {
+  opt = opt || {};
+  if (!ds) return null;
+  pushUndo(ds);
+  const g = { id: uid('g'), name: opt.name || newGroupName(ds), color: opt.color || nextSlot(ds), visible: true };
+  ds.groups.push(g);
+  if (opt.focus) S.focusGroup = g.id;
+  else if (opt.scroll) S.scrollGroup = g.id;
+  ds.ver++;
+  inv('groups', 'settings', 'sel');
+  if (!opt.quiet) toast(L('Added preset group “{0}”', g.name));
+  return g;
+}
 function newDataset(ex, meta) {
   const ds = {
     id: uid('d'), name: meta.name || L('Data'), file: meta.file || '', sheet: meta.sheet || '', channel: ex.channel || '',
@@ -7516,6 +7724,11 @@ function newDataset(ex, meta) {
     w.ovf = s.ovf || 0;
     const nm = ex.names && ex.names[s.id];
     if (nm) w.name = nm;
+  }
+  if (!meta.noPresets && typeof makePresetGroups === 'function') {
+    const presets = makePresetGroups(ds, 0, PRESET_COUNT);
+    ds.sets[0].groups = presets;
+    ds.groups = presets;
   }
   return ds;
 }
@@ -7631,6 +7844,7 @@ function addSet(ds, copy, quiet, stay) {
   const s = newSet(named ? freeSetName(ds, cur.name + L(' copy')) : freeSetName(ds));
   copySetParts(cur, s, parts);
   ds.sets.push(s);
+  if (!named && typeof makePresetGroups === 'function') s.groups = makePresetGroups(ds, ds.sets.length - 1, PRESET_COUNT);
   loadSet(ds, stay ? keep : ds.sets.length - 1);
   if (!stay) layerSwitched(ds, cur);
   ds.ver++;
@@ -7741,7 +7955,7 @@ function renameSet(ds, i, name) {
    (s.hue), 'mark' no colour - its groups are filled, hollow, half filled or dotted marks in grey (colour specs 'mark:1'
    … 'mark:4'); the new groups of the layer follow it ("Colours…" sets it). A shared room keeps its own ways: 4 layers at
    most, no frames, no marks. */
-const LAYER_MODES = ['expand', 'stack'];
+const LAYER_MODES = ['expand', 'stack', 'split'];
 const MARKS = ['f', 'h', 'half', 'dot'];
 const MARK_NAMES = ['Filled', 'Hollow', 'Half filled', 'Dotted'];
 const MARK_INK = { light: '#4b5254', dark: '#b7bdbd' };
@@ -7768,7 +7982,7 @@ const palOf = s => (s && (s.pal === 'seq' || s.pal === 'mark') ? s.pal : 'cat');
 /** The colour of a layer of shades. */
 const okHue = h => (typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h) ? h.toLowerCase() : SEQ_HUE);
 /** The view of a new dataset. */
-const LV0 = () => ({ mode: 'expand', cm: 'layer', facet: null, filt: {}, cpart: [], statv: 'list', xr: null, allFr: false });
+const LV0 = () => ({ mode: 'expand', cm: 'layer', facet: null, filt: {}, cpart: [], statv: 'list', xr: null, allFr: false, pMarg: true, pBlock: true, pHid: [], cmpBy: '' });
 /** The view of the layers of a dataset made safe (from a file, an analysis, a view of before): known values only, the
     layers it has. */
 function cleanLayerView(o, ds) {
@@ -7783,19 +7997,28 @@ function cleanLayerView(o, ds) {
   if (o.statv === 'cross') v.statv = 'cross';
   if (has(o.xr)) v.xr = o.xr;
   v.allFr = o.allFr === true;
+  if (typeof o.pMarg === 'boolean') v.pMarg = o.pMarg;
+  if (typeof o.pBlock === 'boolean') v.pBlock = o.pBlock;
+  if (Array.isArray(o.pHid)) v.pHid = [...new Set(o.pHid.filter(has))];
+  if (o.cmpBy === '__all' || has(o.cmpBy)) v.cmpBy = o.cmpBy;
   return v;
 }
 function lvOf(ds) {
   if (!isObj(ds.lv)) ds.lv = cleanLayerView(null, ds);
+  if (typeof ds.lv.pMarg !== 'boolean') ds.lv.pMarg = true;
+  if (typeof ds.lv.pBlock !== 'boolean') ds.lv.pBlock = true;
+  if (!Array.isArray(ds.lv.pHid)) ds.lv.pHid = [];
+  if (typeof ds.lv.cmpBy !== 'string') ds.lv.cmpBy = '';
   return ds.lv;
 }
 /** The view as it is kept; null for the view of a new dataset. */
 function layerViewData(ds) {
-  const v = lvOf(ds), d = { mode: v.mode, cm: v.cm, facet: v.facet, filt: Object.assign({}, v.filt), cpart: v.cpart.slice(), statv: v.statv, xr: v.xr, allFr: !!v.allFr };
+  const v = lvOf(ds), d = { mode: v.mode, cm: v.cm, facet: v.facet, filt: Object.assign({}, v.filt), cpart: v.cpart.slice(), statv: v.statv, xr: v.xr, allFr: !!v.allFr, pMarg: v.pMarg !== false, pBlock: v.pBlock !== false, pHid: (v.pHid || []).slice(), cmpBy: v.cmpBy || '' };
   return JSON.stringify(d) === JSON.stringify(LV0()) ? null : d;
 }
-/** Whether the layers of ds are stacked ("Stack", two layers or more). */
+/** Whether the layers of ds are stacked ("Stack", two layers or more) or split side-by-side ("Split"). */
 const layerStack = ds => !!ds && ds.sets.length > 1 && lvOf(ds).mode === 'stack';
+const layerSplit = ds => !!ds && ds.sets.length > 1 && lvOf(ds).mode === 'split';
 const layerIdx = (ds, sid) => ds.sets.findIndex(s => s.id === sid);
 /** Every layer with the group it gives each well: [{ si, s, name, groups, of: Map(well id -> group) }]. */
 function layerMaps(ds) {
@@ -7842,12 +8065,11 @@ function newGroupName(ds, si) {
   if (si == null) si = ds.gs;
   const groups = si === ds.gs ? ds.groups : ds.sets[si].groups || [], nm = ds.sets.length > 1 ? ds.sets[si].name : '';
   const base = nm ? nm + (/\d$/.test(nm) ? '-' : ' ') : L('Group ');
-  for (let k = groups.length + 1; ; k++) { const x = base + k; if (!groups.some(q => q.name === x)) return x; }
+  for (let k = 1; ; k++) { const x = base + k; if (!groups.some(q => q.name === x)) return x; }
 }
 /** The colours of the palette (slot indices) in the order the groups of layer si (the active one when not given) take
     them: first those that no other layer uses, then those another layer uses, so that a second layer does not look
-    like the first (the swatches "+", "Quick groups", "Group by name", "Paste layout", "Apply a layout", "Colours…");
-    si -1: a layer still to be made (every layer is another one). One layer: the palette's own order, as before. */
+    like the first. */
 function layerSlotOrder(ds, si) {
   if (si == null) si = ds.gs;
   const other = new Set();
@@ -7864,21 +8086,18 @@ function vqHtml(spec, dark, cls) {
 }
 /** The square of a layer that does not group the wells, in the slot the layer has: empty, faint. */
 const VQ_NONE = '<i class="vq e" aria-hidden="true"></i>';
-/** Another layer made the active one: it is no longer a filter or the layer of the small charts. `from`: the layer
-    that was the active one - it takes part in the combinations from now on (as the active layer always does), so that
-    the curves by "Combinations" stay the combinations they were. New groups go into the new active layer again (the
-    layer picked in the selection card is forgotten: newGroupTarget). */
+/** Another layer made the active one: it is no longer a filter or the layer of the small charts; unhide it on plate. */
 function layerSwitched(ds, from) {
   const v = lvOf(ds), id = ds.sets[ds.gs].id;
   if (v.facet === id) v.facet = null;
+  if (v.cmpBy === id) v.cmpBy = '';
   delete v.filt[id];
+  if (Array.isArray(v.pHid)) v.pHid = v.pHid.filter(x => x !== id);
   if (from && from.id !== id && ds.sets.includes(from) && !v.cpart.includes(from.id)) v.cpart.push(from.id);
   v.open = null;
   v.into = null;
 }
-/** "Curves by": the groups of the active layer ('layer') or combinations ('combo'). Combinations of the active layer
-    alone would be its groups again: then the first other layer with groups takes part. A layer of the combinations
-    filters nothing. (A view: no step to undo.) */
+/** "Curves by": the groups of the active layer ('layer') or combinations ('combo'). */
 function setLayerCurves(ds, cm) {
   const v = lvOf(ds);
   v.cm = cm === 'combo' ? 'combo' : 'layer';
@@ -7890,9 +8109,10 @@ function setLayerCurves(ds, cm) {
   }
   v.cpart.forEach(x => { delete v.filt[x]; });
 }
-/** "Expand" / "Stack" (a view: no step to undo, no change to save). */
+/** "Single" / "Stack" / "Split" (a view: no step to undo, no change to save). */
 function setLayerMode(ds, mode) {
   if (!ds || !LAYER_MODES.includes(mode) || lvOf(ds).mode === mode) return;
+  if (ds.sets.length < 2 && mode !== 'expand') return;
   lvOf(ds).mode = mode;
   lvOf(ds).open = null;
   invAll();
@@ -7910,23 +8130,21 @@ function moveSet(ds, i, dir) {
   invAll();
   return true;
 }
-/** What the curves and the statistics of stacked layers follow: { keys: the layers (indices) a curve stands for a
-    combination of, facet: a layer drawn as small charts (or null), filt: layer index -> group id }; null when the layers
-    are not stacked. A layer without groups takes no part. */
+/** What the curves and the statistics of stacked layers follow. Layers with no assigned wells take no part. */
 function layerModel(ds) {
   if (!layerStack(ds)) return null;
   const v = lvOf(ds), gs = ds.gs, idx = id => layerIdx(ds, id), groupsOf = i => (i === gs ? ds.groups : ds.sets[i].groups || []);
+  const active = i => i >= 0 && hasAssignedGroups(ds, i);
   let keys = [gs], facet = null;
-  if (v.cm === 'combo') keys = [...new Set([gs].concat(v.cpart.map(idx).filter(i => i >= 0 && groupsOf(i).length)))].sort((a, b) => a - b);
-  else { const f = idx(v.facet); if (f >= 0 && f !== gs && groupsOf(f).length) facet = f; }
+  if (v.cm === 'combo') keys = [...new Set([gs].concat(v.cpart.map(idx).filter(active)))].sort((a, b) => a - b);
+  else { const f = idx(v.facet); if (f >= 0 && f !== gs && active(f)) facet = f; }
   const filt = {};
-  for (const [sid, gid] of Object.entries(v.filt)) { const i = idx(sid); if (i >= 0 && i !== gs && !keys.includes(i) && i !== facet && groupsOf(i).some(g => g.id === gid)) filt[i] = gid; }
+  for (const [sid, gid] of Object.entries(v.filt)) { const i = idx(sid); if (i >= 0 && i !== gs && !keys.includes(i) && i !== facet && active(i) && groupsOf(i).some(g => g.id === gid)) filt[i] = gid; }
   return { keys, facet, filt };
 }
 /** Whether a well passes the filters (a layer that does not group it lets it through). */
 const layerPasses = (maps, filt, id) => Object.keys(filt).every(i => { const g = maps[i].of.get(id); return !g || g.id === filt[i]; });
-/** The layers the statistics of stacked layers are by, joined, and the filters: "Sample × Dilution", "Sample
-    (Dilution = 1e-2)". */
+/** The layers the statistics of stacked layers are by, joined, and the filters. */
 function layerStatNames(ds) {
   const M = layerModel(ds);
   if (!M) return ds.sets[ds.gs].name;
@@ -7934,8 +8152,7 @@ function layerStatNames(ds) {
   const only = Object.entries(M.filt).map(([i, gid]) => { const s = ds.sets[i], g = (s.groups || []).find(x => x.id === gid); return s.name + ' = ' + (g ? gName(g) : '?'); });
   return only.length ? by + L(' ({0})', only.join(L(', '))) : by;
 }
-/** The rows of the group statistics of stacked layers when they are not simply the groups of the active layer (the
-    curves follow combinations, small charts or filters): [{ label, color, fill, gid, ids, sq }], else null. */
+/** The rows of the group statistics of stacked layers when they are not simply the groups of the active layer. */
 function layerStatGroups(ds, dark) {
   const M = layerModel(ds);
   if (!M || (M.keys.length < 2 && M.facet == null && !Object.keys(M.filt).length)) return null;
@@ -7949,45 +8166,8 @@ function layerStatGroups(ds, dark) {
   });
 }
 
-/* the plate */
-/** A layer written beside the plate along its rows (axis 'r') or columns ('c'): the group of each line - a line whose
-    wells with data the layer groups all into that group; null: a line it does not write (a well with data of the line
-    is grouped in another layer only, or no layer groups any of them); undefined: a line without wells with data. A well
-    that no layer groups (an empty or a control well left out of every layer) does not count. When two lines at least
-    have different groups; else (or when a line has two groups of the layer: it is not by these lines) null. */
-function perLine(ds, M, axis, maps) {
-  const n = axis === 'r' ? ds.plate.rows : ds.plate.cols, m = axis === 'r' ? ds.plate.cols : ds.plate.rows, out = [];
-  for (let a = 0; a < n; a++) {
-    let v = null, data = false, whole = true;
-    for (let b = 0; b < m; b++) {
-      const id = axis === 'r' ? C.wellId(a, b) : C.wellId(b, a);
-      if (!ds.wells[id].y) continue;
-      data = true;
-      const g = M.of.get(id) || null;
-      if (!g) { if (maps.some(X => X.of.has(id))) whole = false; continue; }   // (grouped by another layer only: not all of the line)
-      if (v && g !== v) return null;
-      v = g;
-    }
-    out.push(!data ? undefined : whole ? v : null);
-  }
-  return new Set(out.filter(Boolean)).size >= 2 ? out : null;
-}
-/** The other layers written beside the plate: { row: { M, v, full } (a layer by rows), col: { M, v, full } (one by
-    columns) } - v: the group of each line (perLine), full: every well with data the layer groups is on a line written. */
-function layerMargins(ds, maps) {
-  const g = { row: null, col: null };
-  const full = (M, v, k) => ds.order.every(id => { const w = ds.wells[id]; return !w.y || !M.of.has(id) || !!v[w[k]]; });
-  for (const M of maps) {
-    if (M.si === ds.gs) continue;
-    let v;
-    if (!g.row && (v = perLine(ds, M, 'r', maps))) g.row = { M, v, full: full(M, v, 'r') };
-    else if (!g.col && (v = perLine(ds, M, 'c', maps))) g.col = { M, v, full: full(M, v, 'c') };
-  }
-  return g;
-}
-/** Runs of equal values along the lines: [[first, last, value]]. Lines without wells with data (undefined) do not break
-    a run: between two lines of the same group they are in its run (B, D, F of one group, C and E empty: one run B-F);
-    else they are a run of no group (null). */
+/* the plate: 4-side multi-track outer margins, partial/split halves, contiguous block overlays, and split mini-plates */
+/** Runs of equal values along lines: [[first, last, value]]. Undefined lines (no data) bridge equal neighbours. */
 function lineRuns(vs) {
   const f = vs.slice(), r = [];
   for (let i = 0; i < f.length; i++) {
@@ -8001,74 +8181,385 @@ function lineRuns(vs) {
   f.forEach((v, i) => { const l = r[r.length - 1]; if (l && l[2] === v) l[1] = i; else r.push([i, i, v]); });
   return r;
 }
-/** What the plate shows of stacked layers: null when they are not stacked (or the wells show a heat map); else { maps,
-    oth (the other layers), sqL (those drawn as small squares: the other layers that have groups, a slot each, in layer
-    order), turn (the same in the order their squares are drawn when not all of them fit: the layers not beside the plate
-    first, then those partly beside it), marg (the layers beside / over the plate), margins (their cells, placed in the
-    grid of the plate), well(w) (the small squares and the names of a well) }. */
-function layerPlate(ds, hk) {
-  if (!layerStack(ds) || hk) return null;
-  const maps = layerMaps(ds), gs = ds.gs, oth = maps.filter(M => M.si !== gs), dark = isDark(), big = ds.plate.cols > 12;
-  const marg = layerMargins(ds, maps), names = S.view.plateMode !== 'call' && !big;
-  // the grid: a first column for the labels of the layer by rows (as wide as they are, up to --rmw), a first row for the
-  // brackets of the layer by columns; each layer's name stands with its labels: over those of the rows, before the
-  // brackets (on a row of its own above them when no layer is by rows, the corner being too narrow for it)
-  const C1 = marg.row ? 3 : 2, top = !!marg.col && !marg.row, RB = top ? 2 : 1, R0 = marg.col ? RB + 1 : 1, margins = [];
-  const hids = test => ds.order.filter(id => ds.wells[id].y && test(ds.wells[id])).join(' ');
-  const what = (M, g) => ': ' + M.name + ' ' + gName(g);
+/** Evaluate layer M along axis ('r' = rows over columns [b0..b1]; 'c' = cols over rows [b0..b1]).
+    Allows ungrouped wells (e.g. control columns) on the same line, while rejecting conflicting groups on one line
+    and guarding against inconsistent sparse diagonal blocks. */
+function sliceLines(ds, M, axis, b0, b1) {
+  const n = axis === 'r' ? ds.plate.rows : ds.plate.cols;
+  const hasData = ds.order.some(id => !!ds.wells[id].y);
+  const lines = [];
+  for (let a = 0; a < n; a++) {
+    let v = null, cnt = 0, tot = 0, minB = 1e9, maxB = -1;
+    for (let b = b0; b <= b1; b++) {
+      const id = axis === 'r' ? C.wellId(a, b) : C.wellId(b, a);
+      const w = ds.wells[id], g = M.of.get(id) || null;
+      if (hasData ? (w.y || g) : true) tot++;
+      if (!g) continue;
+      if (v && v !== g) return null;
+      v = g; cnt++;
+      if (b < minB) minB = b;
+      if (b > maxB) maxB = b;
+    }
+    lines.push({ v: !tot && !cnt ? undefined : v, cnt, tot, minB, maxB });
+  }
+  const grouped = lines.filter(x => x.v);
+  if (!grouped.length) return { ok: true, empty: true, v: lines.map(x => x.v), distinct: 0, runs: 0, avgCov: 0, allFull: false, spanMin: b0, spanMax: b1, rangeText: '' };
+  const distinct = new Set(grouped.map(x => x.v)).size;
+  const allFull = grouped.every(x => x.tot === 0 || x.cnt >= x.tot);
+  const sameSpan = grouped.every(x => x.minB === grouped[0].minB && x.maxB === grouped[0].maxB);
+  const minCov = Math.min(...grouped.map(x => (x.tot ? x.cnt / x.tot : 1)));
+  const sumCnt = grouped.reduce((s, x) => s + x.cnt, 0), sumTot = grouped.reduce((s, x) => s + Math.max(x.tot, x.cnt), 0);
+  const avgCov = sumTot ? sumCnt / sumTot : 1;
+  if (!(allFull || sameSpan || (minCov >= 0.5 && avgCov >= 0.65))) return null;
+  const spanMin = Math.min(...grouped.map(x => x.minB)), spanMax = Math.max(...grouped.map(x => x.maxB));
+  const rangeText = axis === 'r' ? (spanMin === spanMax ? String(spanMin + 1) : `${spanMin + 1}–${spanMax + 1}`)
+    : (spanMin === spanMax ? C.LETTERS[spanMin] : `${C.LETTERS[spanMin]}–${C.LETTERS[spanMax]}`);
+  const v = lines.map(x => x.v);
+  return { ok: true, empty: false, v, distinct, allFull, sameSpan, avgCov, spanMin, spanMax, rangeText, runs: lineRuns(v).filter(r => r[2]).length, b0, b1 };
+}
+/** 4-connected components of each group in layer M (used for contiguous block borders & corner badges). */
+function layerBlocks(ds, M) {
+  const { rows, cols } = ds.plate, seen = new Set(), comps = [];
+  for (const g of M.groups) {
+    const member = new Set();
+    for (const [id, gr] of M.of) if (gr === g) member.add(id);
+    if (!member.size) continue;
+    for (const start of member) {
+      if (seen.has(start)) continue;
+      const q = [start], ids = [];
+      seen.add(start);
+      let r0 = rows, r1 = -1, c0 = cols, c1 = -1;
+      while (q.length) {
+        const cur = q.shift(), w = ds.wells[cur];
+        ids.push(cur);
+        if (w.r < r0) r0 = w.r;
+        if (w.r > r1) r1 = w.r;
+        if (w.c < c0) c0 = w.c;
+        if (w.c > c1) c1 = w.c;
+        for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          const nr = w.r + dr, nc = w.c + dc;
+          if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+          const nid = C.wellId(nr, nc);
+          if (member.has(nid) && !seen.has(nid)) { seen.add(nid); q.push(nid); }
+        }
+      }
+      let anchorC = cols;
+      for (const id of ids) { const w = ds.wells[id]; if (w.r === r0 && w.c < anchorC) anchorC = w.c; }
+      comps.push({ M, g, ids, r0, r1, c0, c1, anchorR: r0, anchorC });
+    }
+  }
+  return comps;
+}
+/** Classify how layer M maps geometrically onto the plate:
+    1) 'row' / 'col' (full-axis single-side outer margin, tolerating ungrouped wells e.g. controls);
+    2) 'row-split' (Left+Right) / 'col-split' (Top+Bottom) for half-plate / 2-band layouts;
+    3) 'blocks' (contiguous multi-well regions -> dashed borders + corner capsule badges);
+    4) 'scattered' (falls back to in-well encoding). */
+function classifyLayerGeo(ds, M) {
+  if (!M.of.size) return { kind: 'none', M };
+  const { rows, cols } = ds.plate;
+  const distinctAll = new Set(M.of.values()).size;
+  const rFull = sliceLines(ds, M, 'r', 0, cols - 1);
+  const cFull = sliceLines(ds, M, 'c', 0, rows - 1);
+  const elig = s => !!(s && s.ok && !s.empty && (s.distinct >= 2 || (s.allFull && s.v.some(x => x === null))));
+  const rOk = elig(rFull), cOk = elig(cFull);
+  if (rOk || cOk) {
+    let pick = rOk && !cOk ? 'r' : !rOk && cOk ? 'c' : null;
+    if (!pick) {
+      const sc = s => (s.allFull ? 100 : 0) + s.distinct * 5 + s.avgCov * 20 - s.runs * 0.5;
+      pick = sc(rFull) >= sc(cFull) ? 'r' : 'c';
+    }
+    const tr = pick === 'r' ? rFull : cFull;
+    return { kind: pick === 'r' ? 'row' : 'col', M, track: tr, scope: tr.allFull ? '' : tr.rangeText };
+  }
+  if (distinctAll >= 2) {
+    let bestRow = null, bestCol = null;
+    const occCols = [...M.of.keys()].map(id => ds.wells[id].c), midC = (Math.min(...occCols) + Math.max(...occCols) + 1) / 2;
+    for (let sc = 1; sc < cols; sc++) {
+      const L1 = sliceLines(ds, M, 'r', 0, sc - 1), R1 = sliceLines(ds, M, 'r', sc, cols - 1);
+      if (!L1 || !R1 || L1.empty || R1.empty) continue;
+      const score = (L1.allFull && R1.allFull ? 100 : 0) + (L1.avgCov + R1.avgCov) * 25 - (L1.runs + R1.runs) * 1.2 - Math.abs(sc - midC) * 1.5;
+      if (!bestRow || score > bestRow.score) bestRow = { kind: 'row-split', M, split: sc, left: L1, right: R1, score };
+    }
+    const occRows = [...M.of.keys()].map(id => ds.wells[id].r), midR = (Math.min(...occRows) + Math.max(...occRows) + 1) / 2;
+    for (let sr = 1; sr < rows; sr++) {
+      const T1 = sliceLines(ds, M, 'c', 0, sr - 1), B1 = sliceLines(ds, M, 'c', sr, rows - 1);
+      if (!T1 || !B1 || T1.empty || B1.empty) continue;
+      const score = (T1.allFull && B1.allFull ? 100 : 0) + (T1.avgCov + B1.avgCov) * 25 - (T1.runs + B1.runs) * 1.2 - Math.abs(sr - midR) * 1.5;
+      if (!bestCol || score > bestCol.score) bestCol = { kind: 'col-split', M, split: sr, top: T1, bot: B1, score };
+    }
+    if (bestRow || bestCol) return !bestCol || (bestRow && bestRow.score >= bestCol.score) ? bestRow : bestCol;
+  }
+  const comps = layerBlocks(ds, M);
+  if (comps.length && comps.some(c => c.ids.length >= 2) && comps.length <= 36) return { kind: 'blocks', M, comps };
+  return { kind: 'scattered', M };
+}
+/** Build outer margin grid cells for any set of tracks { left, right, top, bot } around a plate grid.
+    Returns { nL, nR, nT, nB, C_RH, C_W0, R_CH, R_W0, colTpl, cells, rmw }. */
+function buildMarginGrid(ds, tracks, dark, big, mini) {
+  const { rows, cols } = ds.plate;
+  const nL = tracks.left.length, nR = tracks.right.length, nT = tracks.top.length, nB = tracks.bot.length;
+  // When no left track exists, top/bottom tracks get a slim caption row each so wells keep 100% width
+  const capTop = nL === 0 && nT > 0, capBot = nL === 0 && nB > 0;
+  const topRows = nT * (capTop ? 2 : 1), botRows = nB * (capBot ? 2 : 1);
+  const C_RH = nL + 1, C_W0 = nL + 2;
+  const R_CH = topRows + 1, R_W0 = topRows + 2;
+  const rhW = mini ? (big ? '12px' : '15px') : (big ? '16px' : '20px');
+  const colTpl = [...tracks.left.map(() => 'fit-content(var(--rmw))'), rhW, `repeat(${cols}, minmax(0, 1fr))`, ...tracks.right.map(() => 'fit-content(var(--rmw))')].join(' ');
+  const sideN = nL + nR;
+  const rmw = mini ? (big ? '46px' : '58px') : sideN >= 3 ? (big ? '58px' : '72px') : sideN === 2 ? (big ? '72px' : '88px') : (big ? '86px' : '112px');
+  const cells = [];
   const label = g => `${vqHtml(g.color, dark)}<span>${esc(gName(g))}</span>`;
-  const head = (M, cls, place) => `<div class="mgh${cls}" style="${place}" title="${esc(M.name)}" translate="no"><span>${esc(M.name)}</span></div>`;
-  if (marg.col) {
-    const M = marg.col.M;
-    if (top) margins.push(head(M, ' top', 'grid-row:1;grid-column:1 / -1'), '<div style="grid-row:2;grid-column:1"></div>');
-    else margins.push(head(M, '', `grid-row:1;grid-column:1 / ${C1}`));
-    for (const [a, b, g] of lineRuns(marg.col.v)) {
-      margins.push(`<div class="mgb${g ? '' : ' e'}" style="grid-row:${RB};grid-column:${C1 + a} / ${C1 + b + 1}"${g ? ` data-hids="${hids(w => w.c >= a && w.c <= b && M.of.get(w.id) === g)}" title="${esc((a === b ? L('Column {0}', a + 1) : L('Columns {0}–{1}', a + 1, b + 1)) + what(M, g))}"` : ''} translate="no">${g ? label(g) : ''}</div>`);
+  const hids = (M, test) => ds.order.filter(id => M.of.has(id) && test(ds.wells[id])).join(' ');
+  const mTitle = (M, scope) => scope ? `${M.name} (${scope})` : M.name;
+  const headHtml = (M, scope, cls, place) => `<div class="mgh${cls}" style="${place}" title="${esc(mTitle(M, scope))}" translate="no"><span>${esc(M.name)}${scope ? `<span class="mr">(${esc(scope)})</span>` : ''}</span></div>`;
+  const what = (M, g) => ': ' + M.name + ' · ' + gName(g);
+
+  // Top column tracks (outermost first = row 1)
+  tracks.top.forEach((tr, ti) => {
+    const M = tr.M, scope = tr.scope || '';
+    const rCap = capTop ? 1 + ti * 2 : 0, rBr = capTop ? 2 + ti * 2 : 1 + ti;
+    if (capTop) cells.push(headHtml(M, scope, ' top', `grid-row:${rCap};grid-column:1 / -1`));
+    else cells.push(headHtml(M, scope, '', `grid-row:${rBr};grid-column:1 / ${C_W0}`));
+    for (const [a, b, g] of lineRuns(tr.v)) {
+      const ids = g ? hids(M, w => w.c >= a && w.c <= b && w.r >= tr.b0 && w.r <= tr.b1 && M.of.get(w.id) === g) : '';
+      const tip = g ? (scope ? `${scope}, ` : '') + (a === b ? L('Column {0}', a + 1) : L('Columns {0}–{1}', a + 1, b + 1)) + what(M, g) : '';
+      cells.push(`<div class="mgb${g ? '' : ' e'}" style="grid-row:${rBr};grid-column:${C_W0 + a} / ${C_W0 + b + 1}"${ids ? ` data-hids="${ids}" title="${esc(tip)}"` : ''} translate="no">${g ? label(g) : ''}</div>`);
+    }
+  });
+
+  // Left row tracks (outermost at col 1, innermost next to row headers at col nL)
+  tracks.left.forEach((tr, li) => {
+    const M = tr.M, scope = tr.scope || '', col = 1 + li;
+    cells.push(headHtml(M, scope, '', `grid-row:${R_CH};grid-column:${col}`));
+    for (const [a, b, g] of lineRuns(tr.v)) {
+      const ids = g ? hids(M, w => w.r >= a && w.r <= b && w.c >= tr.b0 && w.c <= tr.b1 && M.of.get(w.id) === g) : '';
+      const tip = g ? (a === b ? L('Row {0}', C.LETTERS[a]) : L('Rows {0}–{1}', C.LETTERS[a], C.LETTERS[b])) + (scope ? ` (${scope})` : '') + what(M, g) : '';
+      cells.push(`<div class="mg${g && b > a ? ' run' : ''}" style="grid-row:${R_W0 + a} / ${R_W0 + b + 1};grid-column:${col}"${ids ? ` data-hids="${ids}" title="${esc(tip)}"` : ''} translate="no">${g ? label(g) : ''}</div>`);
+    }
+  });
+
+  // Right row tracks (innermost right next to last well column, expanding outward)
+  tracks.right.forEach((tr, ri) => {
+    const M = tr.M, scope = tr.scope || '', col = C_W0 + cols + ri;
+    cells.push(headHtml(M, scope, ' right', `grid-row:${R_CH};grid-column:${col}`));
+    for (const [a, b, g] of lineRuns(tr.v)) {
+      const ids = g ? hids(M, w => w.r >= a && w.r <= b && w.c >= tr.b0 && w.c <= tr.b1 && M.of.get(w.id) === g) : '';
+      const tip = g ? (a === b ? L('Row {0}', C.LETTERS[a]) : L('Rows {0}–{1}', C.LETTERS[a], C.LETTERS[b])) + (scope ? ` (${scope})` : '') + what(M, g) : '';
+      cells.push(`<div class="mg right${g && b > a ? ' run' : ''}" style="grid-row:${R_W0 + a} / ${R_W0 + b + 1};grid-column:${col}"${ids ? ` data-hids="${ids}" title="${esc(tip)}"` : ''} translate="no">${g ? label(g) : ''}</div>`);
+    }
+  });
+
+  // Bottom column tracks (innermost right below last well row)
+  tracks.bot.forEach((tr, bi) => {
+    const M = tr.M, scope = tr.scope || '';
+    const rBr = R_W0 + rows + bi * (capBot ? 2 : 1), rCap = capBot ? rBr + 1 : 0;
+    if (capBot) cells.push(headHtml(M, scope, ' bot', `grid-row:${rCap};grid-column:1 / -1`));
+    else cells.push(headHtml(M, scope, '', `grid-row:${rBr};grid-column:1 / ${C_W0}`));
+    for (const [a, b, g] of lineRuns(tr.v)) {
+      const ids = g ? hids(M, w => w.c >= a && w.c <= b && w.r >= tr.b0 && w.r <= tr.b1 && M.of.get(w.id) === g) : '';
+      const tip = g ? (scope ? `${scope}, ` : '') + (a === b ? L('Column {0}', a + 1) : L('Columns {0}–{1}', a + 1, b + 1)) + what(M, g) : '';
+      cells.push(`<div class="mgb bot${g ? '' : ' e'}" style="grid-row:${rBr};grid-column:${C_W0 + a} / ${C_W0 + b + 1}"${ids ? ` data-hids="${ids}" title="${esc(tip)}"` : ''} translate="no">${g ? label(g) : ''}</div>`);
+    }
+  });
+
+  return { nL, nR, nT, nB, C_RH, C_W0, R_CH, R_W0, colTpl, cells, rmw, hasAny: nL + nR + nT + nB > 0 };
+}
+
+let CUR_PA = null;
+/** Compute full plate annotations for the current mode (Single or Stack, also supporting heat maps for outer margins). */
+function plateAnnot(ds, hk) {
+  const lv = lvOf(ds), stack = layerStack(ds), maps = layerMaps(ds), gs = ds.gs, dark = isDark(), big = ds.plate.cols > 12;
+  const hidSet = new Set(lv.pHid || []);
+  const visMaps = stack ? maps.filter(M => !hidSet.has(M.s.id)) : [maps[gs]];
+  const tracks = { left: [], right: [], top: [], bot: [] }, blockLayers = [], geoBySi = new Map(), margPlace = new Map();
+  const MAX_TR = 3;
+  // Classify visible layers that have assigned wells; in Stack mode put secondary layers in outer tracks first,
+  // and also include active layer if room permits so users can read all regular axes cleanly at once.
+  const ordered = stack ? visMaps.filter(M => M.si !== gs).concat(visMaps.filter(M => M.si === gs)) : visMaps;
+  for (const M of ordered) {
+    if (!M.of.size) continue;
+    const geo = classifyLayerGeo(ds, M);
+    geoBySi.set(M.si, geo);
+    let placed = false;
+    if (lv.pMarg !== false) {
+      if (geo.kind === 'row' && tracks.left.length < MAX_TR) {
+        tracks.left.push(Object.assign({}, geo.track, { M, scope: geo.scope }));
+        margPlace.set(M.si, { kind: 'row', full: geo.track.allFull });
+        placed = true;
+      } else if (geo.kind === 'col' && tracks.top.length < MAX_TR) {
+        tracks.top.push(Object.assign({}, geo.track, { M, scope: geo.scope }));
+        margPlace.set(M.si, { kind: 'col', full: geo.track.allFull });
+        placed = true;
+      } else if (geo.kind === 'row-split' && tracks.left.length < MAX_TR && tracks.right.length < MAX_TR) {
+        tracks.left.push(Object.assign({}, geo.left, { M, scope: geo.left.rangeText }));
+        tracks.right.push(Object.assign({}, geo.right, { M, scope: geo.right.rangeText }));
+        margPlace.set(M.si, { kind: 'row-split', full: geo.left.allFull && geo.right.allFull });
+        placed = true;
+      } else if (geo.kind === 'col-split' && tracks.top.length < MAX_TR && tracks.bot.length < MAX_TR) {
+        tracks.top.push(Object.assign({}, geo.top, { M, scope: geo.top.rangeText }));
+        tracks.bot.push(Object.assign({}, geo.bot, { M, scope: geo.bot.rangeText }));
+        margPlace.set(M.si, { kind: 'col-split', full: geo.top.allFull && geo.bot.allFull });
+        placed = true;
+      }
+    }
+    if (!placed && lv.pBlock !== false && geo.kind === 'blocks' && !hk) {
+      blockLayers.push({ M, comps: geo.comps, secondary: stack && M.si !== gs });
+      margPlace.set(M.si, { kind: 'blocks', full: true });
     }
   }
-  if (marg.row) {
-    const M = marg.row.M;
-    margins.push(head(M, '', `grid-row:${R0};grid-column:1`));
-    for (const [a, b, g] of lineRuns(marg.row.v)) {
-      margins.push(`<div class="mg${g && b > a ? ' run' : ''}" style="grid-row:${R0 + 1 + a} / ${R0 + 2 + b};grid-column:1"${g ? ` data-hids="${hids(w => w.r >= a && w.r <= b && M.of.get(w.id) === g)}" title="${esc((a === b ? L('Row {0}', C.LETTERS[a]) : L('Rows {0}–{1}', C.LETTERS[a], C.LETTERS[b])) + what(M, g))}"` : ''} translate="no">${g ? label(g) : ''}</div>`);
-    }
-  }
-  // the small squares: a slot for each other layer that has groups, in layer order, the same in every well (a layer that
-  // does not group the well: an empty one; none at all when no other layer groups it). The class p0, p1 … of a square is
-  // its turn: when not all of them fit (fitStack), those first in turn are drawn
-  const sqL = oth.filter(M => layerValues(ds, M).length);
-  const rank = M => { const x = marg.row && marg.row.M === M ? marg.row : marg.col && marg.col.M === M ? marg.col : null; return !x ? 0 : x.full ? 2 : 1; };
+  const mg = buildMarginGrid(ds, tracks, dark, big, false);
+  const showStackInWell = stack && !hk;
+  const oth = visMaps.filter(M => M.si !== gs);
+  const sqL = showStackInWell ? oth.filter(M => layerValues(ds, M).length) : [];
+  const rank = M => { const p = margPlace.get(M.si); return !p ? 0 : p.full ? 2 : 1; };
   const turn = sqL.map((M, k) => [M, k]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(x => x[0]);
-  const well = w => {
+  const names = showStackInWell && S.view.plateMode !== 'call' && !big;
+  const activeShown = !stack || !hidSet.has(maps[gs].s.id);
+  const well = showStackInWell ? (w => {
     const sq = sqL.map(M => M.of.get(w.id) || null), any = sq.some(Boolean);
     let h = any ? `<span class="wsq">${sq.map((g, k) => { const t = 'p' + turn.indexOf(sqL[k]); return g ? vqHtml(g.color, dark, t) : VQ_NONE.replace('vq e', 'vq e ' + t); }).join('')}</span>` : '';
     if (names) {
-      // the names: the active layer's group first (a well it does not group: the well's own name, in grey - it is no
-      // group), the other layers' groups joined as a second line, one name for each layer, also where two of them are
-      // named alike; the well's own name once (a control named as its group in another layer, the active layer not
-      // grouping it: its name alone, which then may take two lines)
-      const a = maps[gs].of.get(w.id), first = a ? gName(a) : w.name || '';
+      const a = activeShown ? maps[gs].of.get(w.id) : null, first = a ? gName(a) : w.name || '';
       const rest = oth.map(M => M.of.get(w.id)).filter(Boolean).map(gName).filter(t => a || t !== first).join('·');
       const cls = [rest ? '' : 'w2', a ? '' : 'sn'].filter(Boolean).join(' ');
       if (first || rest) h += `<span class="wnm${any ? ' q' : ''}" translate="no"><b${cls ? ` class="${cls}"` : ''}>${esc(first)}</b>${rest ? `<span>${esc(rest)}</span>` : ''}</span>`;
     }
     return h;
-  };
-  return { maps, oth, sqL, turn, marg, margins, well };
+  }) : null;
+  return { stack: showStackInWell, isStackMode: stack, maps, visMaps, hidSet, activeShown, oth, sqL, turn, geoBySi, margPlace, tracks, blockLayers, mg, margins: mg.cells, well };
 }
-/** What the head of the plate card adds: " · 2 excluded", " · 3 layers stacked" (a heat map: the active layer's only)
-    or the name of the active layer. hk: the heat map shown. */
+/** Backwards-compatible wrapper used by fitStack when rebuilding the layer key. */
+function layerPlate(ds, hk) {
+  if (!layerStack(ds) || hk) return null;
+  return plateAnnot(ds, hk);
+}
+/** Draw SVG block borders (#plateBlocksSvg) and corner capsule badges (#plateBlocks) for block-structured layers. */
+function drawBlockOverlay() {
+  const svg = $('#plateBlocksSvg'), box = $('#plateBlocks'), ds = curDS(), PA = CUR_PA;
+  if (!svg || !box) return;
+  if (!ds || !PA || !PA.blockLayers.length || layerSplit(ds) || !wellEls.get(C.wellId(0, 0))) {
+    if (svg.firstChild) svg.textContent = '';
+    if (box.firstChild) box.textContent = '';
+    return;
+  }
+  const { rows, cols } = ds.plate, at = (r, c) => wellEls.get(C.wellId(r, c)), dark = isDark(), big = cols > 12;
+  const xs = [], ys = [];
+  for (let c = 0; c < cols; c++) { const e = at(0, c); xs.push([e.offsetLeft, e.offsetLeft + e.offsetWidth]); }
+  for (let r = 0; r < rows; r++) { const e = at(r, 0); ys.push([e.offsetTop, e.offsetTop + e.offsetHeight]); }
+  const gx = cols > 1 ? xs[1][0] - xs[0][1] : 4, gy = rows > 1 ? ys[1][0] - ys[0][1] : 4;
+  const xb = c => (c <= 0 ? xs[0][0] - gx / 2 : c >= cols ? xs[cols - 1][1] + gx / 2 : (xs[c - 1][1] + xs[c][0]) / 2);
+  const yb = r => (r <= 0 ? ys[0][0] - gy / 2 : r >= rows ? ys[rows - 1][1] + gy / 2 : (ys[r - 1][1] + ys[r][0]) / 2);
+  const n1 = x => x.toFixed(1), wrap = svg.parentElement;
+  let paths = '';
+  const tags = [], usedAnchors = new Map();
+  PA.blockLayers.forEach((bl, bi) => {
+    const sw = big ? 1.2 : 1.7, dash = bl.secondary ? ' stroke-dasharray="4 2.5"' : '';
+    const byCol = new Map(), addP = (col, d) => byCol.set(col, (byCol.get(col) || '') + d);
+    for (const comp of bl.comps) {
+      const col = resolveColor(comp.g.color, dark) || MARK_INK[dark ? 'dark' : 'light'];
+      const edges = outlineEdges(ds, new Set(comp.ids));
+      for (const [m, k] of edges) {
+        const [r, c] = k.split(':').map(Number);
+        if (m === 'h') addP(col, `M${n1(xb(c))} ${n1(yb(r))}H${n1(xb(c + 1))}`);
+        else addP(col, `M${n1(xb(c))} ${n1(yb(r))}V${n1(yb(r + 1))}`);
+      }
+      const akey = comp.anchorR + ':' + comp.anchorC;
+      const slot = usedAnchors.get(akey) || 0;
+      usedAnchors.set(akey, slot + 1);
+      const x = Math.max(2, xs[comp.anchorC][0] + 2);
+      const y = Math.max(1, ys[comp.anchorR][0] - 7 + slot * 16);
+      const maxW = Math.max(46, Math.min(150, xs[comp.c1][1] - xs[comp.anchorC][0] - 2));
+      const tip = `${bl.M.name} · ${gName(comp.g)} (${L('{0:well}', comp.ids.length)})`;
+      tags.push(`<button class="btag" type="button" data-hids="${comp.ids.join(' ')}" style="left:${n1(x)}px;top:${n1(y)}px;max-width:${n1(maxW)}px;--c:${col}" title="${esc(tip)}" translate="no">${vqHtml(comp.g.color, dark)}<span>${esc(gName(comp.g))}</span></button>`);
+    }
+    for (const [col, d] of byCol) paths += `<path d="${d}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-opacity="${bl.secondary ? '0.72' : '0.82'}"${dash} stroke-linecap="round"/>`;
+  });
+  svg.setAttribute('width', wrap.clientWidth);
+  svg.setAttribute('height', wrap.clientHeight);
+  svg.innerHTML = paths;
+  box.innerHTML = tags.join('');
+}
+/** Plate card toolbar (#plateBar): switch Single / Stack / Split, per-layer plate visibility, outer labels & block badges. */
+function renderPlateBar(ds) {
+  const bar = $('#plateBar');
+  if (!bar) return;
+  const multi = ds.sets.length > 1, anyG = hasAssignedGroups(ds);
+  if (!multi && !anyG) { bar.hidden = true; if (bar.firstChild) bar.innerHTML = ''; return; }
+  bar.hidden = false;
+  const lv = lvOf(ds), mode = lv.mode, hidSet = new Set(lv.pHid || []);
+  let h = '';
+  if (multi) {
+    h += `<div class="seg sm vseg" role="group" aria-label="${esc(L('How the layers are shown'))}">`
+      + `<button type="button" data-lmode="expand"${mode === 'expand' ? ' class="on"' : ''} title="${esc(L('Show one layer at a time on the main plate, group list and curves (switch layers with the tabs on the left)'))}">${esc(L('Single'))}</button>`
+      + `<button type="button" data-lmode="stack"${mode === 'stack' ? ' class="on"' : ''} title="${esc(L('Every layer on the wells at once: the colour follows the active layer, every other layer is a small square at the top right of each well'))}">${esc(L('Stack'))}</button>`
+      + `<button type="button" data-lmode="split"${mode === 'split' ? ' class="on"' : ''} title="${esc(L('Show each grouping layer on its own mini-plate side by side (the group list below still edits the active layer)'))}">${esc(L('Split'))}</button></div>`;
+    if (mode === 'stack') {
+      h += '<div class="pl-pills">' + ds.sets.map((s, i) => {
+        const on = i === ds.gs, vis = !hidSet.has(s.id);
+        return `<span class="pl-pill${on ? ' on' : ''}${vis ? '' : ' off'}"><input type="checkbox" data-pvis="${esc(s.id)}"${vis ? ' checked' : ''} title="${esc(L('Show or hide “{0}” on the stacked plate', s.name))}"><span class="pl-nm" data-pact="${i}" title="${esc(on ? L('Active layer (double-click to rename)') : L('Make “{0}” the active layer: the colour of the wells, the first line of their names and the curves follow it', s.name))}" translate="no">${esc(s.name)}</span></span>`;
+      }).join('') + '</div>';
+    }
+  }
+  h += `<span class="pl-opts">`
+    + `<label class="chk" title="${esc(L('Show row / column labels outside the plate (including left/right or top/bottom halves)'))}"><input type="checkbox" data-popt="pMarg"${lv.pMarg !== false ? ' checked' : ''}> ${esc(L('Outer labels'))}</label>`
+    + (mode !== 'split' ? `<label class="chk" title="${esc(L('Draw block borders and corner badges for contiguous non-row/col blocks'))}"><input type="checkbox" data-popt="pBlock"${lv.pBlock !== false ? ' checked' : ''}> ${esc(L('Block badges'))}</label>` : '')
+    + `</span>`;
+  bar.innerHTML = h;
+}
+/** Render side-by-side mini-plates (one plate per grouping layer) inside #splitPlates when mode === 'split'. */
+function renderSplitPlates(ds, hk) {
+  const box = $('#splitPlates'), maps = layerMaps(ds), { rows, cols } = ds.plate, big = cols > 12, dark = isDark(), lv = lvOf(ds);
+  const cards = maps.map(M => {
+    const on = M.si === ds.gs, vs = layerValues(ds, M), nUsed = new Set([...M.of.values()]).size;
+    const tracks = { left: [], right: [], top: [], bot: [] };
+    if (lv.pMarg !== false && M.of.size) {
+      const geo = classifyLayerGeo(ds, M);
+      if (geo.kind === 'row') tracks.left.push(Object.assign({}, geo.track, { M, scope: geo.scope }));
+      else if (geo.kind === 'col') tracks.top.push(Object.assign({}, geo.track, { M, scope: geo.scope }));
+      else if (geo.kind === 'row-split') {
+        tracks.left.push(Object.assign({}, geo.left, { M, scope: geo.left.rangeText }));
+        tracks.right.push(Object.assign({}, geo.right, { M, scope: geo.right.rangeText }));
+      } else if (geo.kind === 'col-split') {
+        tracks.top.push(Object.assign({}, geo.top, { M, scope: geo.top.rangeText }));
+        tracks.bot.push(Object.assign({}, geo.bot, { M, scope: geo.bot.rangeText }));
+      }
+    }
+    const mg = buildMarginGrid(ds, tracks, dark, big, true);
+    const parts = [`<div class="mp-hd" data-all="1" style="grid-row:${mg.R_CH};grid-column:${mg.C_RH}" title="${esc(L('Select all / none'))}">⊞</div>`];
+    for (let c = 0; c < cols; c++) parts.push(`<div class="mp-hd" data-col="${c}" style="grid-row:${mg.R_CH};grid-column:${mg.C_W0 + c}" title="${esc(L('Select column {0}', c + 1))}">${c + 1}</div>`);
+    for (let r = 0; r < rows; r++) {
+      parts.push(`<div class="mp-hd" data-row="${r}" style="grid-row:${mg.R_W0 + r};grid-column:${mg.C_RH}" title="${esc(L('Select row {0}', C.LETTERS[r]))}">${C.LETTERS[r]}</div>`);
+      for (let c = 0; c < cols; c++) {
+        const w = ds.wells[C.wellId(r, c)], g = M.of.get(w.id) || null;
+        const col = g ? resolveColor(g.color, dark) : null, mk = g ? markOf(g.color) : null;
+        const cls = ['mp-well'];
+        if (!w.y) cls.push('nodata');
+        if (w.excluded) cls.push('excl');
+        if (ds.sel.has(w.id)) cls.push('sel');
+        if (col) cls.push('gc');
+        if (mk && mk !== 'f') cls.push('m-' + mk);
+        const st = `grid-row:${mg.R_W0 + r};grid-column:${mg.C_W0 + c};` + (col ? `--wbg:${mk ? 'var(--surface)' : rgba(col, dark ? 0.24 : 0.16)};--gc:${col};` : '');
+        parts.push(`<div class="${cls.join(' ')}" data-w="${w.id}" style="${st}"></div>`);
+      }
+    }
+    parts.push(...mg.cells);
+    const leg = vs.length
+      ? vs.map(g => { const ids = ds.order.filter(id => M.of.get(id) === g); return `<span class="lgw" data-hids="${ids.join(' ')}" translate="no">${vqHtml(g.color, dark)}${esc(gName(g))}<span class="n">${ids.length}</span></span>`; }).join('')
+      : `<span class="hint">${esc(L('No groups yet'))}</span>`;
+    return `<div class="mp-card${on ? ' on' : ''}" data-mpsi="${M.si}">
+      <div class="mp-head" data-mpact="${M.si}"><span class="nm" translate="no">${esc(M.name)}</span>${on ? `<span class="tag role">${esc(L('active'))}</span>` : ''}<span class="hint">${nUsed ? Lc('count', '{0:group}', nUsed) : esc(L('Empty'))}</span><button class="btn sm ghost" type="button" data-mpfocus="${M.si}" title="${esc(L('Show only “{0}” on the main plate', M.name))}">${esc(L('Focus'))}</button></div>
+      <div class="mp-wrap"><div class="mp-grid${big ? ' mp384' : ''}" style="grid-template-columns:${mg.colTpl};--rmw:${mg.rmw}">${parts.join('')}</div></div>
+      <div class="mp-leg">${leg}</div></div>`;
+  });
+  box.innerHTML = cards.join('');
+}
+/** What the head of the plate card adds. */
 function layerPlateInfo(ds, hk) {
   const ex = dataWells(ds).filter(w => w.excluded).length, nm = ds.sets[ds.gs].name;
-  return (ex ? L(' · {0} excluded', ex) : '') + (layerStack(ds) ? (hk ? L(' · heat map: “{0}” only', nm) : L(' · {0} layers stacked', ds.sets.length)) : ds.sets.length > 1 ? ' · ' + nm : '');
+  return (ex ? L(' · {0} excluded', ex) : '') + (layerSplit(ds) ? L(' · {0} layers split', ds.sets.length) : layerStack(ds) ? (hk ? L(' · heat map: “{0}” only', nm) : L(' · {0} layers stacked', ds.sets.length)) : ds.sets.length > 1 ? ' · ' + nm : '');
 }
-/** What fits into the wells of stacked layers: wd, h the inner size of a well, n the layers that have squares, big 384
-    wells, need the room the first line of names wants (px), fine: every square can be drawn small (no half filled or
-    dotted marks, which need 4 px to be told apart). -> { n: the squares drawn (those first in turn), edge: on the top
-    edge of the wells, nm: the lines of names ('nm-2', 'nm-1', 'nm-0'; 384 wells: none), small: squares of 3 px }. 96
-    wells: squares of 6 px beside the first line of names while that leaves the names their room, else squares of 4 px on
-    the top edge (the names keep the width of the well); 384 wells: squares of 4 px below the top edge, or of 3 px with
-    gaps of 1 px where more of them fit so (11 px wells: 2 instead of 1). As many as fit. */
+/** What fits into the wells of stacked layers. */
 function stackFit(big, wd, h, n, need, fine) {
   if (big) {
     const n4 = h < 10 ? 0 : Math.max(0, Math.min(n, Math.floor((wd - 1) / 6))), n3 = fine && h >= 9 ? Math.max(0, Math.min(n, Math.floor((wd - 1) / 4))) : 0;
@@ -8084,10 +8575,6 @@ function stackNote(fit, big) {
   return [fit.nm === 'nm-1' ? L('Wells not tall enough: the names of the active layer only, the others in the tooltip') : fit.nm === 'nm-0' ? L('Wells too small: the names are in the tooltip') : '',
     fit.edge && fit.n && fit.nm !== 'nm-0' ? L('the small squares on the top edge of the wells, to leave room for the names') : ''].filter(Boolean).join(' · ');
 }
-/** Stacked layers: what fits into the wells of the plate (stackFit, from their size and the widest first line of names of
-    the wells with squares, up to 30 px), shown by the classes of the plate - the lines of names, the squares drawn (sq-n:
-    the first n in turn) and where (sqe: on the top edge), squares of 3 px (sqsm: never "sqs", the class of the squares in
-    the group list, whose rule for every element would reach the plate) - and said by the note and the key under the plate. */
 let STACK_FIT = null;
 function fitStack() {
   const pl = $('#plate');
@@ -8104,23 +8591,19 @@ function fitStack() {
     for (const t of new Set(bs.map(b => b.textContent))) need = Math.max(need, plateInk.measureText(t).width);
     need = Math.min(30, Math.ceil(need) + 2);
   }
-  // (squares of 3 px only where no half filled or dotted mark has to be told apart)
   const fine = !big || !$$('.wsq .m-half, .wsq .m-dot', pl).length;
   const fit = (STACK_FIT = stackFit(big, w.clientWidth, w.clientHeight, n, need, fine));
   if (fit.nm) pl.classList.add(fit.nm);
   pl.classList.add('sq-' + fit.n);
   pl.classList.toggle('sqe', fit.edge);
   pl.classList.toggle('sqsm', !!fit.small);
-  pl.style.setProperty('--sqw', !big && fit.n && !fit.edge ? fit.n * 9 + 1 + 'px' : '0px');     // (the room of the squares beside the names)
+  pl.style.setProperty('--sqw', !big && fit.n && !fit.edge ? fit.n * 9 + 1 + 'px' : '0px');
   if (!big && fit.nm !== 'nm-0') fitStackNames(pl, w, fit);
   if (note) note.textContent = stackNote(fit, big);
-  // the key says which layers are squares: built again when that changed (the window made narrower or wider)
   const key = $('#plateFoot .lkey'), ds = curDS();
   if (key && key.dataset.fit !== fit.n + (fit.edge ? 'e' : '')) { const LP = ds && layerPlate(ds, null); if (LP) key.outerHTML = layerKeyHtml(ds, LP, fit); }
 }
-/** A name on two lines (in the font of ctx), where its two parts are the most even: broken only after a space or between
-    two Chinese characters, never inside a word or a number ("10⁻²", "1e-2", "R1" stay whole) -> { w: the width of the
-    longer part (px; 0: it cannot be broken), a, b: the two parts, a + b the name as it was }. */
+/** A name on two lines (in the font of ctx). */
 function twoLines(t, ctx) {
   const cs = Array.from(String(t)), han = c => /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/.test(c);
   let best = { w: 0, a: '', b: '' };
@@ -8133,21 +8616,14 @@ function twoLines(t, ctx) {
   }
   return best;
 }
-/** How a name fits into a well: w its width on one line and w2 on two lines (twoLines; 0: it cannot break) at the
-    size s0 (px), the room W × H px, lh the line height (a share of the size). One line at s0 while it fits; else the
-    larger of one line made smaller and two lines (where H takes them); the smallest: 7.5 px on two lines (the whole
-    name), else one line of 8 px, cut with an ellipsis (the whole name is in the tooltip). -> { size (px), two } */
+/** How a name fits into a well. */
 function nameFit(w, w2, s0, W, H, lh) {
   if (!(W > 0) || !(w > W)) return { size: s0, two: false };
   const q = x => Math.floor(x * 4) / 4, one = q(s0 * W / w), two = w2 > 0 ? q(Math.min(s0, s0 * W / w2, H / (2 * lh))) : 0;
   if (two >= 7.5 && two > one) return { size: two, two: true };
   return { size: Math.max(8, one), two: false };
 }
-/** Stacked layers, 96 wells: the first line of names of each well readable (fit: what fitStack found) - a name too long
-    for its well smaller, or, where it is alone in the well (no second line shown), on two lines from just below the
-    colour bar (nameFit; lines of Chinese closer together than those of Latin letters, which need room for their tails);
-    beside the squares it has the room they leave, without squares the width of the well. The second line (the other
-    layers' groups, in wells tall enough for it) smaller too where it is too long, on one line. */
+/** Stacked layers, 96 wells: fit first & second name lines inside each well. */
 function fitStackNames(pl, w, fit) {
   const bs = $$('.wnm b', pl);
   if (!bs.length) return;
@@ -8169,15 +8645,7 @@ function fitStackNames(pl, w, fit) {
     if (sp) { const r = nameFit(ink('400 10px ', sp.textContent)[0], 0, 10, W0, 0, 1); sp.style.fontSize = r.size === 10 ? '' : r.size + 'px'; }
   }
 }
-/** "Expand" with two layers or more, 96 wells: each well's group readable, from the size of the wells (fitPlate) - its
-    id before the name where the widest id fits with it (a name stands beside the ids of every column or of none), else
-    the name alone (the id is in the tooltip and the headers); a name too long for its well smaller, or on two lines
-    (nameFit; Chinese closer together, as fitStackNames) - written as two lines, broken where twoLines breaks it: after
-    a space or between two Chinese characters, never inside a word or a number such as "10⁻²". Never the id alone. Every
-    well of a name alike: measured in the narrowest of its labels. In "Call" the label of a positive well leaves room at
-    its right for the "+"; where a name is not whole in that room (cut: "Positive control" in the wells of 1360 px), the
-    "+" of every positive well goes up onto the colour bar at the top right (the plate's class pu) and every label has
-    the whole width of its well - the names as in the wells without a "+". */
+/** "Expand" with two layers or more, 96 wells: each well's group readable, from the size of the wells (fitPlate). */
 function fitExpand(pl) {
   if (pl) pl.classList.remove('pu');
   const ls = pl ? $$('.wl.lx', pl) : [];
@@ -8187,15 +8655,13 @@ function fitExpand(pl) {
   let idw = 0;
   for (const l of ls) idw = Math.max(idw, plateInk.measureText($('.wid', l).textContent).width);
   plateInk.font = '400 9.5px ' + getComputedStyle($('.wn', ls[0])).fontFamily;
-  // (the sizes read before anything is changed: the page is laid out once. PLUS: the room the "+" takes from a label -
-  // its right 13 px, not 3 px: .well .wl and .well .wl.lx.nr)
   const PLUS = 10, memo = new Map(), H = ls[0].parentElement.clientHeight - 7, room = new Map(), full = new Map();
   const ink = t => { if (!memo.has(t)) memo.set(t, [plateInk.measureText(t).width, twoLines(t, plateInk)]); return memo.get(t); };
   const fit = (t, W) => {
     const [tw, two] = ink(t), lh = /[A-Za-z]/.test(t) ? 1.1 : 1;
     if (idw + 4 + tw <= W) return { id: true, size: 9.5, two: false, lh, whole: true };
     const f = nameFit(tw, two.w, 9.5, W, H, lh);
-    return Object.assign(f, { id: false, lh, whole: f.two || tw * f.size / 9.5 <= W });     // (else cut with an ellipsis)
+    return Object.assign(f, { id: false, lh, whole: f.two || tw * f.size / 9.5 <= W });
   };
   const least = (m, t, W) => m.set(t, m.has(t) ? Math.min(m.get(t), W) : W);
   for (const l of ls) { const t = $('.wn', l).textContent, W = l.clientWidth - 0.5; least(room, t, W); least(full, t, l.classList.contains('nr') ? W : W + PLUS); }
@@ -8209,7 +8675,6 @@ function fitExpand(pl) {
     n.style.fontSize = f.size === 9.5 ? '' : f.size + 'px';
     n.style.lineHeight = f.two ? String(f.lh) : '';
     n.classList.toggle('t2', f.two);
-    // (two lines: a line each, the name's text as it was; one line: its text again where it had two)
     if (f.two) { const two = ink(t)[1]; n.innerHTML = `<span>${esc(two.a)}</span><span>${esc(two.b)}</span>`; }
     else if (n.firstElementChild) n.textContent = t;
   }
@@ -8218,9 +8683,6 @@ function fitExpand(pl) {
 function headParts(text) {
   return String(text).split(' · ').map((p, i, a) => `<span class="hp">${esc(p)}${i < a.length - 1 ? ' ·' : ''}</span>`).join(' ');
 }
-/** The heads of the plate card and of the group card written in full, never cut (their parts: headParts): on one line
-    beside the buttons while it fits there; else on two lines, wrapped between its parts (hc2); else on a row of its own
-    above the buttons (hcf), wrapped between its parts if that is still too narrow. */
 function fitHeads() {
   for (const c of [$('#plateInfo'), $('#groupCount')]) {
     const head = c && c.closest('.card-head');
@@ -8233,53 +8695,49 @@ function fitHeads() {
     head.classList.add('hcf');
   }
 }
-/** A tiny well for the key: the active layer is its colour and top bar, every other layer drawn as squares one of them
-    (j: its slot among the n drawn; edge: the squares on the top edge, as in narrow wells). */
+/** A tiny well for the key. */
 function roleGlyph(on, j, n, edge) {
   let s = `<svg viewBox="0 0 20 15" aria-hidden="true"><rect x=".5" y=".5" width="19" height="14" rx="3" fill="currentColor" fill-opacity="${on ? 0.16 : 0}" stroke="currentColor" stroke-opacity=".5"/><rect x="2.5" y="1" width="15" height="2.4" fill="currentColor" fill-opacity="${on ? 1 : 0.18}"/>`;
   for (let k = 0; k < n; k++) s += `<rect x="${(18.2 - (n - k) * 4.4).toFixed(1)}" y="${edge ? 0.5 : 5}" width="3.4" height="3.4" rx=".8" fill="currentColor" fill-opacity="${k === j ? 1 : 0.18}"${edge ? ' style="stroke:var(--surface);stroke-width:.8"' : ''}/>`;
   return s + '</svg>';
 }
-/** The key under a plate of stacked layers: what the colour and the small squares of the wells are - the squares really
-    drawn (fit: what fitStack found fits; at first all of them), and where the layers without squares are (beside the
-    plate, only in the tooltip) - then a line per layer: its part on the wells, its groups with their numbers of wells
-    (hover: those wells on the plate). */
+/** The key under a plate of stacked layers, with per-layer visibility checkboxes and placement notes. */
 function layerKeyHtml(ds, LP, fit) {
   const gs = ds.gs, A = LP.maps[gs], dark = isDark();
   fit = fit || { n: LP.sqL.length, edge: false };
   const first = LP.turn.slice(0, fit.n), drawn = LP.sqL.filter(M => first.includes(M)), off = LP.sqL.filter(M => !first.includes(M));
   const where = M => {
-    const r = LP.marg.row && LP.marg.row.M === M ? LP.marg.row : null, c = LP.marg.col && LP.marg.col.M === M ? LP.marg.col : null;
-    if (drawn.includes(M)) return r ? L('also beside the row letters') : c ? L('also over the column numbers') : '';
-    if (r) return r.full ? L('beside the row letters') : L('partly beside the row letters, the rest only in the tooltip');
-    if (c) return c.full ? L('over the column numbers') : L('partly over the column numbers, the rest only in the tooltip');
-    return L('only in the tooltip');
+    if (LP.hidSet && LP.hidSet.has(M.s.id)) return L('hidden on plate');
+    const p = LP.margPlace && LP.margPlace.get(M.si), sq = drawn.includes(M);
+    if (p) {
+      if (p.kind === 'row') return sq ? L('also beside the row letters') : L('beside the row letters');
+      if (p.kind === 'col') return sq ? L('also over the column numbers') : L('over the column numbers');
+      if (p.kind === 'row-split') return sq ? L('also beside rows (left & right)') : L('beside rows (left & right)');
+      if (p.kind === 'col-split') return sq ? L('also over & under columns') : L('over & under columns');
+      if (p.kind === 'blocks') return sq ? L('also block outlines & badges') : L('block outlines & badges');
+    }
+    return sq ? '' : L('only in the tooltip');
   };
-  // (a layer without squares and where it is: "Layer 3 beside the row letters"; a well without squares: no other layer
-  // groups it - every slot is drawn, empty where a layer does not group the well, once one of them does)
   const offs = off.map(M => M.name + ' ' + where(M)).join(L('; '));
   const hd = L('Colour of the wells = the active layer “{0}”', A.name) + (drawn.length ? L('; small squares at the top right = {0}', drawn.map(M => M.name).join(L(', '))) : '')
     + (off.length ? (drawn.length ? L('; no room in the wells for the squares of the other layers: {0}', offs) : L('; the wells are too small for squares: {0}', offs)) : '')
     + (drawn.length ? L('; a well without squares: no other layer groups it') : '');
   let h = `<div class="lkey" data-fit="${fit.n}${fit.edge ? 'e' : ''}" aria-label="${esc(L('Key of the stacked layers'))}"><div class="lk-h">${esc(hd)}<span class="hint">${esc(L(' · click a layer here or in the Groups card to make it the active one'))}</span></div>`;
-  // the glyph and the name of another layer: a click (Enter on the name) makes it the active one (setupLayers)
   const pick = (M, key) => (M.si === gs ? '' : ` data-lk="${esc(M.s.id)}" title="${esc(L('Make “{0}” the active layer: the colour of the wells, the first line of their names and the curves follow it', M.name))}"${key ? ' role="button" tabindex="0"' : ''}`);
   for (const M of LP.maps) {
-    const vs = layerValues(ds, M), on = M.si === gs;
-    if (!vs.length) { h += `<span class="lk-g"${pick(M)}></span><span class="lk-n"${pick(M, true)}><b translate="no">${esc(M.name)}</b></span><span class="lk-v"><span class="hint">${esc(L('No groups yet'))}</span></span>`; continue; }
-    const none = ds.order.filter(id => ds.wells[id].y && !M.of.get(id)), at = on ? '' : where(M);
+    const vs = layerValues(ds, M), on = M.si === gs, vis = !(LP.hidSet && LP.hidSet.has(M.s.id));
+    const cb = `<input type="checkbox" class="lk-vis" data-pvis="${esc(M.s.id)}"${vis ? ' checked' : ''} title="${esc(L('Show or hide “{0}” on the stacked plate', M.name))}">`;
+    if (!vs.length) { h += `<span class="lk-g">${cb}</span><span class="lk-n"${pick(M, true)}><b translate="no">${esc(M.name)}</b></span><span class="lk-v"><span class="hint">${esc(L('No groups yet'))}</span></span>`; continue; }
+    const none = ds.order.filter(id => ds.wells[id].y && !M.of.get(id)), at = where(M);
     const v = vs.map(g => { const ids = ds.order.filter(id => ds.wells[id].y && M.of.get(id) === g); return `<span class="lgw" data-hids="${ids.join(' ')}" translate="no">${vqHtml(g.color, dark)}${esc(gName(g))}<span class="n">${ids.length}</span></span>`; }).join('')
       + (none.length ? `<span class="lgw none" data-hids="${none.join(' ')}"><i class="vq" aria-hidden="true"></i>${esc(L('not grouped in this layer'))}<span class="n">${none.length}</span></span>` : '');
-    h += `<span class="lk-g${on ? ' on' : ''}"${pick(M)}>${roleGlyph(on, drawn.indexOf(M), drawn.length, fit.edge)}</span><span class="lk-n"${pick(M, true)}><b translate="no">${esc(M.name)}</b>${on ? `<span class="tag role">${esc(L('active'))}</span>` : ''}${at ? `<span class="where">· ${esc(at)}</span>` : ''}</span><span class="lk-v">${v}</span>`;
+    h += `<span class="lk-g${on ? ' on' : ''}">${cb}<span${pick(M)}>${roleGlyph(on && vis, vis ? drawn.indexOf(M) : -1, drawn.length, fit.edge)}</span></span><span class="lk-n"${pick(M, true)}><b translate="no">${esc(M.name)}</b>${on ? `<span class="tag role">${esc(L('active'))}</span>` : ''}${at ? `<span class="where">· ${esc(at)}</span>` : ''}</span><span class="lk-v">${v}</span>`;
   }
   return h + '</div>';
 }
-/** After the key: the note on what fits into the wells (and, with fewer than two layers that have groups, that "Stack"
-    shows what "Expand" does), the key of the frames, the switch for the frames of every layer. */
+/** After the key: note on what fits, frame key, switch for the frames of every layer. */
 function layerFootHtml(ds) {
   const fr = framedLayers(ds), all = lvOf(ds).allFr, other = otherFramed(ds), grouped = layerMaps(ds).filter(M => layerValues(ds, M).length);
-  // (the one layer with groups the active one: Stack and Expand show the same; another one: Stack shows it on the wells,
-  // Expand only when it is the active layer)
   const one = grouped.length > 1 ? '' : `<span class="lnote" translate="no">${esc(!grouped.length ? L('No groups yet: Stack shows the same as Expand.') : grouped[0].si === ds.gs ? L('Only “{0}” has groups: Stack shows the same as Expand.', grouped[0].name)
     : L('Only “{0}” has groups: Stack shows them on the wells; Expand shows them once “{0}” is the active layer.', grouped[0].name))}</span>`;
   return '<span id="nmNote"></span>' + one + (all && other ? frameKeyHtml(ds, fr) : '')
@@ -8425,55 +8883,54 @@ function restoreExcluded(ds) {
 /** The head of the group card of stacked layers: "5 groups · 26 combinations" (it has to fit beside the buttons of the
     head); full: with the layers, "5 groups · 26 combinations (Sample × Dilution × Replicate)" (its tooltip). */
 function layerCountText(ds, full) {
-  const n = ds.groups.length, base = n ? Lc('count', '{0:group}', n) : '';
+  const used = ds.groups.filter(g => groupWells(ds, g).length > 0).length;
+  const base = used ? Lc('count', '{0:group}', used) : ds.groups.length ? L('{0} presets', ds.groups.length) : '';
   if (!layerStack(ds)) return base;
-  const maps = layerMaps(ds), keys = maps.filter(M => M.groups.length).map(M => M.si);
-  const nc = layerCombos(ds, maps, keys, ds.order.filter(id => ds.wells[id].y)).length;
-  return (base ? base + ' · ' : '') + (full ? L('{0:combination} ({1})', nc, keys.map(i => ds.sets[i].name).join(' × ')) : L('{0:combination}', nc));
+  const maps = layerMaps(ds), keys = maps.filter(M => M.of.size > 0).map(M => M.si);
+  const nc = keys.length ? layerCombos(ds, maps, keys, ds.order.filter(id => ds.wells[id].y)).length : 0;
+  return (base ? base + (nc ? ' · ' : '') : '') + (nc ? (full ? L('{0:combination} ({1})', nc, keys.map(i => ds.sets[i].name).join(' × ')) : L('{0:combination}', nc)) : '');
 }
-/** The group list of stacked layers: a section per group of the active layer (and one for the wells with data it does
-    not group, all of them, with those that no layer groups as a row of their own), its combinations with the other
-    layers inside (only the first section unfolded at first). */
+/** The group list of stacked layers: a section per group of the active layer (assigned groups with their combinations,
+    plus compact empty preset groups ready to assign by ticking, and an ungrouped section if needed). */
 function layerRowsHtml(ds, dark, dmap) {
-  // (the other layers that have groups: a square each in the combinations, a slot of its own - empty where the layer
-  // does not group the wells - in layer order, as on the wells)
   const maps = layerMaps(ds), gs = ds.gs, A = maps[gs], oth = maps.filter(M => M.si !== gs && layerValues(ds, M).length).map(M => M.si), v = lvOf(ds), res = ds.res || {};
   const data = ds.order.filter(id => ds.wells[id].y);
-  const segs = A.groups.map(g => ({ g, key: g.id, ids: data.filter(id => A.of.get(id) === g) }));
-  // the wells with data the active layer does not group: all of them, as the key under the plate counts them (those
-  // that no layer groups: a row of their own inside, "in no layer")
+  const segs = A.groups.map(g => ({ g, key: g.id, ids: data.filter(id => A.of.get(id) === g), allIds: ds.order.filter(id => A.of.get(id) === g) }));
   const rest = data.filter(id => !A.of.get(id));
-  if (rest.length && (segs.length || oth.length)) segs.push({ g: null, key: '-', ids: rest });
-  if (!segs.length) return `<div class="gempty">${esc(L('No groups in any layer yet. Select wells on the plate and click a coloured “+” to make a group in “{0}”.', A.name))}</div>`;
-  if (!isObj(v.open)) v.open = { [segs[0].key]: true };
+  const anyAssigned = segs.some(sg => sg.allIds.length > 0);
+  if (rest.length && (anyAssigned || oth.length)) segs.push({ g: null, key: '-', ids: rest, allIds: rest });
+  if (!segs.length) return `<div class="gempty">${esc(L('No groups yet. Click “+ Add preset group” above, or use “Quick groups…” / “Group by name”.'))}</div>`;
+  const firstWithSubs = segs.find(sg => sg.ids.length > 0);
+  if (!isObj(v.open) && firstWithSubs) v.open = { [firstWithSubs.key]: true };
+  else if (!isObj(v.open)) v.open = {};
   const st = ids => { const ws = ids.map(id => ds.wells[id]), ok = ws.filter(w => !w.excluded && res[w.id] && res[w.id].n); return { n: ids.length, nd: ok.length, pos: ok.filter(w => res[w.id].positive).length, ex: ws.filter(w => w.excluded).length }; };
   const meta = (s, short) => L('{0:well}', s.n) + (s.nd ? (short ? ` · ${s.pos}/${s.nd}` : L(' · {0}/{1} positive', s.pos, s.nd)) : '') + (s.ex ? L(' · {0:well} excluded', s.ex) : '');
   return segs.map(sg => {
-    const g = sg.g, subs = layerCombos(ds, maps, oth, sg.ids), none = g ? [] : sg.ids.filter(id => maps.every(M => !M.of.get(id)));
-    const many = subs.length + (none.length ? 1 : 0), open = !!v.open[sg.key] && many > 0, s = st(sg.ids);
+    const g = sg.g, subs = sg.ids.length ? layerCombos(ds, maps, oth, sg.ids) : [], none = g ? [] : sg.ids.filter(id => maps.every(M => !M.of.get(id)));
+    const many = subs.length + (none.length ? 1 : 0), open = !!v.open[sg.key] && many > 0, s = st(sg.allIds);
     const caret = many ? `<button class="gcar" type="button" data-segt="${esc(sg.key)}" aria-expanded="${open}" title="${esc(open ? L('Fold the combinations') : L('Show the combinations'))}">${LAYER_SVG.caret}</button>` : '<span></span>';
     let head;
     if (g) {
-      const info = groupInfo(ds, g), nm = gName(g), mk = markOf(g.color);
+      const info = groupInfo(ds, g), nm = gName(g), mk = markOf(g.color), isEmpty = info.n === 0;
       const tags = (ds.roles.blank === g.id ? `<span class="tag role">${esc(L('Blank'))}</span>` : '') + (ds.roles.neg === g.id ? `<span class="tag role">${esc(L('Negative control'))}</span>` : '') + (info.gpos ? `<span class="tag pos">${esc(L('Positive group'))}</span>` : '');
-      head = `<div class="grow ghead${g.visible ? '' : ' hid'}" data-g="${g.id}" title="${esc(L('Click to select the wells of this group; Ctrl/⌘-click or tick the box to add more groups'))}">${caret}`
-        + `<input type="checkbox" class="gtick" aria-label="${esc(L('Select the wells of {0}', nm))}">`
+      head = `<div class="grow ghead${g.visible ? '' : ' hid'}${isEmpty ? ' empty' : ''}" data-g="${g.id}" title="${esc(isEmpty ? L('No wells assigned yet — select wells on the plate and tick the box to assign them here') : L('Click row to select wells of this group (Ctrl/⌘ or Shift for more); tick the box after selecting wells to assign them here'))}">${caret}`
+        + `<input type="checkbox" class="gtick" aria-label="${esc(L('Tick to assign the selected wells to {0} (untick to remove them)', nm))}">`
         + `<button class="gsw${mk && mk !== 'f' ? ' m-' + mk : ''}" type="button" data-act="color" style="--c:${resolveColor(g.color, dark)}" title="${esc(L('Change colour'))}" aria-label="${esc(L('Change the colour of {0}', nm))}">${dmap[g.id] && !mk ? '<i class="dash"></i>' : ''}</button>`
         + `<input class="gname" value="${esc(g.name)}" data-act="name" placeholder="${esc(L('Group name'))}" aria-label="${esc(L('Group name'))}" translate="no">`
         + `<span class="gmeta">${tags}${esc(meta(s))}</span>`
-        + `<span class="gact"><button class="btn sm icon ghost" type="button" data-act="put" title="${esc(L('Add the selected wells to this group'))}" aria-label="${esc(L('Add the selected wells to this group'))}">${LAYER_SVG.plus}</button>`
-        + `<button class="btn sm icon ghost" type="button" data-act="vis" title="${esc(g.visible ? L('Hide in chart') : L('Show in chart'))}" aria-label="${esc(L('Show or hide'))}">${g.visible ? ICON.eye : ICON.eyeOff}</button></span></div>`;
+        + `<span class="gact">`
+        + `<button class="btn sm icon ghost" type="button" data-act="vis" title="${esc(g.visible ? L('Hide in chart') : L('Show in chart'))}" aria-label="${esc(L('Show or hide'))}">${g.visible ? ICON.eye : ICON.eyeOff}</button>`
+        + `<button class="btn sm icon ghost" type="button" data-act="del" title="${esc(L('Delete group (wells and names are kept)'))}" aria-label="${esc(L('Delete group'))}">${ICON.x}</button></span></div>`;
     } else {
       const nm = L('not grouped in “{0}”', A.name);
-      head = `<div class="grow ghead" data-ids="${sg.ids.join(' ')}" title="${esc(nm)}">${caret}<input type="checkbox" class="gtick" aria-label="${esc(L('Select the wells of {0}', nm))}">`
+      head = `<div class="grow ghead" data-ids="${sg.ids.join(' ')}" title="${esc(nm)}">${caret}<span></span>`
         + `<span class="gsw none"></span><span class="cname un" translate="no">${esc(nm)}</span><span class="gmeta">${esc(meta(s))}</span><span class="gact"></span></div>`;
     }
-    // (the names of the groups with their layers where another layer has the same name: comboName, layerGName)
     const sub = subs.map(c => {
       const full = [g ? layerGName(ds, gs, g) : '', comboName(c, ds)].filter(Boolean).join(' · ');
-      return `<div class="grow gsr" data-ids="${c.ids.join(' ')}" title="${esc(full + ': ' + c.ids.join(' '))}"><span></span><input type="checkbox" class="gtick" aria-label="${esc(L('Select the wells of {0}', full))}">`
+      return `<div class="grow gsr" data-ids="${c.ids.join(' ')}" title="${esc(full + ': ' + c.ids.join(' '))}"><span></span><span></span>`
         + `<span class="sqs">${c.parts.map(p => (p ? vqHtml(p.color, dark) : VQ_NONE)).join('')}</span><span class="cname" translate="no">${esc(comboName(c, ds))}</span><span class="gmeta">${esc(meta(st(c.ids), true))}</span><span class="gact"></span></div>`;
-    }).join('') + (none.length ? `<div class="grow gsr" data-ids="${none.join(' ')}" title="${esc(L('in no layer') + ': ' + none.join(' '))}"><span></span><input type="checkbox" class="gtick" aria-label="${esc(L('Select the wells of {0}', L('in no layer')))}">`
+    }).join('') + (none.length ? `<div class="grow gsr" data-ids="${none.join(' ')}" title="${esc(L('in no layer') + ': ' + none.join(' '))}"><span></span><span></span>`
         + `<span class="sqs">${oth.map(() => VQ_NONE).join('')}</span><span class="cname un" translate="no">${esc(L('in no layer'))}</span><span class="gmeta">${esc(meta(st(none), true))}</span><span class="gact"></span></div>` : '');
     return `<div class="gseg${open ? ' open' : ''}">${head}${sub ? `<div class="gsub">${sub}</div>` : ''}</div>`;
   }).join('');
@@ -8696,7 +9153,7 @@ function layerChart(ds, dark, out, lw) {
   out.lnotes = notes;
   out.layered = combo || M.facet != null;
   if (onlySel) out.note = 'means of the selected wells only';
-  if (!out.series.some(s => !s.faint)) out.note = onlySel ? 'None of the selected wells is in a (visible) group' : 'No groups yet: select wells on the plate, then click a coloured “+” below it';
+  if (!out.series.some(s => !s.faint)) out.note = onlySel ? 'None of the selected wells is in a (visible) group' : 'No groups assigned yet: select wells on the plate, then tick a group below to assign them';
   return out;
 }
 /** The legend of the curves of combinations or small charts: one entry per curve (by its id: a group drawn in every
@@ -8835,8 +9292,32 @@ function crossTableRows(ds) {
 
 /* wiring */
 const LAYER_HOV = { row: null };
+function togglePlateLayerVis(ds, sid, show) {
+  if (!ds || !sid) return;
+  const v = lvOf(ds), set = new Set(v.pHid || []);
+  if (show) set.delete(sid); else set.add(sid);
+  v.pHid = [...set];
+  inv('plate');
+}
 function setupLayers() {
   $('#gsets').addEventListener('click', e => { const b = e.target.closest('[data-lmode]'); if (b && !b.disabled) setLayerMode(curDS(), b.dataset.lmode); });
+  const pbar = $('#plateBar');
+  if (pbar) {
+    pbar.addEventListener('click', e => {
+      const ds = curDS();
+      if (!ds) return;
+      const b = e.target.closest('[data-lmode]');
+      if (b && !b.disabled) { setLayerMode(ds, b.dataset.lmode); return; }
+      const p = e.target.closest('[data-pact]');
+      if (p) switchSet(ds, +p.dataset.pact);
+    });
+    pbar.addEventListener('change', e => {
+      const ds = curDS(), t = e.target;
+      if (!ds) return;
+      if (t.dataset.pvis) { togglePlateLayerVis(ds, t.dataset.pvis, t.checked); return; }
+      if (t.dataset.popt === 'pMarg' || t.dataset.popt === 'pBlock') { lvOf(ds)[t.dataset.popt] = t.checked; inv('plate'); }
+    });
+  }
   const list = $('#groupList');
   list.addEventListener('click', e => {
     const ds = curDS();
@@ -8845,8 +9326,7 @@ function setupLayers() {
     const c = e.target.closest('[data-segt]');
     if (c) { const v = lvOf(ds); if (!isObj(v.open)) v.open = {}; v.open[c.dataset.segt] = !v.open[c.dataset.segt]; inv('groups'); }
   });
-  // a combination (or the wells the active layer does not group): a click selects its wells; with Ctrl/⌘ they are
-  // added (or taken out, when all of them are in); its box adds or takes them out
+  // a combination (or the wells the active layer does not group): a click selects its wells; with Ctrl/⌘ they are added/removed
   list.addEventListener('pointerdown', e => {
     if (e.button !== 0) return;
     const row = e.target.closest('.grow[data-ids]'), ds = curDS();
@@ -8857,12 +9337,6 @@ function setupLayers() {
     else ids.forEach(id => ds.sel.add(id));
     afterSel();
   });
-  list.addEventListener('change', e => {
-    const t = e.target, row = t.closest('.grow[data-ids]'), ds = curDS();
-    if (!row || !ds || row.dataset.g || !t.classList.contains('gtick')) return;
-    for (const id of layerRowIds(ds, row)) { if (t.checked) ds.sel.add(id); else ds.sel.delete(id); }
-    afterSel();
-  });
   list.addEventListener('pointerover', e => {
     const row = e.target.closest('.grow');
     if (row === LAYER_HOV.row) return;
@@ -8870,7 +9344,7 @@ function setupLayers() {
     layerRowHover(curDS(), row);
   });
   list.addEventListener('pointerleave', () => { LAYER_HOV.row = null; layerRowHover(curDS(), null); });
-  // the layers beside the plate and the key under it: hovering a group rings its wells
+  // outer margins, block badges, layer key and split-plate legends: hover links wells; click selects them
   let hov = null;
   const hover = e => {
     const m = e.target.closest('[data-hids]');
@@ -8878,18 +9352,101 @@ function setupLayers() {
     hov = m;
     plateLink(m ? m.dataset.hids.split(' ').filter(Boolean) : []);
   };
-  for (const el of [$('#plate'), $('#plateFoot')]) {
+  const pickHids = e => {
+    if (e.target.closest('input, [data-lk], [data-mpfocus], [data-mpact]')) return;
+    const m = e.target.closest('[data-hids]'), ds = curDS();
+    if (!m || !ds) return;
+    const ids = m.dataset.hids.split(' ').filter(id => ds.wells[id]);
+    if (ids.length) selectIds(ids, e.ctrlKey || e.metaKey);
+  };
+  for (const el of [$('#plate'), $('#plateBlocks'), $('#plateFoot'), $('#splitPlates')]) {
+    if (!el) continue;
     el.addEventListener('pointerover', hover);
     el.addEventListener('pointerleave', () => { if (hov) { hov = null; plateLink([]); } });
+    el.addEventListener('click', pickHids);
   }
   $('#plateFoot').addEventListener('change', e => {
     const ds = curDS();
-    if (!ds || e.target.id !== 'layerAllFr') return;
-    lvOf(ds).allFr = e.target.checked;
-    inv('plate');
+    if (!ds) return;
+    if (e.target.dataset.pvis) { togglePlateLayerVis(ds, e.target.dataset.pvis, e.target.checked); return; }
+    if (e.target.id === 'layerAllFr') { lvOf(ds).allFr = e.target.checked; inv('plate'); }
   });
-  // the key under the plate: a click on the glyph or the name of a layer (Enter / Space on its name) makes it the
-  // active one, as its tab in the group card does
+  // split mini-plates interaction: click header to switch layer, Focus to jump to Single, click/drag wells & headers to select
+  const sp = $('#splitPlates');
+  if (sp) {
+    let mpDrag = null, mpHover = null;
+    sp.addEventListener('click', e => {
+      const ds = curDS();
+      if (!ds) return;
+      const f = e.target.closest('[data-mpfocus]');
+      if (f) { e.stopPropagation(); const i = +f.dataset.mpfocus; if (i !== ds.gs) switchSet(ds, i); setLayerMode(ds, 'expand'); return; }
+      const a = e.target.closest('[data-mpact]');
+      if (a) { const i = +a.dataset.mpact; if (i !== ds.gs) switchSet(ds, i); }
+    });
+    sp.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      const ds = curDS();
+      if (!ds) return;
+      const add = e.ctrlKey || e.metaKey;
+      const hd = e.target.closest('.mp-hd');
+      if (hd) {
+        e.preventDefault();
+        if (hd.dataset.all) { selectIds(ds.sel.size === ds.order.length ? [] : ds.order, false); return; }
+        const axis = hd.dataset.row != null ? 'r' : 'c', idx = +(axis === 'r' ? hd.dataset.row : hd.dataset.col);
+        selectIds(ds.order.filter(id => ds.wells[id][axis] === idx), add);
+        return;
+      }
+      const cell = e.target.closest('.mp-well');
+      if (!cell) return;
+      e.preventDefault();
+      const id = cell.dataset.w;
+      if (e.shiftKey && ds.anchor) {
+        const rect = rectIds(ds, ds.anchor, id);
+        ds.sel = add ? new Set([...ds.sel, ...rect]) : new Set(rect);
+        ds.cursor = id;
+        afterSel();
+        return;
+      }
+      mpDrag = { start: id, base: add ? new Set(ds.sel) : new Set(), moved: false, last: id, toggleOff: add && ds.sel.has(id) };
+      ds.anchor = id; ds.cursor = id;
+      const next = new Set(mpDrag.base); next.add(id); ds.sel = next;
+      updatePlateSel(); renderSelInfo();
+      try { sp.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      hideTip();
+    });
+    sp.addEventListener('pointermove', e => {
+      const ds = curDS();
+      if (!ds) return;
+      if (mpDrag) {
+        const n = document.elementFromPoint(e.clientX, e.clientY), cell = n && n.closest ? n.closest('.mp-well') : null;
+        if (cell && cell.dataset.w !== mpDrag.last) {
+          mpDrag.last = cell.dataset.w; mpDrag.moved = true;
+          const next = new Set(mpDrag.base);
+          for (const x of rectIds(ds, mpDrag.start, mpDrag.last)) next.add(x);
+          ds.sel = next;
+          updatePlateSel(); renderSelInfo();
+        }
+        return;
+      }
+      const cell = e.target.closest('.mp-well'), id = cell ? cell.dataset.w : null;
+      if (id !== mpHover) {
+        mpHover = id;
+        if (id) { showTip(wellTip(ds, ds.wells[id]), e.clientX, e.clientY); plateLink([id]); chartHighlight(id); }
+        else { hideTip(); if (!hov) plateLink([]); chartHighlight(null); }
+      } else if (id) showTip(tipEl().innerHTML, e.clientX, e.clientY);
+    });
+    const mpEnd = () => {
+      if (!mpDrag) return;
+      const ds = curDS();
+      if (!mpDrag.moved && mpDrag.toggleOff) ds.sel.delete(mpDrag.start);
+      mpDrag = null;
+      afterSel();
+    };
+    sp.addEventListener('pointerup', mpEnd);
+    sp.addEventListener('pointercancel', mpEnd);
+    sp.addEventListener('pointerleave', () => { if (!mpDrag && mpHover) { mpHover = null; hideTip(); if (!hov) plateLink([]); chartHighlight(null); } });
+  }
+  // the key under the plate: a click on the glyph or the name of a layer (Enter / Space on its name) makes it the active one
   const pickLayer = e => {
     const t = e.target.closest('[data-lk]'), ds = curDS();
     if (!t || !ds) return false;
@@ -8948,13 +9505,6 @@ function setupLayers() {
     if (t === cell) return;
     cell = t;
     if (t) plateLink(t.dataset.ids.split(' ').filter(Boolean));
-  });
-  // the selection card: the layer new groups go into ("New group into [Layer ▾]"); its swatches follow its palette
-  $('#groupChips').addEventListener('change', e => {
-    const ds = curDS();
-    if (!ds || !e.target.matches('[data-newto]')) return;
-    lvOf(ds).into = e.target.value === ds.sets[ds.gs].id ? null : e.target.value;
-    inv('sel', 'groups');
   });
 }
 
@@ -9522,6 +10072,7 @@ function fitPlate() {
   fitStack();
   fitExpand(el);
   fitHeads();
+  drawBlockOverlay();
   drawFrames();
 }
 /* ---------- frames: lines on the edges of the wells, as the borders of cells in Excel ----------
@@ -9828,8 +10379,8 @@ const gNameHtml = (g, dark) => (g.name ? `<span translate="no">${esc(g.name)}</s
 /** A group's name as a cell of an exported table: a cell in its colour for a group without one. */
 const gCell = g => (g.name ? ud(g.name) : { v: '', nt: 1, fill: resolveColor(g.color, false) });
 
-/* ---------- several groups selected at once from the group list ---------- */
-/** The boxes of the group list follow the selection: a box is ticked while all the wells of its group are selected. */
+/* ---------- group list checkboxes (assign selected wells) & row click (select group wells) ---------- */
+/** Group checkboxes reflect whether the currently selected wells belong to each group; rows highlight when all wells of the group are selected. */
 function syncGroupTicks(ds) {
   const rows = $$('#groupList .grow');
   if (!rows.length) return;
@@ -9840,56 +10391,95 @@ function syncGroupTicks(ds) {
     all.set(gid, (all.get(gid) || 0) + 1);
     if (ds.sel.has(id)) on.set(gid, (on.get(gid) || 0) + 1);
   }
+  const selN = ds.sel.size;
   for (const row of rows) {
-    const ids = !row.dataset.g && row.dataset.ids ? row.dataset.ids.split(' ') : null;     // (a combination of stacked layers)
-    const n = ids ? ids.length : all.get(row.dataset.g) || 0, k = ids ? ids.filter(id => ds.sel.has(id)).length : on.get(row.dataset.g) || 0, box = $('.gtick', row), put = $('[data-act="put"]', row);
-    if (box) { box.checked = n > 0 && k === n; box.indeterminate = k > 0 && k < n; box.disabled = !n; }
-    row.classList.toggle('on', n > 0 && k === n);
-    if (put) put.disabled = !ds.sel.size;
+    const gid = row.dataset.g;
+    if (!gid && row.dataset.ids) {
+      const ids = row.dataset.ids.split(' ');
+      const n = ids.length, k = ids.filter(id => ds.sel.has(id)).length;
+      row.classList.toggle('on', n > 0 && k === n);
+      continue;
+    }
+    const gw = all.get(gid) || 0, gOn = on.get(gid) || 0, box = $('.gtick', row);
+    if (box) {
+      box.disabled = selN === 0;
+      box.checked = selN > 0 && gOn === selN;
+      box.indeterminate = selN > 0 && gOn > 0 && gOn < selN;
+      const g = gById(ds, gid);
+      box.title = selN ? L('Tick to assign the selected wells to {0} (untick to remove them)', gName(g)) : L('Select wells on the plate first, then tick to assign them to this group');
+    }
+    row.classList.toggle('on', gw > 0 && gOn === gw);
   }
 }
-/** A group of the list picked with the pointer: its wells become the selection; with Ctrl/⌘ they are added to it (or
-    taken out, when all of them are in already); with Shift, the groups from the one picked before to this one. */
+/** A group row clicked with the pointer: selects its wells (Ctrl/⌘ adds/toggles; Shift selects a range).
+    Clicking an empty preset group leaves the current plate selection intact so users don't lose wells before ticking. */
 function pickGroups(ds, g, e) {
   const add = e.ctrlKey || e.metaKey, of = gid => ds.order.filter(id => ds.wells[id].group === gid);
   const a = e.shiftKey && S.groupAnchor ? ds.groups.findIndex(x => x.id === S.groupAnchor) : -1, b = ds.groups.indexOf(g);
   let ids;
   if (a >= 0) ids = ds.groups.slice(Math.min(a, b), Math.max(a, b) + 1).flatMap(x => of(x.id));
-  else { ids = of(g.id); S.groupAnchor = g.id; }
+  else ids = of(g.id);
+  if (!ids.length) {
+    if (!ds.sel.size && !e.shiftKey) toast(L('No wells assigned yet — select wells on the plate and tick the box to assign them here'), 2200);
+    return;
+  }
+  if (a < 0) S.groupAnchor = g.id;
   if (!add) ds.sel = new Set(ids);
-  else if (a < 0 && ids.length && ids.every(id => ds.sel.has(id))) ids.forEach(id => ds.sel.delete(id));
+  else if (a < 0 && ids.every(id => ds.sel.has(id))) ids.forEach(id => ds.sel.delete(id));
   else ids.forEach(id => ds.sel.add(id));
   afterSel();
 }
 function renderPlate() {
-  const el = $('#plate');
+  const el = $('#plate'), wrap = $('#plateWrap'), spEl = $('#splitPlates'), fSvg = $('#plateFrames'), bSvg = $('#plateBlocksSvg'), bBox = $('#plateBlocks');
   const ds = curDS();
+  renderPlateBar(ds);
   const { rows, cols } = ds.plate;
   const big = cols > 12, dark = isDark();
+  const mode = S.view.plateMode, res = ds.res || {};
+  const hk = mode.startsWith('heat:') ? mode.slice(5) : null;
+  const split = layerSplit(ds);
+  if (wrap) wrap.classList.toggle('is-split', split);
+  el.hidden = split;
+  if (fSvg) fSvg.hidden = split;
+  if (bSvg) bSvg.hidden = split;
+  if (bBox) bBox.hidden = split;
+  if (spEl) spEl.hidden = !split;
+  const nData = dataWells(ds).length;
+  const head = L('{0} wells · {1} with data', rows * cols, nData) + layerPlateInfo(ds, hk);
+  if (ds.sets.length > 1) $('#plateInfo').innerHTML = headParts(head); else $('#plateInfo').textContent = head;
+  fitHeads();
+  $$('#plateFmt button').forEach(b => b.classList.toggle('on', +b.dataset.v === rows * cols));
+  $('#plateMode').value = mode;
+  const foot = $('#plateFoot');
+  if (split) {
+    CUR_PA = null;
+    linkIds = [];
+    wellEls = new Map();
+    renderSplitPlates(ds, hk);
+    foot.innerHTML = `<span>${esc(L('Click a group or margin label to select its wells (Ctrl/⌘ to add)'))}</span>`;
+    return;
+  }
   el.classList.toggle('p384', big);
   el.style.setProperty('--cols', cols);
-  const mode = S.view.plateMode, res = ds.res || {};
   // the positive/negative view follows a line of the chart while it moves (or replays)
   const st = tbT(), pv = mode === 'call' && (TB.xOn || TB.yv != null);
-  let gmin = Infinity, gmax = -Infinity, hk = null, hmin = Infinity, hmax = -Infinity;
+  let gmin = Infinity, gmax = -Infinity, hmin = Infinity, hmax = -Infinity;
   if (mode === 'spark' || mode === 'call') {
     for (const id of ds.order) { const w = ds.wells[id]; if (!w.y) continue; for (const v of w.y) if (isFinite(v)) { if (v < gmin) gmin = v; if (v > gmax) gmax = v; } }
-  } else if (mode.startsWith('heat:')) {
-    hk = mode.slice(5);
+  } else if (hk) {
     for (const id of ds.order) { const v = pval(res[id], hk); if (isFinite(v)) { if (v < hmin) hmin = v; if (v > hmax) hmax = v; } }
   }
-  // 384 wells: the numbers in the wells share one scale - thousands or millions for large values, thousandths for
-  // small ones - so that four characters carry three digits
   const hbig = big && hk ? Math.max(Math.abs(hmin), Math.abs(hmax)) : NaN;
   const hdiv = !isFinite(hbig) || hbig === 0 ? 1 : hbig >= 9999.5 ? (hbig < 999.5e3 ? 1e3 : hbig < 999.5e6 ? 1e6 : 1e9) : hbig < 0.0995 ? (hbig >= 0.0995e-3 ? 1e-3 : 1e-6) : 1;
   const posC = POSC[dark ? 'dark' : 'light'];
-  // stacked grouping layers: the other layers as small squares, the names of every layer in the wells, the layers that
-  // are the same along rows / columns beside the plate (layerPlate)
-  const LP = layerPlate(ds, hk);
-  const parts = [`<div class="hd corner" data-all="1" title="Select all / none">⊞</div>`];
-  for (let c = 0; c < cols; c++) parts.push(`<div class="hd" data-col="${c}" title="${L('Select column {0}', c + 1)}">${c + 1}</div>`);
+  const PA = plateAnnot(ds, hk);
+  CUR_PA = PA;
+  const LP = PA.stack ? PA : null, mg = PA.mg, hasM = mg.hasAny;
+  const place = (r, c) => (hasM ? `grid-row:${r};grid-column:${c};` : '');
+  const parts = [`<div class="hd corner" data-all="1" style="${place(mg.R_CH, mg.C_RH)}" title="Select all / none">⊞</div>`];
+  for (let c = 0; c < cols; c++) parts.push(`<div class="hd" data-col="${c}" style="${place(mg.R_CH, mg.C_W0 + c)}" title="${L('Select column {0}', c + 1)}">${c + 1}</div>`);
   for (let r = 0; r < rows; r++) {
-    parts.push(`<div class="hd" data-row="${r}" title="${L('Select row {0}', C.LETTERS[r])}">${C.LETTERS[r]}</div>`);
+    parts.push(`<div class="hd" data-row="${r}" style="${place(mg.R_W0 + r, mg.C_RH)}" title="${L('Select row {0}', C.LETTERS[r])}">${C.LETTERS[r]}</div>`);
     for (let c = 0; c < cols; c++) {
       const w = ds.wells[C.wellId(r, c)];
       const cls = ['well'];
@@ -9897,36 +10487,27 @@ function renderPlate() {
       if (w.excluded) cls.push('excl');
       if (ds.sel.has(w.id)) cls.push('sel');
       if (ds.cursor === w.id) cls.push('cur');
-      const col = wellColorHex(ds, w, dark);
-      // a group of a layer without colours: no tint, its mark as the bar at the top
-      const mk = w.color ? null : markOf((gById(ds, w.group) || {}).color);
+      const col = PA.activeShown ? wellColorHex(ds, w, dark) : (w.color ? resolveColor(w.color, dark) : null);
+      const mk = !PA.activeShown || w.color ? null : markOf((gById(ds, w.group) || {}).color);
       if (mk && mk !== 'f') cls.push('m-' + mk);
-      let style = '', inner = '', label = '';
+      let style = place(mg.R_W0 + r, mg.C_W0 + c), inner = '', label = '';
       const rr = res[w.id];
       if (hk) {
         const v = pval(rr, hk);
         if (isFinite(v)) {
           const fill = heatColor(v, hmin, hmax, dark);
-          style = `--wbg:${fill};--wbd:${fill};`;
+          style += `--wbg:${fill};--wbd:${fill};`;
           inner = `<span class="wv" style="color:${inkOn(fill)}">${esc(big ? short(v / hdiv) : hk === 'fold' ? v.toFixed(1) : PARAMS[hk].kind === 'T' ? v.toFixed(S.view.timeUnit === 'min' ? 0 : 1) : compact(v))}</span>`;
         } else if (w.y) inner = '<span class="wv" style="color:var(--muted)">—</span>';
         if (!big) label = `<span class="wid"${isFinite(v) ? ` style="color:${inkOn(heatColor(v, hmin, hmax, dark))};opacity:.7"` : ''}>${w.id}</span>`;
         if (col) { style += `--gc:${col};`; cls.push('gc'); }
       } else {
-        // (stacked layers: a well without data has no colour bar, as the other layers and the counts leave it out - a
-        // faint outline in its group's colour)
-        if (col && LP && !w.y) { style = `--gx:${rgba(col, 0.5)};`; cls.push('gx'); }
-        else if (col) { style = `--wbg:${mk ? 'var(--surface)' : rgba(col, dark ? 0.2 : 0.13)};--gc:${col};`; cls.push('gc'); }
+        if (col && LP && !w.y) { style += `--gx:${rgba(col, 0.5)};`; cls.push('gx'); }
+        else if (col) { style += `--wbg:${mk ? 'var(--surface)' : rgba(col, dark ? 0.2 : 0.13)};--gc:${col};`; cls.push('gc'); }
         const pz = pv ? previewPos(ds, w.id, rr, st) : !!(rr && !rr.excluded && rr.n && rr.positive);
-        // positive: the red tint, and the group's colour bar stays on top like on the other wells
-        if (mode === 'call' && pz) style = `--wbg:${rgba(posC, dark ? 0.2 : 0.13)};--wbd:${rgba(posC, 0.55)};` + (col ? `--gc:${col};` : '');
+        if (mode === 'call' && pz) style = place(mg.R_W0 + r, mg.C_W0 + c) + `--wbg:${rgba(posC, dark ? 0.2 : 0.13)};--wbd:${rgba(posC, 0.55)};` + (col ? `--gc:${col};` : '');
         if (w.y) inner = sparkSvg(ds.t, w.y, gmin, gmax, col || 'var(--ink-2)', !big);
         if (mode === 'call' && pz && !big) inner += '<span class="wcall" aria-label="Positive">+</span>';
-        // (two layers or more: the name of the well's group in the active layer - "Expand" shows the groups of the layer
-        // switched to -, a well it does not group its own name in grey; the well's own name is in its tooltip. The name
-        // first: the id before it only where both fit, the name smaller or on two lines where needed (fitExpand); the
-        // room at the right kept only for the "+" of a positive well, none where a name is not whole beside it: the
-        // "+" then goes up onto the colour bar, fitExpand)
         const wn = wellLabelName(ds, w), lx = ds.sets.length > 1 && !!wn[0];
         if (!big) label = lx ? `<span class="wl lx${mode === 'call' && pz ? '' : ' nr'}"><span class="wid">${w.id}</span><span class="wn${wn[1] ? ' sn' : ''}" translate="no">${esc(wn[0])}</span></span>`
           : `<span class="wl"><span class="wid">${w.id}</span>${wn[0] ? `<span class="wn${wn[1] ? ' sn' : ''}" translate="no">${esc(wn[0])}</span>` : ''}</span>`;
@@ -9935,26 +10516,19 @@ function renderPlate() {
       parts.push(`<div class="${cls.join(' ')}" data-w="${w.id}" style="${style}" role="gridcell" aria-selected="${ds.sel.has(w.id)}">${inner}${label}</div>`);
     }
   }
-  if (LP) parts.push(...LP.margins);
+  if (hasM) parts.push(...PA.margins);
   el.classList.toggle('stack', !!LP);
-  el.classList.toggle('mrow', !!(LP && LP.marg.row));
+  el.classList.toggle('mrow', mg.nL > 0);
   el.classList.toggle('frall', !!LP && lvOf(ds).allFr && otherFramed(ds));
   el.classList.remove('nm-2', 'nm-1', 'nm-0', 'sqe', 'sqsm', 'sq-0', 'sq-1', 'sq-2', 'sq-3', 'sq-4', 'sq-5');
-  // (the labels beside the rows: as wide as they are, up to --rmw; what fits into the wells: fitStack)
-  if (LP) { el.classList.add('nm-2'); el.style.setProperty('--rmw', big ? '96px' : '120px'); }
+  el.style.gridTemplateColumns = hasM ? mg.colTpl : '';
+  if (hasM) el.style.setProperty('--rmw', mg.rmw);
+  if (LP) el.classList.add('nm-2');
   el.innerHTML = parts.join('');
   linkIds = [];
   wellEls = new Map();
   $$('.well', el).forEach(n => wellEls.set(n.dataset.w, n));
   fitPlate();
-  const nData = dataWells(ds).length;
-  // (two layers or more: in parts, so that it wraps between them rather than being cut - fitHeads; one layer: as before)
-  const head = L('{0} wells · {1} with data', rows * cols, nData) + layerPlateInfo(ds, hk);
-  if (ds.sets.length > 1) $('#plateInfo').innerHTML = headParts(head); else $('#plateInfo').textContent = head;
-  fitHeads();
-  $$('#plateFmt button').forEach(b => b.classList.toggle('on', +b.dataset.v === rows * cols));
-  $('#plateMode').value = mode;
-  const foot = $('#plateFoot');
   if (hk) {
     const ramp = (dark ? SEQ.slice().reverse() : SEQ).join(',');
     foot.innerHTML = isFinite(hmin)
@@ -9969,8 +10543,6 @@ function renderPlate() {
   } else {
     foot.innerHTML = isFinite(gmin) ? `<span>Thumbnails share one y-axis</span><span class="mono">${esc(compact(gmin))} – ${esc(compact(gmax))}</span><span>Drag to select · Ctrl/⌘ to add · Shift for a range · click or drag row/column headers · right-click for frames · press 1–9 to put the selection in a group</span>` : '';
   }
-  // stacked layers: a key per layer under the plate (of the squares that fit: fitPlate has measured the wells), the
-  // switch for the frames of every layer
   if (LP) { foot.innerHTML = layerKeyHtml(ds, LP, STACK_FIT) + (mode === 'spark' ? '' : foot.innerHTML) + layerFootHtml(ds); fitStack(); }
   tbPlateMarks(true);
 }
@@ -9982,6 +10554,9 @@ function updatePlateSel() {
     el.setAttribute('aria-selected', on);
     el.classList.toggle('cur', ds.cursor === id);
   });
+  if (layerSplit(ds)) {
+    $$('#splitPlates .mp-well').forEach(el => el.classList.toggle('sel', ds.sel.has(el.dataset.w)));
+  }
 }
 function rectIds(ds, a, b) {
   const A = ds.wells[a], B = ds.wells[b];
@@ -10004,21 +10579,31 @@ function selectIds(ids, additive) {
 
 let plateHover = null;
 let linkIds = [];
-/** Ring the given wells (and their row / column headers) on the plate in the curve's colour. */
+/** Highlight the given wells (and their row / column headers) on the main plate or across all split mini-plates. */
 function plateLink(ids, color) {
   for (const id of linkIds) { const el = wellEls.get(id); if (el) { el.classList.remove('link'); el.style.removeProperty('--hc'); } }
-  $$('#plate .hd.link').forEach(h => h.classList.remove('link'));
-  linkIds = (ids || []).filter(id => wellEls.has(id));
-  if (!linkIds.length) return;
-  const ds = curDS(), rows = new Set(), cols = new Set();
-  for (const id of linkIds) {
-    const el = wellEls.get(id), w = ds.wells[id];
-    el.classList.add('link');
-    if (color) el.style.setProperty('--hc', color);
+  $$('#plate .hd.link, #splitPlates .mp-hd.link').forEach(h => h.classList.remove('link'));
+  $$('#splitPlates .mp-well.link').forEach(el => { el.classList.remove('link'); el.style.removeProperty('--hc'); });
+  const ds = curDS();
+  const valid = (ids || []).filter(id => ds && ds.wells[id]);
+  linkIds = valid.filter(id => wellEls.has(id));
+  if (!valid.length || !ds) return;
+  const rows = new Set(), cols = new Set(), vset = new Set(valid);
+  for (const id of valid) {
+    const w = ds.wells[id];
     rows.add(w.r); cols.add(w.c);
+    const el = wellEls.get(id);
+    if (el) { el.classList.add('link'); if (color) el.style.setProperty('--hc', color); }
   }
   rows.forEach(r => { const h = $(`#plate .hd[data-row="${r}"]`); if (h) h.classList.add('link'); });
   cols.forEach(c => { const h = $(`#plate .hd[data-col="${c}"]`); if (h) h.classList.add('link'); });
+  if (layerSplit(ds)) {
+    $$('#splitPlates .mp-well').forEach(el => {
+      if (vset.has(el.dataset.w)) { el.classList.add('link'); if (color) el.style.setProperty('--hc', color); }
+    });
+    rows.forEach(r => $$(`#splitPlates .mp-hd[data-row="${r}"]`).forEach(h => h.classList.add('link')));
+    cols.forEach(c => $$(`#splitPlates .mp-hd[data-col="${c}"]`).forEach(h => h.classList.add('link')));
+  }
 }
 function wellTip(ds, w) {
   const r = ds.res && ds.res[w.id];
@@ -10201,11 +10786,21 @@ function renderSelBar() {
   renderSelInfo();
   const n = ds.sel.size;
   const sel = [...ds.sel].map(id => ds.wells[id]);
-  for (const s of ['#selName', '#selNumber', '#btnApplyName', '#btnSelColor', '#btnExclude', '#btnClearMeta']) $(s).disabled = !n;
-  const names = new Set(sel.map(w => w.name));
-  const nameIn = $('#selName');
-  if (document.activeElement !== nameIn) { nameIn.value = ''; nameIn.placeholder = names.size === 1 && sel[0] && sel[0].name ? sel[0].name : L('Sample name'); }
-  renderGroupChips(ds, sel);
+  for (const s of ['#btnNamePop', '#btnSelColor', '#btnExclude', '#btnClearMeta']) { const el = $(s); if (el) el.disabled = !n; }
+  const nameBtn = $('#btnNamePop');
+  if (nameBtn) {
+    const names = new Set(sel.map(w => w.name).filter(Boolean));
+    nameBtn.title = n && names.size === 1 ? L('Name the selected wells') + ' (' + [...names][0] + ')' : L('Name the selected wells');
+  }
+  const ungBtn = $('#btnUngroup');
+  if (ungBtn) {
+    const multi = ds.sets.length > 1, nm = ds.sets[ds.gs].name, on = n > 0 && sel.some(w => w.group);
+    const elsewhere = multi && n > 0 && !on && ds.sets.some((s, i) => i !== ds.gs && sel.some(w => s.assign && s.assign[w.id]));
+    ungBtn.disabled = !on;
+    ungBtn.textContent = multi ? L('Ungroup from “{0}”', nm) : L('Ungroup');
+    ungBtn.title = !multi ? L('Remove the selected wells from their group (key 0)') : on ? L('Remove the selected wells from their group in “{0}” (key 0); the other layers keep theirs', nm)
+      : !n ? L('Select wells first') : elsewhere ? L('None of the selected wells is grouped in “{0}”: their groups are in other layers. Make that layer the active one to ungroup them there.', nm) : L('None of the selected wells is in a group');
+  }
   const dark = isDark();
   const cols = new Set(sel.map(w => wellColorHex(ds, w, dark)));
   $('#btnSelColor .swi').style.setProperty('--c', cols.size === 1 && sel[0] ? (wellColorHex(ds, sel[0], dark) || 'transparent') : 'transparent');
@@ -10215,39 +10810,58 @@ function renderSelBar() {
   syncGroupTicks(ds);
   updateUndoButtons();
 }
-/** The selection card's row for groups: a new group from the selected wells, one swatch for each free colour, and
-    taking the selected wells out of their groups. (The groups themselves are the list below it: a click there selects
-    the wells of a group, its "+" puts the selected wells into it.) */
-function renderGroupChips(ds, sel) {
-  const box = $('#groupChips');
-  const n = sel.length, dark = isDark(), dis = n ? '' : ' disabled';
-  // a new group goes into the active layer - with two layers or more into the one picked here ("New group into
-  // [Layer ▾]") -, in the next colour of its palette (the colours of the palette, shades of one colour or marks:
-  // newGroupSwatches); "Ungroup" takes the wells out of their group in the active layer (with two layers or more it
-  // says which: ungroupButton)
-  box.innerHTML = `<span class="newg">${newGroupLabel(ds)}${newGroupSwatches(ds, dis, dark)}</span>` + ungroupButton(ds, sel);
-}
 function setupSelBar() {
-  $('#groupChips').addEventListener('click', e => {
-    const ds = curDS();
-    if (!ds || !ds.sel.size) return;
-    const nw = e.target.closest('.newsw');
-    if (nw) { newGroupInto(ds, { color: nw.dataset.new, focus: false }); return; }      // (into the layer picked: newGroupInto)
-    if (e.target.closest('[data-ungroup]')) addToGroup('__none');
-  });
+  const ung = $('#btnUngroup');
+  if (ung) ung.addEventListener('click', () => addToGroup('__none'));
 }
-function applyName() {
+function removeFromGroup(ds, gid) {
+  if (!ds || !ds.sel.size || !gid) return;
+  const ids = ds.order.filter(id => ds.sel.has(id) && ds.wells[id].group === gid);
+  if (!ids.length) return;
+  const g = gById(ds, gid);
+  pushUndo(ds);
+  ids.forEach(id => { ds.wells[id].group = null; });
+  ds.ver++;
+  inv('plate', 'sel', 'groups', 'settings', 'chart', 'results');
+  toast(L('Removed {0:well} from “{1}”', ids.length, gName(g)));
+}
+let lastSelNumber = false;
+function applyName(base, num) {
   const ds = curDS();
-  if (!ds.sel.size) return;
-  const base = $('#selName').value.trim();
+  if (!ds || !ds.sel.size) return;
+  base = String(base == null ? '' : base).trim();
   const ids = ds.order.filter(id => ds.sel.has(id));
   pushUndo(ds);
-  const num = $('#selNumber').checked;
   const sep = /[\s_\-－]$/.test(base) || !base ? '' : '-';
   ids.forEach((id, k) => { ds.wells[id].name = num ? `${base}${sep}${k + 1}` : base; });
-  $('#selName').value = '';
   inv('plate', 'sel', 'chart', 'results');
   toast(base ? L('Named {0:well}', ids.length) : L('Cleared the names of {0:well}', ids.length));
+}
+function openNamePop(anchor) {
+  const ds = curDS();
+  if (!ds || !ds.sel.size) return;
+  if (popEl && popEl.classList.contains('name-pop')) { closePop(); return; }
+  const sel = [...ds.sel].map(id => ds.wells[id]);
+  const names = new Set(sel.map(w => w.name));
+  const shared = names.size === 1 && sel[0] && sel[0].name ? sel[0].name : '';
+  const html = `<h4>${esc(L('Name selected wells'))}</h4>
+    <input type="text" class="name-in" id="popSelName" value="${esc(shared)}" placeholder="${esc(L('Sample name'))}" aria-label="${esc(L('Name the selected wells'))}" translate="no">
+    <label class="chk" title="${esc(L('Append 1, 2, 3… to the name'))}"><input type="checkbox" id="popSelNumber"${lastSelNumber ? ' checked' : ''}> ${esc(L('Number (1, 2, 3…)'))}</label>
+    <div class="name-acts">
+      <button class="btn sm primary" type="button" data-ok>${esc(L('Apply'))}</button>
+      <button class="btn sm ghost" type="button" data-clr>${esc(L('Clear name'))}</button>
+    </div>`;
+  const el = openPop(anchor, html, p => p.classList.add('name-pop'));
+  const inp = $('#popSelName', el), num = $('#popSelNumber', el);
+  const go = clr => {
+    lastSelNumber = num.checked;
+    applyName(clr ? '' : inp.value, clr ? false : num.checked);
+    closePop();
+  };
+  $('[data-ok]', el).addEventListener('click', () => go(false));
+  $('[data-clr]', el).addEventListener('click', () => go(true));
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(false); } });
+  try { inp.focus({ preventScroll: true }); if (shared) inp.select(); } catch (e) { /* ignore */ }
 }
 function addToGroup(value, opt) {
   opt = opt || {};
@@ -10364,22 +10978,22 @@ function moveGroup(ds, id, dir) {
   return true;
 }
 /** The row of grouping layers: their tabs (click: the active layer; double-click: rename), "+" (a new layer), ⋯ (the
-    menu of the active layer) and, at the right, "Expand | Stack". */
+    menu of the active layer) and, at the right, "Single | Stack | Split". */
 function renderSets(ds) {
-  // one layer left (deleted, or a step undone): "Expand" again, so that a new layer does not stack them by itself
-  if (ds.sets.length < 2 && lvOf(ds).mode === 'stack') lvOf(ds).mode = 'expand';
-  const n = ds.sets.length, stack = layerStack(ds), cap = setCap(), el = $('#gsets');
+  if (ds.sets.length < 2 && lvOf(ds).mode !== 'expand') lvOf(ds).mode = 'expand';
+  const n = ds.sets.length, mode = lvOf(ds).mode, stack = layerStack(ds), cap = setCap(), el = $('#gsets');
   el.classList.add('layers');
   el.innerHTML = `<span class="gsets-lab">${esc(L('Grouping layers'))}</span>` + ds.sets.map((s, i) => {
-    const empty = !(i === ds.gs ? ds.groups : s.groups || []).length;
+    const empty = !hasAssignedGroups(ds, i);
     const tip = i === ds.gs ? L('Active layer (double-click to rename)') : stack ? L('Make “{0}” the active layer: the colour of the wells, the first line of their names and the curves follow it', s.name) : L('Switch to “{0}”', s.name);
     return `<button class="gset${i === ds.gs ? ' on' : ''}${empty ? ' new' : ''}" type="button" role="tab" aria-selected="${i === ds.gs}" data-s="${i}" title="${esc(tip)}"><span translate="no">${esc(s.name)}</span></button>`;
   }).join('') +
     `<button class="gset add plus" type="button" data-sadd aria-haspopup="true" aria-label="${esc(L('New grouping layer'))}" title="${esc(n < cap ? L('New grouping layer: group the same wells once more, another way') : L('Up to {0} grouping layers', cap))}"${n < cap ? '' : ' disabled'}>${LAYER_SVG.plus}</button>` +
     `<button class="btn sm icon ghost more" type="button" data-smenu aria-haspopup="true" aria-label="${esc(L('Layer options'))}" title="${esc(L('Layer options: rename, copy, move, copy to other datasets, save as layout, delete'))}">${LAYER_SVG.more}</button>` +
     `<span class="spacer"></span><div class="seg sm vseg" role="group" aria-label="${esc(L('How the layers are shown'))}">` +
-    `<button type="button" data-lmode="expand"${stack ? '' : ' class="on"'} title="${esc(L('One layer at a time: the plate, the group list and the curves follow it'))}">${esc(L('Expand'))}</button>` +
-    `<button type="button" data-lmode="stack"${stack ? ' class="on"' : ''}${n < 2 ? ` disabled title="${esc(L('Only one layer; make a second one to stack them'))}"` : ` title="${esc(L('Every layer on the wells at once: the colour follows the active layer, every other layer is a small square at the top right of each well'))}"`}>${esc(L('Stack'))}</button></div>`;
+    `<button type="button" data-lmode="expand"${mode === 'expand' ? ' class="on"' : ''} title="${esc(L('Show one layer at a time on the main plate, group list and curves (switch layers with the tabs on the left)'))}">${esc(L('Single'))}</button>` +
+    `<button type="button" data-lmode="stack"${mode === 'stack' ? ' class="on"' : ''}${n < 2 ? ` disabled title="${esc(L('Only one layer; make a second one to stack them'))}"` : ` title="${esc(L('Every layer on the wells at once: the colour follows the active layer, every other layer is a small square at the top right of each well'))}"`}>${esc(L('Stack'))}</button>` +
+    `<button type="button" data-lmode="split"${mode === 'split' ? ' class="on"' : ''}${n < 2 ? ` disabled title="${esc(L('Only one layer; make a second one to split them'))}"` : ` title="${esc(L('Show each grouping layer on its own mini-plate side by side (the group list below still edits the active layer)'))}"`}>${esc(L('Split'))}</button></div>`;
 }
 /** The parts of a grouping layer that a copy can take: [key, label] (the excluded wells are the plate's). */
 const SET_PARTS = [['groups', 'Groups and colours'], ['frames', 'Frames']];
@@ -10465,22 +11079,23 @@ function renderGroups() {
   renderSets(ds);
   const list = $('#groupList');
   const dark = isDark(), dmap = groupDashMap(ds);
-  $('#groupCount').textContent = ds.groups.length ? Lc('count', '{0:group}', ds.groups.length) : '';
+  const usedCount = ds.groups.filter(g => groupWells(ds, g).length > 0).length;
+  $('#groupCount').textContent = usedCount
+    ? (usedCount < ds.groups.length ? L('{0} / {1} presets', usedCount, ds.groups.length) : Lc('count', '{0:group}', usedCount))
+    : ds.groups.length ? L('{0} presets', ds.groups.length) : '';
   if (!ds.groups.length) {
-    list.innerHTML = '<div class="gempty">No groups yet. Select wells on the plate and click any coloured “+” below it to make a group; or use “Quick groups…” to build them all from the replicate layout, or “Group by name” when the wells already have names.</div>';
+    list.innerHTML = `<div class="gempty">${esc(L('No groups yet. Click “+ Add preset group” above, or use “Quick groups…” / “Group by name”.'))}</div>`;
   } else {
     list.innerHTML = ds.groups.map((g, i) => {
       const info = groupInfo(ds, g);
-      const color = resolveColor(g.color, dark), nm = gName(g);
+      const color = resolveColor(g.color, dark), nm = gName(g), isEmpty = info.n === 0;
       const tags = (ds.roles.blank === g.id ? '<span class="tag role">Blank</span>' : '') + (ds.roles.neg === g.id ? '<span class="tag role">Negative control</span>' : '') + (info.gpos ? '<span class="tag pos">Positive group</span>' : '');
-      // a click on the row selects the wells of the group; its box (or Ctrl/⌘) adds a group to the ones selected
-      return `<div class="grow${g.visible ? '' : ' hid'}" data-g="${g.id}" title="${L('Click to select the wells of this group; Ctrl/⌘-click or tick the box to add more groups')}">
-        <input type="checkbox" class="gtick" aria-label="${L('Select the wells of {0}', esc(nm))}">
+      return `<div class="grow${g.visible ? '' : ' hid'}${isEmpty ? ' empty' : ''}" data-g="${g.id}" title="${esc(isEmpty ? L('No wells assigned yet — select wells on the plate and tick the box to assign them here') : L('Click row to select wells of this group (Ctrl/⌘ or Shift for more); tick the box after selecting wells to assign them here'))}">
+        <input type="checkbox" class="gtick" aria-label="${esc(L('Tick to assign the selected wells to {0} (untick to remove them)', nm))}">
         <button class="gsw${(m => (m && m !== 'f' ? ' m-' + m : ''))(markOf(g.color))}" type="button" data-act="color" style="--c:${color}" title="Change colour" aria-label="${L('Change the colour of {0}', esc(nm))}">${dmap[g.id] && !markOf(g.color) ? '<i class="dash"></i>' : ''}</button>
         <input class="gname" value="${esc(g.name)}" data-act="name" placeholder="${L('Group name')}" aria-label="${L('Group name')}" translate="no">
         <span class="gmeta">${tags}${L('{0:well}', info.n)}${info.nd ? L(' · {0}/{1} positive', info.pos, info.nd) : ''}${info.ex ? L(' · {0:well} excluded', info.ex) : ''}</span>
         <span class="gact">
-          <button class="btn sm icon ghost" type="button" data-act="put" title="${L('Add the selected wells to this group{~0}', i < 9 ? L(' (key {0})', i + 1) : '')}" aria-label="${L('Add the selected wells to this group')}"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg></button>
           <button class="btn sm icon ghost" type="button" data-act="vis" title="${g.visible ? L('Hide in chart') : L('Show in chart')}" aria-label="Show or hide">${g.visible ? ICON.eye : ICON.eyeOff}</button>
           <button class="btn sm icon ghost" type="button" data-act="up" title="Move up" aria-label="Move up"${i === 0 ? ' disabled' : ''}>${ICON.up}</button>
           <button class="btn sm icon ghost" type="button" data-act="down" title="Move down" aria-label="Move down"${i === ds.groups.length - 1 ? ' disabled' : ''}>${ICON.down}</button>
@@ -10488,28 +11103,30 @@ function renderGroups() {
         </span></div>`;
     }).join('');
   }
-  // stacked layers: the list by the groups of the active layer, the combinations with the other layers inside; the
-  // excluded wells (the plate's) in a line at the top
   const stackL = layerStack(ds);
   list.classList.toggle('segd', stackL);
   if (stackL) list.innerHTML = layerRowsHtml(ds, dark, dmap);
-  else if (!ds.groups.length && ds.sets.length < 2) list.insertAdjacentHTML('beforeend', `<div class="gempty gempty-2">${esc(L('To group the same wells another way as well (for example by dilution or replicate), make a new grouping layer with “+” in the row of grouping layers.'))}</div>`);
   list.insertAdjacentHTML('afterbegin', exclRowHtml(ds));
-  // (stacked: the head short, the layers in its tooltip; in parts, so that it wraps between them rather than being
-  // cut: fitHeads)
   if (stackL) $('#groupCount').innerHTML = headParts(layerCountText(ds));
   $('#groupCount').title = stackL ? layerCountText(ds, true) : '';
   fitHeads();
   const ung = dataWells(ds).filter(w => !w.group).length;
   const hidden = ds.groups.filter(g => !g.visible).length;
-  $('#groupFoot').innerHTML = `<span>${ung ? L('Ungrouped: {0:well} with data', ung) : (ds.groups.length ? L('All wells with data are grouped') : '')}</span>${hidden ? `<button class="btn sm ghost" type="button" data-act="showall">${L('Show all ({0} hidden)', hidden)}</button>` : ''}${ds.groups.length ? '<span class="spacer"></span>' + clearAllButton(ds) : ''}`;
-  // (stacked: only where new groups go - what is not grouped is in the list and in the key under the plate)
-  if (stackL) $('#groupFoot').innerHTML = `<span>${esc(L('Combinations come from the layers by themselves; groups made here go into “{0}”', ds.sets[newGroupTarget(ds)].name))}</span>`;
+  const restoreBtn = !ds.groups.length ? `<button class="btn sm ghost" type="button" data-act="restorepresets">${esc(L('Restore 6 presets'))}</button>` : '';
+  if (stackL) {
+    $('#groupFoot').innerHTML = `${restoreBtn}<span class="hint">${esc(L('Combinations come from the layers by themselves; groups made here go into “{0}”', ds.sets[ds.gs].name))}</span>`;
+  } else {
+    $('#groupFoot').innerHTML = `${restoreBtn}<span>${ung ? L('Ungrouped: {0:well} with data', ung) : (usedCount ? L('All wells with data are grouped') : '')}</span>${hidden ? `<button class="btn sm ghost" type="button" data-act="showall">${L('Show all ({0} hidden)', hidden)}</button>` : ''}${ds.groups.length ? '<span class="spacer"></span>' + clearAllButton(ds) : ''}`;
+  }
   syncGroupTicks(ds);
   if (S.focusGroup) {
     const inp = $(`.grow[data-g="${S.focusGroup}"] .gname`, list);
-    S.focusGroup = null;
+    S.focusGroup = null; S.scrollGroup = null;
     if (inp) { inp.focus(); inp.select(); inp.scrollIntoView({ block: 'nearest' }); }
+  } else if (S.scrollGroup) {
+    const row = $(`.grow[data-g="${S.scrollGroup}"]`, list);
+    S.scrollGroup = null;
+    if (row) list.scrollTop = list.scrollHeight;
   }
 }
 function setupGroups() {
@@ -10539,8 +11156,7 @@ function setupGroups() {
   });
   const list = $('#groupList');
   const rerender = () => inv('groups', 'plate', 'chart', 'results', 'sel');
-  // a group of the list is picked where the pointer goes down on its row (not on its buttons or its box); a click into
-  // a name that is being typed only moves the caret
+  // clicking a group row selects its wells (not on buttons or the assign checkbox); clicking an active name input moves caret
   list.addEventListener('pointerdown', e => {
     if (e.button !== 0) return;
     const row = e.target.closest('.grow');
@@ -10558,7 +11174,6 @@ function setupGroups() {
     if (!g) return;
     const act = b.dataset.act;
     if (act === 'color') { layerColorPop(b, g.color, spec => { pushUndo(ds); g.color = spec; rerender(); }); return; }
-    if (act === 'put') { if (ds.sel.size) addToGroup(g.id); return; }
     if (act === 'vis') { g.visible = !g.visible; inv('groups', 'chart', 'results'); return; }
     if (act === 'up' || act === 'down') { if (moveGroup(ds, g.id, act === 'up' ? -1 : 1)) rerender(); return; }
     if (act === 'del') { deleteGroups(ds, [g.id]); toast(L('Deleted group “{0}” (undo available)', gName(g))); }
@@ -10567,14 +11182,14 @@ function setupGroups() {
     const t = e.target, row = t.closest('.grow'), ds = curDS();
     const g = row && ds ? gById(ds, row.dataset.g) : null;
     if (!g) return;
-    if (t.classList.contains('gtick')) {          // the box: the wells of this group in or out, the other selected wells stay
-      for (const id of ds.order) if (ds.wells[id].group === g.id) { if (t.checked) ds.sel.add(id); else ds.sel.delete(id); }
-      S.groupAnchor = g.id;
-      afterSel();
+    if (t.classList.contains('gtick')) {
+      // tick = assign selected wells to this group; untick = remove selected wells from this group
+      if (!ds.sel.size) { t.checked = false; return; }
+      if (t.checked) addToGroup(g.id);
+      else removeFromGroup(ds, g.id);
       return;
     }
     if (!t.classList.contains('gname')) return;
-    // the name may be deleted: the group then shows its colour alone (in a shared room every group keeps a name)
     const v = t.value.trim();
     if (v === g.name || (!v && COLLAB.active)) {
       t.value = g.name;
@@ -10588,12 +11203,25 @@ function setupGroups() {
     inv('sel', 'chart', 'results', 'settings', 'plate');
   });
   list.addEventListener('keydown', e => { if (e.target.classList.contains('gname') && e.key === 'Enter') e.target.blur(); });
+  const addPreset = $('#btnAddPreset'), addPresetCol = $('#btnAddPresetColor');
+  if (addPreset) addPreset.addEventListener('click', () => { const ds = curDS(); if (ds) addPresetGroup(ds, { scroll: true }); });
+  if (addPresetCol) addPresetCol.addEventListener('click', e => { const ds = curDS(); if (ds) layerColorPop(e.currentTarget, nextSlot(ds), spec => addPresetGroup(ds, { color: spec, scroll: true })); });
   $('#groupFoot').addEventListener('click', e => {
     const b = e.target.closest('[data-act]');
     if (!b) return;
     const ds = curDS();
-    if (b.dataset.act === 'showall') { ds.groups.forEach(g => { g.visible = true; }); inv('groups', 'chart', 'results'); }
-    if (b.dataset.act === 'clearall') confirmBox(...clearAllAsk(ds), 'Delete', () => {
+    if (!ds) return;
+    const act = b.dataset.act;
+    if (act === 'restorepresets') {
+      pushUndo(ds);
+      const made = makePresetGroups(ds, ds.gs, PRESET_COUNT);
+      ds.groups.push(...made);
+      ds.ver++;
+      inv('groups', 'settings', 'sel');
+      return;
+    }
+    if (act === 'showall') { ds.groups.forEach(g => { g.visible = true; }); inv('groups', 'chart', 'results'); }
+    if (act === 'clearall') confirmBox(...clearAllAsk(ds), 'Delete', () => {
       pushUndo(ds);
       ds.groups = [];
       ds.order.forEach(id => { ds.wells[id].group = null; });
@@ -10626,9 +11254,10 @@ function renderSettings() {
   if (document.activeElement !== $('#v_sigLabel')) $('#v_sigLabel').value = S.view.sigLabel;
   $$('.tu').forEach(n => { n.textContent = TU(); });
   const gopt = g => (g.name ? `<option value="${g.id}" translate="no">${esc(g.name)}</option>` : `<option value="${g.id}" translate="no" style="color:${resolveColor(g.color, isDark())}">■</option>`);
+  const usedIn = (V) => V.groups.filter(g => g.id === ds.roles.blank || g.id === ds.roles.neg || ds.order.some(id => V.gid(ds.wells[id]) === g.id));
   const opts = ds.sets.length > 1
-    ? ds.sets.map((s, si) => { const V = setView(ds, si); return V.groups.length ? `<optgroup label="${esc(s.name)}" translate="no">${V.groups.map(gopt).join('')}</optgroup>` : ''; }).join('')
-    : ds.groups.map(gopt).join('');
+    ? ds.sets.map((s, si) => { const V = setView(ds, si), gs = usedIn(V); return gs.length ? `<optgroup label="${esc(s.name)}" translate="no">${gs.map(gopt).join('')}</optgroup>` : ''; }).join('')
+    : usedIn(setView(ds, ds.gs)).map(gopt).join('');
   $('#r_blank').innerHTML = '<option value="" data-i18n="blank">None</option>' + opts;
   $('#r_blank').value = ds.roles.blank || '';
   $('#r_neg').innerHTML = '<option value="">(not set)</option>' + opts;
@@ -10748,7 +11377,7 @@ function closeDS(i) {
     invAll();
   };
   // groups, colours and exclusions are work to lose also when no step of this session made them (a restored session)
-  const laidOut = () => allGroups(ds).length > 0 || ds.order.some(id => { const w = ds.wells[id]; return !!(w && (w.color || w.excluded)); }) || hasFrames(ds)
+  const laidOut = () => hasAssignedGroups(ds) || ds.order.some(id => { const w = ds.wells[id]; return !!(w && (w.color || w.excluded)); }) || hasFrames(ds)
     || ds.sets.some(s => (Array.isArray(s.excl) && s.excl.length > 0) || (s.frames && hasFrames({ frames: s.frames })));
   if (ds.notes) confirmBox('Close dataset', L('Close “{0}”? Its experiment notes will be closed too (use “Save project” first to keep them).', esc(ds.name)), 'Close', go);
   else if (ds.isDemo || !(dsEdited(ds) || laidOut())) go();
@@ -10785,7 +11414,7 @@ function renderNotice() {
   if (ds && ds.isDemo) {
     el.className = 'notice';
     // the example starts ungrouped, like imported data; while it is untouched its ready-made groups can be added
-    const offer = !ds.demoGrouped && !ds.loaded && !dsEdited(ds) && !ds.groups.length && !COLLAB.active;
+    const offer = !ds.demoGrouped && !ds.loaded && !dsEdited(ds) && !hasAssignedGroups(ds) && !COLLAB.active;
     el.innerHTML = '<span>This is simulated <b>example data</b>: try out the features, then close this tab or import your own file to replace it.</span><span class="spacer"></span>' +
       (offer ? `<button class="btn sm" type="button" data-demo-groups title="${L('Groups the wells by sample name and adds a second grouping layer “By type”')}">${L('Add example groups')}</button>` : '') +
       '<button class="btn sm primary" type="button" data-imp>Import my data</button>';
@@ -10880,8 +11509,8 @@ function buildChartData(ds, dark) {
   // stacked layers: the curves of the combinations, the filters and the small charts (layerChart)
   if (src === 'groups' && layerStack(ds)) return layerChart(ds, dark, out, lw);
   if (src === 'groups') {
-    const onlySel = ds.sel.size > 0;
-    if (!ds.groups.length) out.note = 'No groups yet: select wells on the plate, then click a coloured “+” below it';
+    const onlySel = ds.sel.size > 0, anyG = hasAssignedGroups(ds, ds.gs);
+    if (!anyG) out.note = 'No groups assigned yet: select wells on the plate, then tick a group below to assign them';
     else if (onlySel) out.note = 'means of the selected wells only';
     for (const g of ds.groups) {
       if (!g.visible) continue;
@@ -10900,7 +11529,7 @@ function buildChartData(ds, dark) {
       if (S.view.band !== 'none' && curves.length > 1) out.bands.push({ id: 'g:' + g.id, color, lo: a.lo, hi: a.hi });
       if (S.view.reps) curves.forEach(c => out.reps.push({ id: c.w.id, color, y: c.y }));
     }
-    if (onlySel && ds.groups.length && !out.series.length) out.note = 'None of the selected wells is in a (visible) group';
+    if (onlySel && anyG && !out.series.length) out.note = 'None of the selected wells is in a (visible) group';
   } else {
     let ids = ds.order;
     if (src === 'selected') { if (ds.sel.size) ids = ds.order.filter(id => ds.sel.has(id)); else out.note = 'no wells selected, showing all'; }
@@ -11200,8 +11829,10 @@ function drawChart(o) {
   P.push(`<text transform="translate(${big ? 22 : 16} ${m.t + ph / 2}) rotate(-90)" text-anchor="middle" font-size="${fsTitle}" font-weight="700" fill="${col.ink}" translate="no">${esc(S.view.yMode === 'sig' ? yAxisLabel() : tr(yAxisLabel()))}</text>`);
   P.push(`<g clip-path="url(#${cid})">`);
   const tf = TF();
-  if (S.set.tStart != null && S.set.tStart * tf > dom.x0) P.push(`<rect x="${m.l}" y="${m.t}" width="${Math.max(0, sx(S.set.tStart * tf) - m.l).toFixed(1)}" height="${ph}" fill="${col.wash}"/>`);
-  if (S.set.tEnd != null && S.set.tEnd * tf < dom.x1) { const x = sx(S.set.tEnd * tf); P.push(`<rect x="${x.toFixed(1)}" y="${m.t}" width="${Math.max(0, m.l + pw - x).toFixed(1)}" height="${ph}" fill="${col.wash}"/>`); }
+  if (S.view.winShade !== false) {
+    if (S.set.tStart != null && S.set.tStart * tf > dom.x0) P.push(`<rect x="${m.l}" y="${m.t}" width="${Math.max(0, sx(S.set.tStart * tf) - m.l).toFixed(1)}" height="${ph}" fill="${col.wash}"/>`);
+    if (S.set.tEnd != null && S.set.tEnd * tf < dom.x1) { const x = sx(S.set.tEnd * tf); P.push(`<rect x="${x.toFixed(1)}" y="${m.t}" width="${Math.max(0, m.l + pw - x).toFixed(1)}" height="${ph}" fill="${col.wash}"/>`); }
+  }
   P.push(spliceLinesSvg(ds, sx, m, ph, col, dom, big));
   for (const b of data.bands) P.push(`<path class="band" data-id="${esc(b.id)}" d="${spliceSegs(ds, data.t.length, (a, z) => bandPath(data.t.slice(a, z), b.lo.slice(a, z), b.hi.slice(a, z), sx, sy, log))}" fill="${b.color}" fill-opacity="${col.dark ? 0.16 : 0.14}" stroke="none"/>`);
   for (const r of data.reps) P.push(`<path class="curve rep" data-id="${esc(r.id)}" d="${spliceSegs(ds, data.t.length, (a, z) => linePath(data.t.slice(a, z), r.y.slice(a, z), sx, sy, log, pw))}" stroke="${r.color}" stroke-width="1" stroke-opacity="0.45" fill="none"/>`);
@@ -11277,6 +11908,8 @@ function renderChart() {
   });
   $('#yMode').value = S.view.yMode;
   $('#logY').checked = S.view.logY; $('#showSmooth').checked = S.view.smooth; mkButton();
+  const jw = $('#spliceJoinWrap');
+  if (jw) { jw.hidden = !spliceOf(ds); $('#showJoins').checked = S.view.joins !== false; }
   $('#bandMode').value = S.view.band; $('#showReps').checked = S.view.reps; $('#labelMode').value = S.view.labels;
   $$('.grp-only').forEach(n => { n.hidden = S.view.source !== 'groups'; });
   // (the grouping layer of the curves: the active one - its tab in the group card switches it; the chart has no
@@ -12202,15 +12835,36 @@ function mkButton() {
 }
 function openMarkers(anchor) {
   if (popEl && popEl.classList.contains('mk-pop')) { closePop(); return; }
+  const ds = curDS(), isSpl = !!spliceOf(ds);
   const rows = [['thr', L('Threshold line (drag to set)')], ['cut', L('Cut-off line (drag to set)')], null,
     ['lag', '● ' + L('Lag time')], ['t50', '◆ T50'], ['plat', '■ ' + L('Plateau reached')], ['tan', '╌ ' + L('Max-slope tangent / fitted curve')]];
+  const vrows = (isSpl ? [['joins', L('Splice points (dashed lines)')]] : []).concat([
+    ['winShade', L('Time window shading')],
+    ['grid', L('Grid lines')],
+    ['symbols', L('Data points')]
+  ]);
+  const vOn = k => (k === 'joins' || k === 'winShade' ? S.view[k] !== false : !!S.view[k]);
   const html = '<div class="mk-list" translate="no">'
     + rows.map(r => (r ? `<label class="chk"><input type="checkbox" data-k="${r[0]}"${mkOn(r[0]) ? ' checked' : ''}> ${esc(r[1])}</label>` : '<div class="mk-sep"></div>')).join('')
     + `<p class="mk-note">${esc(L('Marks of each well: drawn for up to 12 curves; with more, for the curve under the pointer'))}</p></div>`
-    + `<div class="mk-row" translate="no"><button type="button" class="btn sm" data-mk="all">${esc(L('Show all'))}</button><button type="button" class="btn sm" data-mk="none">${esc(L('Hide all'))}</button></div>`;
+    + `<div class="mk-row" translate="no"><button type="button" class="btn sm" data-mk="all">${esc(L('Show all'))}</button><button type="button" class="btn sm" data-mk="none">${esc(L('Hide all'))}</button></div>`
+    + `<div class="mk-sep" style="margin:8px 0 4px"></div><div class="mk-sec" translate="no">${esc(L('Chart overlays'))}</div>`
+    + '<div class="mk-list" translate="no">'
+    + vrows.map(([k, lab]) => `<label class="chk"><input type="checkbox" data-vopt="${k}"${vOn(k) ? ' checked' : ''}> ${esc(lab)}</label>`).join('')
+    + '</div>';
   const el = openPop(anchor, html, p => p.classList.add('mk-pop'));
   const sync = () => { $$('input[data-k]', el).forEach(i => { i.checked = mkOn(i.dataset.k); }); mkButton(); inv('chart'); };
-  el.addEventListener('change', e => { const i = e.target.closest('input[data-k]'); if (!i) return; mkSet(i.dataset.k, i.checked); sync(); });
+  el.addEventListener('change', e => {
+    const i = e.target.closest('input[data-k]');
+    if (i) { mkSet(i.dataset.k, i.checked); sync(); return; }
+    const v = e.target.closest('input[data-vopt]');
+    if (v) {
+      const k = v.dataset.vopt;
+      S.view[k] = v.checked;
+      if (k === 'joins' && $('#showJoins')) $('#showJoins').checked = v.checked;
+      inv('chart', k === 'grid' ? 'results' : 'chart');
+    }
+  });
   el.addEventListener('click', e => { const b = e.target.closest('[data-mk]'); if (!b) return; mkSetAll(b.dataset.mk === 'all'); sync(); });
 }
 
@@ -12533,7 +13187,7 @@ function openAxisPop(anchor) {
     </div>
     <p class="hint" style="margin:4px 0 8px">${L('Leave empty for automatic. Y-axis settings are remembered per y-axis mode (now: {~0}).', esc(Lc('ymode', YMODE_LABEL[S.view.yMode])))}</p>
     <div class="row" style="margin-bottom:6px"><label class="chk"><input type="checkbox" data-opt="grid"${S.view.grid ? ' checked' : ''}> Grid lines</label><label class="chk"><input type="checkbox" data-opt="symbols"${S.view.symbols ? ' checked' : ''}> Data points</label><label class="lbl">Line width <input type="number" min="0.5" max="6" step="0.1" data-opt="lineW" value="${S.view.lineW}" style="width:58px"></label></div>
-    ${spliceOf(curDS()) ? `<div class="row" style="margin-bottom:6px"><label class="chk"><input type="checkbox" data-opt="joins"${S.view.joins !== false ? ' checked' : ''}> Splice points (dashed lines)</label></div>` : ''}
+    <div class="row" style="margin-bottom:6px"><label class="chk"><input type="checkbox" data-opt="winShade"${S.view.winShade !== false ? ' checked' : ''}> Time window shading</label>${spliceOf(curDS()) ? `<label class="chk"><input type="checkbox" data-opt="joins"${S.view.joins !== false ? ' checked' : ''}> Splice points (dashed lines)</label>` : ''}</div>
     <div class="row" style="margin-bottom:6px"><span class="lbl">Palette</span>${paletteSelect('axPal')}<span class="palprev" id="axPalPrev">${palettePreview()}</span></div>
     <div class="row" style="margin-bottom:6px"><span class="lbl">Chart height</span><input type="number" min="200" max="1200" step="10" data-opt="chartH" value="${S.view.chartH > 0 ? S.view.chartH : ''}" placeholder="auto" style="width:70px"> <span class="hint">px, empty = automatic</span></div>
     <div class="row" style="margin-bottom:8px"><span class="lbl">Export size</span><input type="number" min="300" max="4000" step="10" data-opt="exportW" value="${S.view.exportW}" style="width:70px"> × <input type="number" min="200" max="4000" step="10" data-opt="exportH" value="${S.view.exportH}" style="width:70px"> <span class="hint">px (PNG at 2×)</span>${CHART_SHAPES[curShape()] ? `<span class="hint">${L('A square chart is fitted into this size')}</span>` : ''}</div>
@@ -12694,8 +13348,9 @@ function groupStatsList(ds, si, dark, scope, layered) {
     if (ws.length) out.push(Object.assign(mk(g.name, resolveColor(g.color, dark), ws, g.id), { fill: resolveColor(g.color, false) }));
   }
   const ung = dataWells(ds).filter(w => !V.gid(w) && inScope(w));
-  // without any groups the single row is simply "the wells": all of them, or the selected ones
-  if (ung.length) out.push(mk(V.groups.length ? 'Ungrouped' : scope ? Lc('rows', 'Selected wells') : 'All wells', NEUTRAL[dark ? 'dark' : 'light'], ung, null));
+  const anyGrouped = ds.order.some(id => ds.wells[id].y && !!V.gid(ds.wells[id]));
+  // without any assigned groups the single row is simply "the wells": all of them, or the selected ones
+  if (ung.length) out.push(mk(anyGrouped ? 'Ungrouped' : scope ? Lc('rows', 'Selected wells') : 'All wells', NEUTRAL[dark ? 'dark' : 'light'], ung, null));
   return out;
 }
 function groupStatRows(ds, keys, allSets, scope) {
@@ -12745,7 +13400,16 @@ function renderResults() {
     renderGroupTable(ds);
   } else if (tab === 'compare') {
     const testing = S.view.stat.mode !== 'none';
+    const subOth = ds.sets.length > 1 ? layerMaps(ds).filter(M => M.si !== ds.gs && layerValues(ds, M).length) : [];
+    const curSub = lvOf(ds).cmpBy || '';
+    const subSel = subOth.length
+      ? `<label class="lbl" title="${esc(L('Subdivide each group by another grouping layer'))}">${esc(L('Subdivide'))} <select id="cmpSub"><option value=""${!curSub ? ' selected' : ''}>${esc(L('None (active layer)'))}</option>`
+        + subOth.map(M => `<option value="${esc(M.s.id)}"${curSub === M.s.id ? ' selected' : ''} translate="no">${esc(M.name)}</option>`).join('')
+        + (subOth.length > 1 ? `<option value="__all"${curSub === '__all' ? ' selected' : ''}>${esc(L('All layers'))}</option>` : '')
+        + `</select></label>`
+      : '';
     tools.innerHTML = `${onlySelBox}<label class="lbl">Parameter <select id="cmpParam">${PARAM_KEYS.filter(k => k !== 'thr').map(k => `<option value="${k}"${k === S.view.cmpParam ? ' selected' : ''}>${esc(PARAMS[k].label)}</option>`).join('')}</select></label>
+      ${subSel}
       <button class="btn sm${testing ? ' active' : ''}" type="button" data-t="stat" title="Run t-tests or Mann–Whitney tests between groups and mark significance on the plot">Significance tests…</button>
       ${testing ? `<button class="btn sm" type="button" data-t="statcopy" title="Copy the table of test results as tab-separated text">${ICON.copy}Copy test results</button>` : ''}
       <button class="btn sm" type="button" data-t="imgcopy" title="Copy the chart to the clipboard as an image, ready to paste into slides or a document">Copy image</button><button class="btn sm" type="button" data-t="png">PNG</button><button class="btn sm" type="button" data-t="svg">SVG</button>`;
@@ -12978,13 +13642,52 @@ function drawDots(o) {
   P.push('</svg>');
   return { svg: P.join(''), pts, W, H, hiddenPairs, shownPairs: brackets.length };
 }
+/** Layer indices used to group items in the Comparison plot: [ds.gs], or [ds.gs, ...subdivision layers]. */
+function compareSubKeys(ds) {
+  if (!ds || ds.sets.length < 2) return [ds ? ds.gs : 0];
+  const cmpBy = lvOf(ds).cmpBy || '';
+  if (!cmpBy) return [ds.gs];
+  const maps = layerMaps(ds), gs = ds.gs;
+  const oth = maps.filter(M => M.si !== gs && layerValues(ds, M).length).map(M => M.si);
+  if (!oth.length) return [gs];
+  if (cmpBy === '__all') return [gs, ...oth];
+  const si = layerIdx(ds, cmpBy);
+  return si >= 0 && oth.includes(si) ? [gs, si] : [gs];
+}
 function compareItems(ds, key, dark, scope) {
-  return groupStatsList(ds, null, dark, scope).filter(g => !g.gid || gById(ds, g.gid).visible).map(g => ({
-    label: g.label, gid: g.gid, nt: !!g.gid, color: g.color, fill: g.fill, nAll: g.n, pos: g.pos, st: g.st[key], ev: g.ev[key] || null,
-    vals: g.ws.map(w => ({ wid: w.id, v: pval(ds.res[w.id], key) })).filter(p => isFinite(p.v)),
-    // for a time to an event: the wells that did not rise, with the time they were watched for
-    cens: PARAMS[key].ev ? g.ws.filter(w => ds.res[w.id].noRise && !isFinite(ds.res[w.id][key])).map(w => ({ wid: w.id, t: ds.res[w.id].tObs * TF() })) : []
-  }));
+  const subKeys = compareSubKeys(ds);
+  if (subKeys.length <= 1) {
+    return groupStatsList(ds, null, dark, scope).filter(g => !g.gid || gById(ds, g.gid).visible).map(g => ({
+      label: g.label, gid: g.gid, baseGid: g.gid, ids: g.ws.map(w => w.id), nt: !!g.gid, color: g.color, fill: g.fill, nAll: g.n, pos: g.pos, st: g.st[key], ev: g.ev[key] || null,
+      vals: g.ws.map(w => ({ wid: w.id, v: pval(ds.res[w.id], key) })).filter(p => isFinite(p.v)),
+      // for a time to an event: the wells that did not rise, with the time they were watched for
+      cens: PARAMS[key].ev ? g.ws.filter(w => ds.res[w.id].noRise && !isFinite(ds.res[w.id][key])).map(w => ({ wid: w.id, t: ds.res[w.id].tObs * TF() })) : []
+    }));
+  }
+  if (dark == null) dark = isDark();
+  if (scope === undefined) scope = statScope(ds);
+  const maps = layerMaps(ds), gs = ds.gs, res = ds.res || {}, tf = TF(), neutral = NEUTRAL[dark ? 'dark' : 'light'];
+  const ids = ds.order.filter(id => ds.wells[id].y && (!scope || scope.has(id)));
+  const combos = layerCombos(ds, maps, subKeys, ids).filter(c => { const g = c.parts[0]; return !g || g.visible; });
+  const out = [];
+  for (const c of combos) {
+    const valid = c.ids.map(id => ds.wells[id]).filter(w => !w.excluded && res[w.id] && res[w.id].n);
+    if (!valid.length) continue;
+    const g0 = c.parts[0], colG = g0 || c.parts.find(Boolean);
+    const vals = valid.map(w => ({ wid: w.id, v: pval(res[w.id], key) })).filter(p => isFinite(p.v));
+    const cens = PARAMS[key].ev ? valid.filter(w => res[w.id].noRise && !isFinite(res[w.id][key])).map(w => ({ wid: w.id, t: res[w.id].tObs * tf })) : [];
+    const st = C.stats(vals.map(p => p.v));
+    const ev = PARAMS[key].ev ? C.kmMedian(vals.map(p => p.v), cens.map(x => x.t)) : null;
+    const pos = valid.filter(w => res[w.id].positive).length;
+    out.push({
+      label: comboName(c, ds), gid: 'c:' + c.key, baseGid: g0 ? g0.id : null, ids: valid.map(w => w.id), nt: true,
+      color: colG ? resolveColor(colG.color, dark) || neutral : neutral,
+      fill: colG ? resolveColor(colG.color, false) || NEUTRAL.light : NEUTRAL.light,
+      sq: c.parts.map((p, k) => (subKeys[k] === gs ? '' : p ? vqHtml(p.color, dark) : VQ_NONE)).join(''),
+      nAll: valid.length, pos, st, ev, vals, cens
+    });
+  }
+  return out;
 }
 
 /* ---------- significance tests between groups ---------- */
@@ -12997,7 +13700,7 @@ function statGroups(ds, items, mode) {
   let ctrl = -1;
   if ((mode || st.mode) === 'ctrl' && list.length) {
     ctrl = st.ctrl ? list.findIndex(it => (it.label ? it.label === st.ctrl : '#' + it.gid === st.ctrl)) : -1;                       // chosen by name, so it carries over to other plates
-    if (ctrl < 0 && ds.roles.neg) ctrl = list.findIndex(it => it.gid === ds.roles.neg);
+    if (ctrl < 0 && ds.roles.neg) ctrl = list.findIndex(it => it.gid === ds.roles.neg || it.baseGid === ds.roles.neg);
     if (ctrl < 0) ctrl = list.findIndex(it => /阴性|negative|\bneg\b|\bnc\b/i.test(it.label));
     if (ctrl < 0) ctrl = list.findIndex(it => /对照|control|\bctrl\b|空白|blank|vehicle|mock/i.test(it.label));
     if (ctrl < 0) ctrl = 0;
@@ -13061,7 +13764,8 @@ function statTableHtml(key, sig) {
   const untestable = fi ? L('Not testable: a group has no valid wells') : mw ? L('Not testable: every value is the same, or a group has no values') : L('Not testable: a group has fewer than two values, or there is no spread');
   const body = sig.rows.map(r => {
     const stat = fi ? (isFinite(r.p) ? L('exact') : '—') : !isFinite(r.stat) ? '—' : mw ? `U = ${+r.stat.toFixed(1)}${r.exact || !isFinite(r.p) ? '' : L(' (normal approx.)')}` : `t = ${r.stat.toFixed(2)}, df = ${r.df.toFixed(1)}`;
-    return `<tr data-pair="${r.a.gid}|${r.b.gid}"${isFinite(r.p) ? '' : ` title="${esc(untestable)}"`}><td class="txt"><span class="sw" style="--c:${r.a.color}"></span>${esc(r.a.label)} <span class="hint">vs</span> <span class="sw" style="--c:${r.b.color};margin-left:4px"></span>${esc(r.b.label)}</td>` +
+    const pids = [...(r.a.ids || []), ...(r.b.ids || [])].join(' ');
+    return `<tr data-pair="${esc(r.a.gid)}||${esc(r.b.gid)}" data-pair-ids="${esc(pids)}"${isFinite(r.p) ? '' : ` title="${esc(untestable)}"`}><td class="txt"><span class="sw" style="--c:${r.a.color}"></span>${r.a.sq ? `<span class="sqs">${r.a.sq}</span>` : ''}${esc(r.a.label)} <span class="hint">vs</span> <span class="sw" style="--c:${r.b.color};margin-left:4px"></span>${r.b.sq ? `<span class="sqs">${r.b.sq}</span>` : ''}${esc(r.b.label)}</td>` +
       `<td>${fi ? `${r.a.pos}/${r.a.nAll} <span class="hint">vs</span> ${r.b.pos}/${r.b.nAll}` : `${r.n1} / ${r.n2}`}</td><td${isFinite(r.est) ? '' : ' class="na"'}>${esc(fmt(r.est, dec))}</td><td${isFinite(r.stat) || (fi && isFinite(r.p)) ? '' : ' class="na"'}>${stat}</td><td${isFinite(r.p) ? '' : ' class="na"'}>${fmtP(r.p)}</td><td${isFinite(r.padj) ? '' : ' class="na"'}>${fmtP(r.padj)}</td>` +
       `<td class="txt sigc${r.stars && r.stars !== 'ns' ? ' yes' : ''}">${r.stars || '—'}</td></tr>`;
   }).join('');
@@ -13125,7 +13829,9 @@ function renderCompare(ds) {
   CMP.points = d.pts;
   CMP.svg = $('svg', box);
   CMP.W = W; CMP.H = d.H;
-  let foot = (scope ? `<span>${L('Selected wells only ({0}).', scopeCount(ds, scope))} </span>` : '') + '<span>Each dot is one well; line = mean, error bars = ± SD; the numbers under the axis are “wells with a value / all valid wells”.</span>';
+  const subKeys = compareSubKeys(ds);
+  const subNote = subKeys.length > 1 ? `<span translate="no">${esc(L('Subdivided by “{0}”.', subKeys.map(i => ds.sets[i].name).join(' × ')))} </span>` : '';
+  let foot = (scope ? `<span>${L('Selected wells only ({0}).', scopeCount(ds, scope))} </span>` : '') + subNote + '<span>Each dot is one well; line = mean, error bars = ± SD; the numbers under the axis are “wells with a value / all valid wells”.</span>';
   const nCens = items.reduce((n, it) => n + it.cens.length, 0);
   if (nCens) foot += `<span translate="no">&emsp;${esc(L('△ = wells that did not rise ({0}): they have no {1} and are not part of the mean.', nCens, tr(PARAMS[key].label).toLowerCase()))}</span>`;
   if (sig) {
@@ -13145,8 +13851,11 @@ function renderCompare(ds) {
 /** The comparison plot as a figure for export, the clipboard and the report. */
 function compareFigure(ds, key) {
   const items = compareItems(ds, key, false);        // exported figures use the light palette whatever the screen theme
-  return drawDots({ W: 1100, H: 700, items, col: chartColors(true), key, forExport: true, sig: compareStats(ds, key, items),
-    title: L('{0} · {1} (mean ± SD)', ds.name, tr(PARAMS[key].label)) });
+  const subKeys = compareSubKeys(ds);
+  const title = subKeys.length > 1
+    ? L('{0} · {1} ({2}, mean ± SD)', ds.name, tr(PARAMS[key].label), subKeys.map(i => ds.sets[i].name).join(' × '))
+    : L('{0} · {1} (mean ± SD)', ds.name, tr(PARAMS[key].label));
+  return drawDots({ W: 1100, H: 700, items, col: chartColors(true), key, forExport: true, sig: compareStats(ds, key, items), title });
 }
 async function exportCompare(type) {
   const ds = curDS(), key = S.view.cmpParam;
@@ -13177,6 +13886,7 @@ function setupResults() {
   $('#resTools').addEventListener('change', e => {
     if (e.target.id === 'onlySel') { S.view.onlySel = e.target.checked; inv('results'); }
     if (e.target.id === 'cmpParam') { S.view.cmpParam = e.target.value; inv('results'); }
+    if (e.target.id === 'cmpSub') { lvOf(curDS()).cmpBy = e.target.value; inv('results'); }
     if (e.target.id === 'gstat') { S.view.gstat = e.target.value; inv('results'); }
   });
   $('#resTools').addEventListener('click', e => {
@@ -13219,16 +13929,32 @@ function setupResults() {
     const tg = e.target.closest('tr[data-g]');
     if (tg && tg.dataset.g) { const ds = curDS(); selectIds(ds.order.filter(id => ds.wells[id].group === tg.dataset.g && (!inSel || ds.sel.has(id))), add); return; }
     const tp = e.target.closest('tr[data-pair]');        // a comparison: select the wells of both groups
-    if (tp) { const ds = curDS(), pair = tp.dataset.pair.split('|'); selectIds(ds.order.filter(id => pair.includes(ds.wells[id].group) && (!inSel || ds.sel.has(id))), add); }
+    if (tp) {
+      const ds = curDS();
+      const ids = tp.dataset.pairIds
+        ? tp.dataset.pairIds.split(' ').filter(id => ds.wells[id] && (!inSel || ds.sel.has(id)))
+        : ds.order.filter(id => tp.dataset.pair.split('||').includes(ds.wells[id].group) && (!inSel || ds.sel.has(id)));
+      selectIds(ids, add);
+    }
   });
   body.addEventListener('pointerover', e => {
     const tr = e.target.closest('tr[data-w]');
-    const id = tr ? tr.dataset.w : null;
-    if (id !== CH.tableHov) {
-      CH.tableHov = id;
+    const tp = !tr ? e.target.closest('tr[data-pair]') : null;
+    const key = tr ? 'w:' + tr.dataset.w : tp && tp.dataset.pairIds ? 'p:' + tp.dataset.pairIds : null;
+    if (key !== CH.tableHov) {
+      CH.tableHov = key;
       const ds = curDS();
-      plateLink(id ? [id] : [], id ? wellColorHex(ds, ds.wells[id], isDark()) : null);
-      chartHighlight(id);
+      if (tr) {
+        const id = tr.dataset.w;
+        plateLink([id], wellColorHex(ds, ds.wells[id], isDark()));
+        chartHighlight(id);
+      } else if (tp && tp.dataset.pairIds) {
+        plateLink(tp.dataset.pairIds.split(' ').filter(id => ds.wells[id]));
+        chartHighlight(null);
+      } else {
+        plateLink([]);
+        chartHighlight(null);
+      }
     }
   });
   body.addEventListener('pointerleave', () => {
@@ -15295,6 +16021,8 @@ function openSplice(i) {
         <span class="lab">Time mode</span><div class="opts" style="flex-direction:column;align-items:flex-start;gap:7px">
           <label class="chk" style="white-space:normal"><input type="radio" name="spMode" value="actual"> Actual time (the pause between them stays on the time axis)</label>
           <label class="chk" style="white-space:normal"><input type="radio" name="spMode" value="b2b"> Back to back (no gap)</label></div>
+        <span class="lab">Display</span><div class="opts">
+          <label class="chk" style="white-space:normal"><input type="checkbox" id="spShowJoins"${S.view.joins !== false ? ' checked' : ''}> Show splice points (dashed lines) on chart</label></div>
         <span></span><p class="hint" id="spHint" translate="no" style="margin:-2px 0 0"></p>
       </div>
       <div class="sp-msg" id="spMsg" translate="no"></div>`,
@@ -15349,6 +16077,7 @@ function openSplice(i) {
   q('[data-ok]').onclick = () => {
     const res = makeSplice(a, other(), opts());
     if (!res.ds) { update(); return; }
+    S.view.joins = q('#spShowJoins').checked;
     m.close();
     S.ds.push(res.ds);
     S.cur = S.ds.length - 1; S.zoom = null; S.sort = { key: null, dir: 1 }; S.dirty = true;
@@ -15499,6 +16228,47 @@ function loadProject(o, keepPrefs) {
   S.setVer++; S.zoom = null; S.sort = { key: null, dir: 1 }; S.dirty = false;
   try { PROJ.base = projFp(); PROJ.dirty = false; } catch (e) { PROJ.base = null; }      // what was loaded has no changes
   invAll();
+}
+/** Append datasets from a project file into the current workspace without closing existing datasets. */
+function appendProject(o) {
+  const list = projectDatasets(o);
+  if (!list.length) throw new Error('The project contains no datasets');
+  S.ds = S.ds.filter(d => !(d.isDemo && !dsEdited(d) && !d.notes && !hasAssignedGroups(d)));
+  const usedIds = new Set(S.ds.map(d => d.id));
+  const idMap = new Map();
+  for (const d of list) {
+    if (usedIds.has(d.id)) {
+      const nid = uid('d');
+      idMap.set(d.id, nid);
+      d.id = nid;
+    }
+    usedIds.add(d.id);
+  }
+  if (idMap.size) {
+    for (const d of list) {
+      const r = spliceOf(d);
+      if (!r) continue;
+      if (r.from && idMap.has(r.from)) r.from = idMap.get(r.from);
+      if (Array.isArray(r.parts)) for (const p of r.parts) if (p && p.id && idMap.has(p.id)) p.id = idMap.get(p.id);
+    }
+  }
+  if (o.settingsPerDataset && !S.each) {
+    for (const d of S.ds) if (!d.set) d.set = Object.assign({}, S.set);
+    S.each = true;
+  }
+  if (S.each) {
+    const fallbackSet = o.set ? cleanSettings(o.set) : Object.assign({}, S.set);
+    for (const d of list) if (!d.set) d.set = Object.assign({}, fallbackSet);
+  }
+  const first = S.ds.length;
+  for (const d of list) {
+    S.ds.push(d);
+    if (d.layerExclNew) { layerExclTell(d, d.layerExclNew); delete d.layerExclNew; }
+  }
+  S.cur = first;
+  S.setVer++; S.zoom = null; S.sort = { key: null, dir: 1 }; S.dirty = true;
+  invAll();
+  return list.length;
 }
 /* ---------- saving to the same file ----------
    "Save project" (the button, Ctrl+S) asks where only the first time (the File System Access API: showSaveFilePicker)
@@ -15877,12 +16647,26 @@ async function openProjectFile(f, handle) {
     // looked at before anything is asked: a file that is no project must not offer to replace the datasets
     let o;
     try { o = JSON.parse(await f.text()); } catch (e) { throw new Error(L('This is not a project file saved by this app')); }
-    if (!projectDatasets(o).length) throw new Error(L('The project contains no datasets'));
-    const go = () => { try { loadProject(o); projOpened(f.name, handle, f); toast('Project opened'); } catch (e) { toast(L('Cannot open: {~0}', e.message)); } };
-    if (COLLAB.active) confirmBox('Replace the shared data', 'Opening a project replaces every dataset in the room and is synchronized to the other participants. If changes are still unsynchronized, save the draft on this page first.', 'Open and synchronize', go);
-    else if (!projClean()) projAskSave(go, handle);
-    else if (S.ds.some(d => !d.isDemo)) confirmBox('Open project', 'Opening a project replaces all current datasets.', 'Open', go);
-    else go();
+    const incoming = projectDatasets(o);
+    if (!incoming.length) throw new Error(L('The project contains no datasets'));
+    const goReplace = () => { try { loadProject(o); projOpened(f.name, handle, f); toast('Project opened'); } catch (e) { toast(L('Cannot open: {~0}', e.message)); } };
+    const goAdd = () => { try { const n = appendProject(o); toast(L('Added {0:dataset} from “{1}” (existing datasets kept)', n, String(f.name || '').replace(/\.json$/i, ''))); } catch (e) { toast(L('Cannot open: {~0}', e.message)); } };
+    if (COLLAB.active) {
+      confirmBox('Replace the shared data', 'Opening a project replaces every dataset in the room and is synchronized to the other participants. If changes are still unsynchronized, save the draft on this page first.', 'Open and synchronize', goReplace);
+      return;
+    }
+    const hasOpen = S.ds.some(d => !d.isDemo || dsEdited(d) || !!d.notes || hasAssignedGroups(d));
+    if (!hasOpen) { goReplace(); return; }
+    const choice = await askBox(
+      'Open project',
+      L('“{0}” contains {1:dataset}. Add them alongside your current datasets, or replace everything open?', String(f.name || '').replace(/\.json$/i, ''), incoming.length),
+      [['add', L('Add to current workspace (keep existing)'), true], ['replace', L('Replace all current datasets'), false], ['', L('Cancel'), false]]
+    );
+    if (choice === 'add') goAdd();
+    else if (choice === 'replace') {
+      if (!projClean()) projAskSave(goReplace, handle);
+      else goReplace();
+    }
   } catch (e) { toast(L('Cannot open: {~0}', e.message)); }
 }
 
@@ -15912,7 +16696,7 @@ function analysisGroups(ds, si) {
     if (ds.roles.blank === g.id) o.role = 'blank';
     else if (ds.roles.neg === g.id) o.role = 'negative control';
     return o;
-  });
+  }).filter(o => o.wells.length > 0 || o.role);
 }
 function getDatasetResults(id) {
   const ds = dsById(id);
@@ -16009,6 +16793,7 @@ function applyDatasetAnalysis(id, a, opt) {
     return set;
   });
   if (!ds.sets.length) ds.sets = [newSet(L('Layer 1'))];
+  if (typeof makePresetGroups === 'function') ds.sets.forEach((s, si) => { if (!s.groups.length) s.groups = makePresetGroups(ds, si, PRESET_COUNT); });
   loadSet(ds, clamp(active, 0, ds.sets.length - 1));      // (its frames with it)
   // an analysis of the layout build (11-26, never released): the excluded wells of every layer on the plate
   const layerExcl = given.map(s => s.excluded).filter(Array.isArray);
@@ -16303,8 +17088,8 @@ function openHelp() {
       [k('Esc'), L('Clear the selection, or close an open panel')]
     ]],
     [L('Grouping'), [
-      [L('Click a group in the list'), L('Select its wells; {0}-click more groups, or tick their boxes, to select them together; Shift-click for a run of groups', mod), 1],
-      [k('G'), L('New group from the selected wells')],
+      [L('Click a group in the list'), L('Select its wells; {0}-click more groups or Shift-click for a range. To assign wells to a group, select wells on the plate and tick the group’s checkbox', mod), 1],
+      [k('G'), L('Add a new preset group (assigns selected wells if any are selected)')],
       [k('1 … 9'), L('Put the selected wells into group 1–9 of the list')],
       [k('0'), L('Remove the selected wells from their group')]
     ]],
@@ -16591,7 +17376,7 @@ const PKCollabCore = (() => {
 })();
 
 const COLLAB = (() => {
-  const K = PKCollabCore, BUILD = 'pk-v3-10-0-a43c85f68b2a', API = '/api/collab/rooms';
+  const K = PKCollabCore, BUILD = 'pk-v3-15-0-96adea8b6cfe', API = '/api/collab/rooms';
   const route = /^\/share\/([A-Za-z0-9_-]{20,128})\/?$/.exec(typeof location === 'undefined' ? '' : location.pathname);
   const c = { active: !!route, roomId: route ? route[1] : null, state: null, connected: false, closed: false,
     intents: [], conflicts: [], inFlight: null, undoStack: [], redoStack: [], seen: new Set(), deferred: [],
@@ -17288,8 +18073,7 @@ function init() {
   $('#btnSelAll').addEventListener('click', () => selectIds(curDS().order, false));
   $('#btnSelNone').addEventListener('click', () => selectIds([], false));
   $('#btnSelInv').addEventListener('click', () => { const ds = curDS(); selectIds(ds.order.filter(id => !ds.sel.has(id)), false); });
-  $('#btnApplyName').addEventListener('click', applyName);
-  $('#selName').addEventListener('keydown', e => { if (e.key === 'Enter') applyName(); });
+  $('#btnNamePop').addEventListener('click', e => openNamePop(e.currentTarget));
   $('#btnSelColor').addEventListener('click', e => {
     const ds = curDS();
     if (!ds.sel.size) return;
@@ -17305,7 +18089,7 @@ function init() {
   $('#btnAutoGroup').addEventListener('click', () => {
     const ds = curDS();
     if (!ds) return;
-    if (ds.groups.length) confirmBox('Regroup by name', 'All groups will be rebuilt from the well names, one group per name; existing groups with the same name keep their colours. You can undo this.', 'Regroup', () => autoGroup(ds));
+    if (hasAssignedGroups(ds, ds.gs)) confirmBox('Regroup by name', 'All groups will be rebuilt from the well names, one group per name; existing groups with the same name keep their colours. You can undo this.', 'Regroup', () => autoGroup(ds));
     else autoGroup(ds);
   });
   $('#btnPasteLayout').addEventListener('click', openPasteLayout);
@@ -17318,6 +18102,7 @@ function init() {
   viewToggle('#yMode', 'yMode', true);
   viewToggle('#logY', 'logY', true);
   viewToggle('#showSmooth', 'smooth');
+  viewToggle('#showJoins', 'joins');
   $('#btnMarkers').addEventListener('click', e => openMarkers(e.currentTarget));
   viewToggle('#bandMode', 'band');
   viewToggle('#showReps', 'reps');
@@ -17349,7 +18134,7 @@ function init() {
     else if (mod && k === 'y' && !typing) { e.preventDefault(); redo(); }
     else if (mod && k === 'a' && !typing && curDS()) { e.preventDefault(); selectIds(curDS().order, false); }
     else if (!mod && !e.altKey && (e.key === '?' || e.key === '？') && !typing) { e.preventDefault(); openHelp(); }
-    else if (!mod && !e.altKey && k === 'g' && !typing && curDS() && curDS().sel.size) { e.preventDefault(); newGroupInto(curDS()); }
+    else if (!mod && !e.altKey && k === 'g' && !typing && curDS()) { e.preventDefault(); const ds = curDS(); if (ds.sel.size) addToGroup('__new'); else addPresetGroup(ds, { focus: true }); }
     else if (!mod && !e.altKey && /^[0-9]$/.test(e.key) && !typing && curDS() && curDS().sel.size) {
       const ds = curDS(), n = +e.key;
       if (n === 0) { e.preventDefault(); addToGroup('__none'); }
