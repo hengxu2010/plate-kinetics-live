@@ -41,6 +41,12 @@ namespace SAAControl
         public int Status { get; }
         /// <summary>What is said in Chinese ({"errorZh": ...}); null: only the English.</summary>
         public string MessageZh { get; }
-        public ApiError(int status, string message, string messageZh = null) : base(message) { Status = status; MessageZh = messageZh; }
+        /// <summary>What else the answer says, after "error" and "errorZh" (JSON values; e.g. the 409 "conflict" of POST
+        /// /api/analysis: "rev", "analysis", "savedAt", "savedBy"); null: nothing.</summary>
+        public Dictionary<string, object> Fields { get; }
+        public ApiError(int status, string message, string messageZh = null, Dictionary<string, object> fields = null) : base(message)
+        {
+            Status = status; MessageZh = messageZh; Fields = fields;
+        }
     }
 }

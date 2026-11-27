@@ -625,11 +625,22 @@ namespace SAAControl
                      (plan.Value.Name.Length > 0 ? ": name " + plan.Value.Name : "") + (layout != null ? ", layout " + layout["name"] : ""));
         }
 
-        /// <summary>An analysis that holds a layout's sample names and groups.</summary>
+        /// <summary>An analysis that holds a layout's sample names and groups; a layout saved by the analysis page also gives
+        /// its groups' order and colours, its excluded wells and its frames ("page": {"excluded", "frames"}, read by the
+        /// page as those of the grouping set).</summary>
         public static Dictionary<string, object> FromLayout(Dictionary<string, object> layout, string operatorName)
         {
             var samples = new Dictionary<string, object>();
             var groups = new List<(string Name, List<object> Wells)>();
+            var colors = new Dictionary<string, string>(StringComparer.Ordinal);
+            // the groups the layout lists come first, in its order, with their colours
+            if (layout.TryGetValue("groups", out object listed) && listed is List<object> list)
+                foreach (var item in list.OfType<Dictionary<string, object>>())
+                {
+                    if (!(item.TryGetValue("name", out object gn) && gn is string groupName && groupName.Length > 0) || groups.Any(x => x.Name == groupName)) continue;
+                    groups.Add((groupName, new List<object>()));
+                    if (item.TryGetValue("color", out object gc) && gc is string color && color.Length > 0) colors[groupName] = color;
+                }
             if (layout.TryGetValue("wells", out object w) && w is Dictionary<string, object> wells)
                 foreach (var well in wells)
                 {
@@ -642,14 +653,29 @@ namespace SAAControl
                         groups[at].Wells.Add(well.Key);
                     }
                 }
-            return new Dictionary<string, object>
+            var analysis = new Dictionary<string, object>
             {
                 ["format"] = PkFile.AnalysisFormat, ["savedAt"] = Clock.Now(),
                 ["savedBy"] = "layout " + (layout.TryGetValue("name", out object ln) ? ln as string : ""),
                 ["operator"] = operatorName, ["samples"] = samples,
-                ["groups"] = groups.Select(g => (object)new Dictionary<string, object> { ["name"] = g.Name, ["wells"] = g.Wells }).ToList(),
+                ["groups"] = groups.Where(g => g.Wells.Count > 0).Select(g =>
+                {
+                    var group = new Dictionary<string, object> { ["name"] = g.Name, ["wells"] = g.Wells };
+                    if (colors.TryGetValue(g.Name, out string color)) group["color"] = color;
+                    return (object)group;
+                }).ToList(),
                 ["notes"] = "", ["settings"] = new Dictionary<string, object>(), ["results"] = new List<object>(),
             };
+            bool excluded = layout.TryGetValue("excluded", out object ex) && ex is List<object> exList && exList.Count > 0;
+            bool frames = layout.TryGetValue("frames", out object fr) && fr is Dictionary<string, object>;
+            if (excluded || frames)
+            {
+                var page = new Dictionary<string, object>();
+                if (excluded) page["excluded"] = ex;
+                if (frames) page["frames"] = fr;
+                analysis["page"] = page;
+            }
+            return analysis;
         }
 
         /// <summary>The status in a .pk's info.json; null when it cannot be read.</summary>
@@ -1230,8 +1256,16 @@ namespace SAAControl
         /// WorkbookAuto); an Excel problem never stops the .pk. Experiment files the user deleted are made again only on
         /// WorkbookNow (Ctrl+S), never by a save the page made by itself. Returns {"ok", "rev", "savedAt", "savedBy",
         /// "file", "xlsx": "written|saved-as:&lt;file&gt;|current|pending|kept|none|failed:&lt;reason&gt;" (see
-        /// MakeWorkbook), "previous"}; null: no such run.</summary>
-        public object SaveAnalysis(string runId, Dictionary<string, object> posted, string savedBy, string workbook = WorkbookNow)
+        /// MakeWorkbook), "previous"}; null: no such run.
+        /// baseRev (the body's "baseRev"; the online view and the phone app send it, the program's window and older
+        /// servers do not): the revision the change was made on - the "rev" of GET /api/analysis (0: there was no saved
+        /// analysis). When it is given and the saved analysis is another revision now (someone saved meanwhile), nothing is
+        /// saved or changed and ApiError 409 says {"error": "conflict" (for programs), "errorZh" (the words to show in
+        /// Chinese), "message" (the same in English), "rev": the revision now, "analysis": the saved analysis now (as GET
+        /// gives it; null: none), "savedAt", "savedBy"} - the same "rev" a GET gives, so a save made again on that revision
+        /// goes through. When it is the same, the save is made as without it. The check and
+        /// the save are one step (under the gate): no other save comes between them.</summary>
+        public object SaveAnalysis(string runId, Dictionary<string, object> posted, string savedBy, string workbook = WorkbookNow, long? baseRev = null)
         {
             if (string.IsNullOrEmpty(runId) || !SafeRunId(runId)) throw new ApiError(400, "not a run id");
             if (posted == null) throw new ApiError(400, "the analysis must be a JSON object");
@@ -1245,6 +1279,26 @@ namespace SAAControl
                 string pk = PkOf(runId);
                 Dictionary<string, object> record = ReadRecord(runId);
                 if (pk == null && record == null) return null;
+                if (baseRev.HasValue)
+                {
+                    Dictionary<string, object> current = AnalysisOf(runId, pk);
+                    long rev = RevisionOf(current);
+                    if (baseRev.Value != rev)
+                    {
+                        Log.Info("a save of the analysis of " + runId + " made on revision " + baseRev.Value + " was refused: it is revision " + rev + " now");
+                        // "error": a word for programs; what people read: "errorZh" and "message" (the English of it)
+                        throw new ApiError(409, "conflict",
+                                           "\u5728\u4f60\u4fee\u6539\u671f\u95f4\uff0c\u8fd9\u4e2a\u5b9e\u9a8c\u7684\u5206\u6790\u5df2\u7ecf\u88ab\u522b\u4eba\u6216\u5728\u7535\u8111\u4e0a\u4fdd\u5b58\u8fc7\uff08\u73b0\u5728\u662f\u7b2c " + rev +
+                                           " \u7248\uff09\uff0c\u8fd9\u6b21\u7684\u4fee\u6539\u6ca1\u6709\u4fdd\u5b58\uff1b\u8bf7\u5728\u65b0\u7684\u7248\u672c\u4e0a\u518d\u6539\u4e00\u6b21\u3002",
+                                           new Dictionary<string, object>
+                                           {
+                                               ["message"] = "While this change was being made, the analysis of this experiment was saved by someone else or on the PC (it is revision " + rev +
+                                                             " now). This change was not saved: make it again on the new version.",
+                                               ["rev"] = rev, ["analysis"] = current,
+                                               ["savedAt"] = ValueOf(current, "savedAt"), ["savedBy"] = ValueOf(current, "savedBy"),
+                                           });
+                    }
+                }
                 return Keep(runId, analysis, pk, record, workbook);
             }
         }

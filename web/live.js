@@ -333,6 +333,12 @@ const ZH = {
     'No plate was found in the file': '文件里没有找到孔板',
     'Read from {0}: check the names, then save the layout': '已从 {0} 读入，请核对名称后保存布局',
     'The layout could not be read: {0}': '布局没能读入：{0}',
+    'frames': '框线',
+    '{0} excluded': '{0} 孔已排除',
+    // the plate layouts of the analysis page (its menu "Layouts")
+    'Layouts are kept in the plate layouts of this program, which the next experiment of an instrument can use': '布局保存在本程序的孔板布局里，仪器的下一个实验也可以用',
+    'Layouts are kept in this browser only: the online view does not reach the plate layouts of the program': '布局只保存在这个浏览器里：线上视图连不到程序里的孔板布局',
+    'Saving layouts here needs an editor account: sign in first': '在这里保存布局需要编辑账号，请先登录',
     'Use for the next experiment': '用于下一个实验',
     'The next run that starts on the instrument gets the names and groups of “{0}”. Once used, the choice is cleared.':
       '这台仪器上下一次开始的实验会用“{0}”的样品名和分组；用过一次后自动取消。',
@@ -1285,10 +1291,61 @@ function stableJson(v) {
   if (isObj(v)) return '{' + Object.keys(v).sort().filter(k => v[k] !== undefined).map(k => JSON.stringify(k) + ':' + stableJson(v[k])).join(',') + '}';
   return JSON.stringify(v === undefined ? null : v);
 }
-/** What decides whether an analysis has changed: the names, the groups and their wells, the excluded wells, the notes,
-    the settings (withSettings: false for an analysis that has none, made from a plate layout) and the operator - not
-    the time it was made, its results (they follow from the rest) or the colours. */
+/** What decides whether an analysis has changed: the names, the groups and their wells (of the one grouping layer), the
+    excluded wells (the plate's, the same in every layer), the notes, the settings (withSettings: false for an analysis
+    that has none, made from a plate layout), the operator, the grouping layers when there are two or more (their names,
+    order, groups and wells: a layer added, renamed, moved or deleted is a change; the name of a single layer when it is
+    not the name a new plate gives it), the frames of each layer, and the colours (of the groups of every layer, the
+    palettes of the layers, the own colours of the wells) - not the time it was made, its results (they follow from the
+    rest), whether a group is shown in the chart, or what is a view: which layer is the active one and how the layers
+    are shown (page.layerView: Expand / Stack; analysisView: Save / Ctrl+S writes it, a view alone is not saved by
+    itself). A part that an analysis does not have (one grouping layer of the name it was given, no frames, the colours
+    a new plate gives: every group the colour of its place in the palette, no palette, no colour of a well) is left
+    out: such an analysis has the signature it always had. An analysis of the layout build (11-26, never released) said
+    the excluded wells of each layer: all of them count, as the page puts them all on the plate. */
+/** The names of the one grouping layer of a new plate (the page's "Layer 1", in English and Chinese, and its "Set 1" of
+    the versions before the layers): a single layer named so is no part of the signature. */
+const DEFAULT_LAYER_NAMES = ['Layer 1', '\u5206\u7ec4\u5c42 1', 'Set 1', '\u65b9\u6848 1'];      // (Layer 1, Set 1 in Chinese)
 function analysisSig(a, operator, withSettings) {
+  if (!isObj(a)) return '';
+  const sorted = list => (Array.isArray(list) ? list.filter(w => typeof w === 'string').slice().sort() : []);
+  const groupsOf = list => (Array.isArray(list) ? list : []).filter(isObj).map(g => ({ name: String(g.name || ''), wells: sorted(g.wells), role: g.role || '' }));
+  const page = isObj(a.page) ? a.page : {};
+  const sets = (Array.isArray(page.groupingSets) ? page.groupingSets : []).filter(isObj);
+  const lists = [page.excluded].concat(sets.map(s => s.excluded)).filter(Array.isArray);
+  const sig = { samples: isObj(a.samples) ? a.samples : {},
+    notes: String(a.notes || '').trim(), excluded: [...new Set(sorted([].concat(...lists)))],
+    settings: withSettings === false ? null : isObj(a.settings) ? a.settings : {},
+    operator: String(operator == null ? a.operator || '' : operator).trim() };
+  // more than one grouping layer: each one's name, groups and wells (a layer copied in from another dataset is a change);
+  // the groups of the active one (a.groups) are no part then, which layer is the active one being a view
+  if (sets.length > 1) sig.sets = sets.map(s => ({ name: String(s.name || ''), groups: groupsOf(s.groups) }));
+  // one grouping layer: its groups, and its name once it is renamed (the names a new plate gives it, in either
+  // language, are left out)
+  else {
+    sig.groups = groupsOf(a.groups);
+    const one = String((sets.length ? sets[0].name : page.groupingSet) || '').trim();
+    if (one && !DEFAULT_LAYER_NAMES.includes(one)) sig.set = one;
+  }
+  // the frames: of each grouping layer (one that does not say its own - an analysis of before - has those of the page,
+  // as the page reads it; one that says its excluded wells - the layout build - has none then; null: none), or of the
+  // page when there is one layer
+  const obj = v => (isObj(v) ? v : null);
+  const frames = sets.length > 1 ? sets.map(s => obj(s.frames) || (Object.prototype.hasOwnProperty.call(s, 'frames') || Array.isArray(s.excluded) ? null : obj(page.frames))) : [obj(page.frames)];
+  if (frames.some(Boolean)) sig.frames = frames;
+  // the colours: of the groups of each layer (in their order), the palette of each layer, the wells' own colours
+  const tints = (sets.length > 1 ? sets : [Object.assign({}, sets[0], { groups: a.groups })]).map(s => ({
+    colors: (Array.isArray(s.groups) ? s.groups : []).filter(isObj).map(g => String(g.color || '')),
+    palette: s.palette === 'seq' || s.palette === 'mark' ? s.palette : '', hue: s.palette === 'seq' ? String(s.hue || '') : '' }));
+  if (!tints.every(t => !t.palette && t.colors.every((c, i) => !c || c === 'slot:' + (i + 1)))) sig.colors = tints;
+  if (isObj(page.colors) && Object.keys(page.colors).length) sig.wellColors = page.colors;
+  return stableJson(sig);
+}
+/** The signature of the versions before the grouping layers (Plate Kinetics Live 2.5 and before: the names, the groups
+    of the active grouping set, its excluded wells, the notes, the settings, the operator). A browser of before kept the
+    signatures of its datasets so (a record without "v": createSync, adopt): known again by it once after the update,
+    the dataset is not taken for one with changes of this device. Never changed. */
+function analysisSigV1(a, operator, withSettings) {
   if (!isObj(a)) return '';
   const sorted = list => (Array.isArray(list) ? list.filter(w => typeof w === 'string').slice().sort() : []);
   const page = isObj(a.page) ? a.page : {};
@@ -1297,6 +1354,16 @@ function analysisSig(a, operator, withSettings) {
     notes: String(a.notes || '').trim(), excluded: sorted(page.excluded),
     settings: withSettings === false ? null : isObj(a.settings) ? a.settings : {},
     operator: String(operator == null ? a.operator || '' : operator).trim() });
+}
+/** The version of analysisSig that a browser's record of a dataset is made with ({ r, h, v }; none: analysisSigV1). */
+const SIG_VERSION = 2;
+/** How an analysis shows its grouping layers: which one is the active one, and page.layerView (Expand / Stack, what
+    the curves and the statistics follow). A view: no part of the signature (it is not saved by itself), but Save /
+    Ctrl+S writes it when it is not the view of the version the dataset is based on (createSync().saveNow). */
+function analysisView(a) {
+  if (!isObj(a)) return '';
+  const page = isObj(a.page) ? a.page : {}, sets = (Array.isArray(page.groupingSets) ? page.groupingSets : []).filter(isObj);
+  return stableJson({ active: sets.length > 1 ? sets.findIndex(s => s.active === true) : 0, view: isObj(page.layerView) ? page.layerView : null });
 }
 /** Whether a saved analysis holds the settings it was made with (one made from a plate layout holds none). */
 const hasSettings = a => isObj(a) && isObj(a.settings) && Object.keys(a.settings).length > 0;
@@ -1356,7 +1423,8 @@ function xlsxText(xlsx) {
    experiment a device keeps the version of the instrument the dataset shows ("rev") and what the dataset said then (its
    signature, analysisSig): what differs from that is a change made on this device.
    - A change is saved by itself about 3 s after the last one (Save or Ctrl+S: at once), where this device may save: in
-     the program's window, and online when signed in. Online and not signed in a change stays in this browser.
+     the program's window, and online when signed in. Online and not signed in a change stays in this browser. A
+     dataset the page changed while it was not in view (a grouping set copied into it: touch) is saved the same way.
    - A save that does not get through (the instrument PC cannot be reached) is tried again every 30 s.
    - A newer version of the instrument goes into a dataset without changes by itself. With changes it waits for the
      user ("Newer on the instrument"): Restore from instrument takes it, Save puts this device's over it (the last save wins).
@@ -1403,7 +1471,7 @@ const sameAnnotation = (a, b) => (!isObj(a) && !isObj(b)) || (isObj(a) && isObj(
  *   when it is done ('' = "Saved to the experiment"),
  *   load(x) -> Promise<{ analysis, rev, savedAt, savedBy, file, previous }>, revert(x) -> Promise<answer>,
  *   workbook(x, { how: 'now' | 'leave', keepalive }) -> Promise<{ xlsx }>, file(x, file): the experiment's file,
- *   store: { get(dsId), set(dsId, { r, h } | null) }: what the browser keeps over a reload,
+ *   store: { get(dsId), set(dsId, { r, h, v } | null) }: what the browser keeps over a reload (v: SIG_VERSION),
  *   busy() -> bool: not now (a half-typed name, a drag), toast(text, ms), changed(): draw again,
  *   signIn(): online, ask the user to sign in; signedOut(): a save was refused for want of a sign-in }
  */
@@ -1423,7 +1491,8 @@ function createSync(env) {
   function exp(runId, extra) {
     if (!records.has(runId)) records.set(runId, Object.assign({ runId, rev: null, saved: null, savedAt: '', savedBy: '', loaded: false, loading: null,
       epoch: 0, remote: '', checkedAt: -Infinity, bases: {}, seen: {}, starts: {}, pending: {}, inflight: null, offline: false, denied: false, error: '',
-      refused: null, retryAt: 0, retryDs: '', bookDue: 0, bookMode: '', prev: undefined, unreachable: false, blocked: false, operator: null, news: '' }, extra || {}));
+      refused: null, retryAt: 0, retryDs: '', bookDue: 0, bookMode: '', prev: undefined, unreachable: false, blocked: false, operator: null, news: '',
+      touched: {} }, extra || {}));
     return records.get(runId);
   }
   /** What a dataset shows now (kept: the last look of a dataset that is no longer on the page); `at`: when it last
@@ -1439,7 +1508,7 @@ function createSync(env) {
   const remoteNewer = x => { const a = revNumber(x.remote), b = revNumber(x.rev); return !!x.remote && x.remote !== x.rev && !(fin(a) && fin(b) && a < b); };
   function based(x, dsId, rev, sig) {
     x.bases[dsId] = { rev, sig };
-    if (env.store) env.store.set(dsId, sig == null ? { r: rev } : { r: rev, h: textHash(sig) });
+    if (env.store) env.store.set(dsId, sig == null ? { r: rev, v: SIG_VERSION } : { r: rev, h: textHash(sig), v: SIG_VERSION });
   }
   /** Changes made on this device: the dataset differs from the version it is based on, or an operator was typed. */
   const changedHere = (x, dsId) => { const b = x.bases[dsId], s = x.seen[dsId]; return !!(b && s) && (s.sig !== b.sig || x.operator != null); };
@@ -1593,13 +1662,15 @@ function createSync(env) {
   }
   /** A dataset found on the page without a version (the page has put its session back after a reload): what the
       browser kept tells whether it shows that version or has changes of this device; without it, a dataset that
-      shows what the instrument has is based on that, else the user decides. */
+      shows what the instrument has is based on that, else the user decides. A record kept by a version of before (no
+      "v": its signature made by analysisSigV1) is read with that signature, and kept again with the one of now. */
   function adopt(x, dsId) {
     const got = env.look(dsId);
     if (!got) return;
     if (!x.seen[dsId] || x.seen[dsId].sig !== got.sig) x.seen[dsId] = { sig: got.sig, at: now(), analysis: got.analysis, op: x.operator };
     const kept = env.store ? env.store.get(dsId) : null, rev = isObj(kept) && kept.r != null ? String(kept.r) : null;
     if (isObj(kept) && kept.h && kept.h === textHash(got.sig)) x.bases[dsId] = { rev, sig: got.sig };
+    else if (isObj(kept) && kept.h && kept.v == null && kept.h === textHash(analysisSigV1(got.analysis, '', true))) based(x, dsId, rev, got.sig);
     else if (isObj(kept)) x.bases[dsId] = { rev, sig: null };
     else if (!x.saved || sameAnnotation(x.saved, got.analysis)) based(x, dsId, x.rev, got.sig);
     else based(x, dsId, null, null);
@@ -1626,6 +1697,18 @@ function createSync(env) {
       }
     }
     for (const x of records.values()) {
+      // a dataset the page changed while it was not in view (touch: a grouping set copied into it), about 3 s later:
+      // saved as the one in view would be (in view now: the usual way)
+      for (const dsId of Object.keys(x.touched || {})) {
+        if (view && view.x === x && view.dsId === dsId) { delete x.touched[dsId]; continue; }
+        if (t - x.touched[dsId] < SYNC.saveAfterMs - 250 || x.inflight || !ready(x) || x.pending[dsId] || (env.busy && env.busy())) continue;
+        if (remoteNewer(x) && !fileOnly(x)) continue;          // the instrument's newer version first (asked for below)
+        if (!x.bases[dsId]) adopt(x, dsId);
+        const s = observe(x, dsId);
+        delete x.touched[dsId];
+        if (s && changedHere(x, dsId) && !behind(x, dsId) && mayWrite(x) && x.refused !== s.sig)
+          save(x, dsId, { workbook: !last || last.x !== x ? 'leave' : '' });
+      }
       // a save that did not get through, or a dataset that was left while another save was under way
       if (x.retryDs && x.retryAt && t >= x.retryAt && !x.inflight && ready(x) && !x.pending[x.retryDs]) {
         const dsId = x.retryDs, s = observe(x, dsId);
@@ -1637,8 +1720,12 @@ function createSync(env) {
       if (remoteNewer(x) && x.loaded && !fileOnly(x) && !x.loading && !x.inflight && t - x.checkedAt >= SYNC.askMs) load(x);
     }
   }
-  /** Save or Ctrl+S: what is changed is saved at once (also over a newer version: the last save wins); with nothing
-      changed the workbook is made again. Online and not signed in: the user is asked to sign in. */
+  /** The dataset shows its grouping layers in another way (another active layer, Expand / Stack, …) than the version
+      of the instrument it is based on: no change to save by itself, but Save writes it (analysisView). */
+  const viewMoved = (x, dsId, s) => { const b = x.bases[dsId]; return !!(b && s && isObj(x.saved) && b.rev === x.rev && analysisView(x.saved) !== analysisView(s.analysis)); };
+  /** Save or Ctrl+S: what is changed is saved at once (also over a newer version: the last save wins), and so is the
+      view of the grouping layers when only that differs; with nothing changed the workbook is made again. Online and
+      not signed in: the user is asked to sign in. */
   function saveNow(x, dsId) {
     if (!env.canSave(x)) { if (env.online() && env.signIn) env.signIn(); else env.toast(say('This version of the analysis page cannot save into the experiment'), 6000); return Promise.resolve(false); }
     if (x.unreachable || x.blocked) { env.toast(say('Not saved: {0}', x.blocked ? x.error : say('this experiment was not recorded by this program')), 8000); return Promise.resolve(false); }
@@ -1646,7 +1733,7 @@ function createSync(env) {
     const s = observe(x, dsId);
     x.denied = false;
     if (!s) return Promise.resolve(false);
-    if (changedHere(x, dsId) || !x.bases[dsId]) return save(x, dsId, { workbook: 'now', explicit: true });
+    if (changedHere(x, dsId) || !x.bases[dsId] || viewMoved(x, dsId, s)) return save(x, dsId, { workbook: 'now', explicit: true });
     return workbook(x, { explicit: true, how: 'now' });
   }
   /** Restore from instrument: the changes of this device go, the instrument's version comes (its newest; when the
@@ -1715,6 +1802,9 @@ function createSync(env) {
     flush() { if (last) leave(last.x, last.dsId, { workbook: true, keepalive: true }); },
     /** Signed in (online): saves refused for want of a sign-in may go again. */
     signedIn() { for (const x of records.values()) x.denied = false; },
+    /** The page changed a dataset of the experiment that may not be in view (a grouping set copied into it): it is
+        looked at and saved about 3 s later, as a change of the dataset in view is. */
+    touch(x, dsId) { if (x && dsId) (x.touched || (x.touched = {}))[dsId] = now(); },
     changedHere, behind, fileOnly };
 }
 /** The reason a save did not get through when the instrument PC (online) or the background program does not answer. */
@@ -1808,7 +1898,10 @@ function layoutGroups(layout) {
 function layoutMeta(layout) {
   const plate = layout && layout.plate ? layout.plate : { rows: 8, cols: 12 }, wells = isObj(layout && layout.wells) ? layout.wells : {};
   const named = Object.keys(wells).filter(id => wells[id] && wells[id].name).length, groups = layoutGroups(layout).length;
-  return [say('{0} wells', plate.rows * plate.cols), say('{0} named', named), say('{0:group}', groups)].join(' · ');
+  // (a layout saved by the analysis page can have frames and excluded wells too)
+  const excluded = Array.isArray(layout && layout.excluded) ? layout.excluded.length : 0, frames = isObj(layout && layout.frames);
+  return [say('{0} wells', plate.rows * plate.cols), say('{0} named', named), say('{0:group}', groups), frames ? say('frames') : '', excluded ? say('{0} excluded', excluded) : '']
+    .filter(Boolean).join(' · ');
 }
 
 /* ---------- settings (GET/POST /api/settings) ---------- */
@@ -1903,7 +1996,7 @@ const logic = { ZH, PROGRAM, PROGRAMS, ME, say: (fmt, ...args) => say(fmt, ...ar
   miniCurves, axisSteps, shortNumber, lookBackAt, lookBackPlace, lookBackStep, interruptionText, interruptionLine,
   searchWords, instrumentText, statusText, experimentList, experimentRows, experimentMeta, experimentStatus, experimentProblem, instrumentsOf, removedRows,
   omegaRows, omegaTitle, omegaMeta, omegaName, runOf, safeId, bytesText, storageProblem, placeOf, inFolder,
-  problemLines, instrumentProblems, eventKey, newEvents, eventTitle, eventText, wanted, runOfDataset, isRunId, stableJson, analysisSig, hasSettings, analysisToSave,
+  problemLines, instrumentProblems, eventKey, newEvents, eventTitle, eventText, wanted, runOfDataset, isRunId, stableJson, analysisSig, analysisSigV1, SIG_VERSION, analysisView, hasSettings, analysisToSave,
   layoutNames, namesAnalysis, xlsxText, SYNC, textHash, revKey, versionOf, sameAnnotation, createSync, syncTexts, FOLD_MS, runStartMs, datasetEndMs, foldable,
   wellId, wellPos, plateWells, wellRange, newLayout, editLayout, layoutGroups, layoutMeta, settingsOf, nextText, checkLines, editionText, fileNameOf,
   protocolView };

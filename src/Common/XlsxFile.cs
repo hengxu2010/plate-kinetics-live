@@ -3,7 +3,8 @@
 //   sheet "Full record": a two-column block of everything known about the run (experiment, its id, instrument, software,
 //                        protocol, start, end, time zone, status - with the Chinese words in column C -, why it was
 //                        interrupted, cycles, target temperature, filters and gain per channel, operator, run id, the raw
-//                        data's checksum, the saved analysis), the samples (well, content, and the saved names and groups),
+//                        data's checksum, the saved analysis), the samples (well, content, and the saved names and groups:
+//                        with two grouping layers or more a group column per layer, its name in the heading),
 //                        then per channel the table Cycle, Time (s), Temperature (C), one column per well (with the saved
 //                        sample names in the row under the well ids), for an Archimed run everything its log had (the
 //                        calibration, every optical channel and well raw, the dark readings, the block temperatures), the
@@ -217,21 +218,33 @@ namespace SAAControl
             Item("Note", "This workbook is a copy made from the experiment file (.pk); changes made here are not read back.");
 
             // the samples: the content of the wells (of the first channel that has the well), and the saved names and groups
+            // (with two grouping layers or more a group column per layer, headed with its name, and the Chinese headings
+            // in a row under them)
             var names = Samples(analysis);
-            var groups = Groups(analysis);
+            var layers = GroupColumns(analysis);
             var samples = new List<(string Well, string Content)>();
             var seen = new HashSet<string>();
             foreach (Channel channel in channels)
                 for (int i = 0; i < channel.Wells.Count; i++)
                     if (seen.Add(channel.Wells[i])) samples.Add((channel.Wells[i], channel.Contents[i]));
-            bool named = names.Count > 0 || groups.Count > 0;
+            bool named = names.Count > 0 || layers.Any(l => l.Groups.Count > 0);
             sheet.Row(new List<object>());
             sheet.Row(new List<object> { "Sample names" }, true);
-            sheet.Row(named ? new List<object> { "Well", "Sample", "Name", "Group" } : new List<object> { "Well", "Sample" }, true);
+            var head = named ? new List<object> { "Well", "Sample", "Name" } : new List<object> { "Well", "Sample" };
+            if (named) head.AddRange(layers.Select(l => (object)l.Heading));
+            sheet.Row(head, true);
+            if (named && layers.Count > 1)
+            {
+                var zh = new List<object> { "\u5b54\u4f4d", "\u6837\u54c1", "\u540d\u79f0" };          // well, sample, name
+                zh.AddRange(layers.Select(l => (object)l.HeadingZh));
+                sheet.Row(zh, true);
+            }
             foreach (var (well, content) in samples)
             {
-                if (!named) sheet.Row(new List<object> { well, content });
-                else sheet.Row(new List<object> { well, content, names.TryGetValue(well, out string n) ? n : null, groups.TryGetValue(well, out string g) ? g : null });
+                if (!named) { sheet.Row(new List<object> { well, content }); continue; }
+                var row = new List<object> { well, content, names.TryGetValue(well, out string n) ? n : null };
+                row.AddRange(layers.Select(l => l.Groups.TryGetValue(well, out string g) ? (object)g : null));
+                sheet.Row(row);
             }
 
             foreach (Channel channel in channels)
@@ -313,10 +326,12 @@ namespace SAAControl
         /// <summary>The results the page computed, as it sent them: one row per well; the columns Well, Name, Group, then
         /// every other item in the order they first appear. A column is headed as the page names it in "resultColumns"
         /// ({key, label, labelZh, unit}: "Lag time (h)"), with a row of the Chinese names under the header; a column the
-        /// page does not name, by its key.</summary>
+        /// page does not name, by its key. With two grouping layers or more the page sends the group of every layer
+        /// ("group1", "group2", ... named "Group (layer)") instead of "group": no Group column then.</summary>
         static void Results(Sheet sheet, List<object> results, List<object> columns)
         {
-            var keys = new List<string> { "well", "name", "group" };
+            bool layered = results.OfType<Dictionary<string, object>>().Any(r => r.Keys.Any(LayerGroupKey));
+            var keys = layered ? new List<string> { "well", "name" } : new List<string> { "well", "name", "group" };
             foreach (object item in results)
                 if (item is Dictionary<string, object> row)
                     foreach (string key in row.Keys)
@@ -368,6 +383,34 @@ namespace SAAControl
                 foreach (var entry in samples)
                     if (entry.Value is string name && name.Length > 0) names[entry.Key] = name;
             return names;
+        }
+
+        /// <summary>A key of the results that holds the group of a well in one grouping layer: "group1", "group2", ....</summary>
+        static bool LayerGroupKey(string key) =>
+            key.Length > 5 && key.StartsWith("group", StringComparison.Ordinal) && key.Substring(5).All(c => c >= '0' && c <= '9');
+
+        /// <summary>The saved groups as columns of the sample names: with two grouping layers or more (the page's
+        /// "page": {"groupingSets": [{"name", "groups"}]}) one per layer in their order, headed "Group (layer)" and
+        /// its Chinese, the same whichever layer was the active one; else the one of "groups", headed
+        /// "Group".</summary>
+        public static List<(string Heading, string HeadingZh, Dictionary<string, string> Groups)> GroupColumns(Dictionary<string, object> analysis)
+        {
+            var columns = new List<(string Heading, string HeadingZh, Dictionary<string, string> Groups)>();
+            if (Get(analysis, "page") is Dictionary<string, object> page && Get(page, "groupingSets") is List<object> sets)
+            {
+                var layers = sets.OfType<Dictionary<string, object>>().ToList();
+                if (layers.Count > 1)
+                {
+                    foreach (var layer in layers)
+                    {
+                        string name = Text(Get(layer, "name"));
+                        columns.Add(("Group (" + name + ")", "\u5206\u7ec4\uff08" + name + "\uff09", Groups(layer)));
+                    }
+                    return columns;
+                }
+            }
+            columns.Add(("Group", "\u5206\u7ec4", Groups(analysis)));
+            return columns;
         }
 
         /// <summary>The saved groups: well -> group name (a well in two groups: the first).</summary>

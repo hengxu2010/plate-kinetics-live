@@ -304,6 +304,22 @@ function mount(pkApp) {
   // an experiment is saved into its own file: no unsaved change of the page's project file (its "●", the question
   // when the page is closed)
   if (app && app.S) app.S.savedElsewhere = ds => !!expOf(ds);
+  // the plate layouts the page saves and applies (its menu "Layouts"): the program's own library (/api/layouts, the one
+  // the next experiment of an instrument uses); the online view does not reach it: the page keeps them in the browser,
+  // and saves them for one who is signed in for editing only
+  if (app && app.S) app.S.layoutStore = online
+    ? { note: en('Layouts are kept in this browser only: the online view does not reach the plate layouts of the program'),
+      canSave: () => editor(), why: en('Saving layouts here needs an editor account: sign in first') }
+    : { note: en('Layouts are kept in the plate layouts of this program, which the next experiment of an instrument can use'),
+      list: () => api('/api/layouts', { seconds: 30 }),
+      save: l => api('/api/layouts', { method: 'POST', body: { layout: l }, seconds: 30 }).then(a => { layoutsChanged(); return a && a.id; }),
+      remove: id => api('/api/layouts/delete?id=' + enc(id), { method: 'POST', seconds: 30 }).then(() => { layoutsChanged(); }) };
+  // datasets the page changed that may not be in view (a grouping set copied into them): saved into their experiments
+  // as a change of the one in view is (web/live.js createSync().touch)
+  if (app && app.S) app.S.datasetsEdited = ids => {
+    for (const id of Array.isArray(ids) ? ids : []) { const x = expOf(dsById(id)); if (x) sync.touch(x, id); }
+    syncSoon();
+  };
   const parts = app ? pageParts() : null;
   mode = parts ? 'shell' : 'classic';
   document.documentElement.classList.add(parts ? 'saa-mode-shell' : 'saa-mode-classic');
@@ -1745,6 +1761,11 @@ function renderLayouts() {
       button(en('Use for the next experiment…'), () => useLayout(l), 'sm ghost'),
       button(en('Delete'), () => deleteLayout(l), 'sm ghost'));
   }));
+}
+/** The analysis page saved, renamed or deleted a layout (its menu "Layouts"): this view and "next experiment" follow. */
+function layoutsChanged() {
+  if (lay.body && view === 'layouts' && !lay.draft) { loadLayouts(); return; }
+  api('/api/layouts', { seconds: 30 }).then(l => { layoutList = Array.isArray(l) ? l : []; render(); }).catch(() => { /* looked at again later */ });
 }
 function editNew(rowsN, cols) { editLayoutDraft(X.newLayout(rowsN, cols)); }
 function editLayoutDraft(l) {

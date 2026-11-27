@@ -7,7 +7,12 @@
 //    "keepAwake": true,                                               the PC does not sleep while a run is measuring
 //    "nextExperiment": {"<key>": {"name": "...", "layoutId": "..."}}, used once, by the next run of that instrument
 //    "operatorDefault": ""}                                           who runs the experiments ("" = the Windows user)
-// A layout: {"id", "name", "plate": {"rows", "cols"}, "wells": {"A1": {"name", "group"}}, "updatedAt"}.
+// A layout: {"id", "name", "plate": {"rows", "cols"}, "wells": {"A1": {"name", "group"}}, "updatedAt"}; a layout saved
+// by the analysis page (its menu "Layouts", from 2026-11-26) can also have "groups": [{"name", "color"}] (the groups in
+// order, with their colours), "excluded": ["A1", ...] (wells left out of the analysis) and "frames": {"width": "medium" |
+// "thick", "groups": bool, "h": {"r:c": colour}, "v": {"r:c": colour}} (frame lines on the edges of the wells: h along
+// the top of well (r, c), v along its left side; a colour "#rrggbb" or "w:A1", the colour of that well's group). Each of
+// the three is written only when there is something in it, so a layout without them is stored as it always was.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -396,14 +401,119 @@ namespace SAAControl
                 }
             }
             else if (raw.ContainsKey("wells") && raw["wells"] != null) Refuse("wells must be an object");
-            return new Dictionary<string, object>
+            var layout = new Dictionary<string, object>
             {
                 ["id"] = raw.TryGetValue("id", out object id) ? id as string ?? "" : "",
                 ["name"] = name,
                 ["plate"] = new Dictionary<string, object> { ["rows"] = rows, ["cols"] = cols },
                 ["wells"] = wells,
-                ["updatedAt"] = null,
             };
+            // what the analysis page adds (only when there is something in it)
+            var groups = GroupColors(raw, wells, Refuse);
+            if (groups.Count > 0) layout["groups"] = groups;
+            var excluded = ExcludedWells(raw, rows, cols, Refuse);
+            if (excluded.Count > 0) layout["excluded"] = excluded;
+            var frames = Frames(raw, rows, cols, Refuse);
+            if (frames != null) layout["frames"] = frames;
+            layout["updatedAt"] = null;
+            return layout;
+        }
+
+        static readonly Regex GroupColor = new Regex("^(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})|slot:[1-9][0-9]{0,3}|ramp:#[0-9a-fA-F]{6}:[0-9]{1,3}:[1-9][0-9]{0,2}|mark:[1-4])$", RegexOptions.CultureInvariant);
+        static readonly Regex EdgeKey = new Regex("^([0-9]{1,2}):([0-9]{1,2})$", RegexOptions.CultureInvariant);
+        static readonly Regex LineColor = new Regex("^#[0-9a-fA-F]{6}$", RegexOptions.CultureInvariant);
+
+        /// <summary>"groups": the groups in order with their colours, [{"name", "color"}]; only groups some well is in, each
+        /// name once, at most 400. A colour as the page writes them: "#rgb", "#rrggbb", "slot:n", "ramp:#rrggbb:i:n" or
+        /// "mark:1" to "mark:4" (a group of a grouping layer without colours: filled, hollow, half filled, dotted).</summary>
+        static List<object> GroupColors(Dictionary<string, object> raw, Dictionary<string, object> wells, Action<string> refuse)
+        {
+            var list = new List<object>();
+            if (!raw.TryGetValue("groups", out object value) || value == null) return list;
+            if (!(value is List<object> given)) { refuse("groups must be a list"); return list; }
+            var used = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var cell in wells.Values.OfType<Dictionary<string, object>>())
+                if (cell["group"] is string g && g.Length > 0) used.Add(g);
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (object item in given)
+            {
+                if (!(item is Dictionary<string, object> group)) { refuse("a group must be an object"); continue; }
+                string name = SettingsStore.Plain(group.TryGetValue("name", out object n) ? n as string : null, 100);
+                object c = group.TryGetValue("color", out object found) ? found : null;
+                string color = c as string;
+                if (c != null && (color == null || !GroupColor.IsMatch(color))) { refuse("not a colour of a group: " + c); color = null; }
+                if (name.Length == 0 || !used.Contains(name) || seen.Contains(name) || list.Count >= 400) continue;
+                seen.Add(name);
+                var kept = new Dictionary<string, object> { ["name"] = name };
+                if (color != null) kept["color"] = color;
+                list.Add(kept);
+            }
+            return list;
+        }
+
+        /// <summary>"excluded": wells of the plate, each once, in plate order.</summary>
+        static List<object> ExcludedWells(Dictionary<string, object> raw, long rows, long cols, Action<string> refuse)
+        {
+            if (!raw.TryGetValue("excluded", out object value) || value == null) return new List<object>();
+            if (!(value is List<object> given)) { refuse("excluded must be a list of wells"); return new List<object>(); }
+            var ids = new List<string>();
+            foreach (object item in given)
+            {
+                if (!(item is string id)) { refuse("not a well of the plate: " + item); continue; }
+                if (!ids.Contains(id)) ids.Add(id);
+            }
+            return OrderedWells(ids, rows, cols, refuse).Select(id => (object)id).ToList();
+        }
+
+        /// <summary>"frames": {"width", "groups", "h", "v"}; null when it has no line and its groups are off. An edge "r:c" of h
+        /// lies on the plate when r is at most rows and c below cols, one of v when r is below rows and c at most cols.</summary>
+        static Dictionary<string, object> Frames(Dictionary<string, object> raw, long rows, long cols, Action<string> refuse)
+        {
+            if (!raw.TryGetValue("frames", out object value) || value == null) return null;
+            if (!(value is Dictionary<string, object> given)) { refuse("frames must be an object"); return null; }
+            string width = "medium";
+            if (given.TryGetValue("width", out object w) && w != null)
+            {
+                if (w is string s && (s == "medium" || s == "thick")) width = s;
+                else refuse("frames.width must be medium or thick");
+            }
+            bool groups = false;
+            if (given.TryGetValue("groups", out object g) && g != null)
+            {
+                if (g is bool b) groups = b;
+                else refuse("frames.groups must be true or false");
+            }
+            var h = FrameLines(given, "h", rows, cols, refuse);
+            var v = FrameLines(given, "v", rows, cols, refuse);
+            if (!groups && h.Count == 0 && v.Count == 0) return null;
+            return new Dictionary<string, object> { ["width"] = width, ["groups"] = groups, ["h"] = h, ["v"] = v };
+        }
+
+        static Dictionary<string, object> FrameLines(Dictionary<string, object> frames, string side, long rows, long cols, Action<string> refuse)
+        {
+            var found = new List<(int Row, int Col, string Color)>();
+            if (frames.TryGetValue(side, out object value) && value != null)
+            {
+                if (!(value is Dictionary<string, object> lines)) refuse("frames." + side + " must be an object");
+                else
+                    foreach (var line in lines)
+                    {
+                        var m = EdgeKey.Match(line.Key);
+                        int r = m.Success ? int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) : -1;
+                        int c = m.Success ? int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture) : -1;
+                        bool onPlate = m.Success && (side == "h" ? r <= rows && c < cols : r < rows && c <= cols);
+                        string color = line.Value as string;
+                        bool known = color != null && (LineColor.IsMatch(color)
+                                     || (color.StartsWith("w:", StringComparison.Ordinal) && TryWell(color.Substring(2), out int wr, out int wc) && wr < rows && wc < cols));
+                        if (!onPlate) refuse("frames." + side + ": not an edge of the plate: " + line.Key);
+                        else if (!known) refuse("frames." + side + "." + line.Key + ": not a colour of a frame: " + line.Value);
+                        else if (!found.Any(x => x.Row == r && x.Col == c)) found.Add((r, c, color[0] == '#' ? color.ToLowerInvariant() : color));
+                    }
+            }
+            var result = new Dictionary<string, object>();
+            foreach (var x in found.OrderBy(x => x.Row).ThenBy(x => x.Col))
+                result[x.Row.ToString(CultureInfo.InvariantCulture) + ":" + x.Col.ToString(CultureInfo.InvariantCulture)] = x.Color;
+            return result;
         }
 
         /// <summary>The well ids of the plate that are given, in plate order (A1, A2, ..., B1, ...).</summary>

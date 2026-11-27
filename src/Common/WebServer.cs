@@ -7,7 +7,8 @@
 // API: /api/state (with "storage", "problems", "events", "operator", "keepAwake", "openQueue"; each run's "analysisRev"),
 // /api/run, /api/runs (each run's "analysisRev") as before (/api/run, /api/pk and /api/pk-file's "run" with the run's
 // "protocolDetails", ProtocolDetails.cs); /api/experiments, /api/pk?file=, /api/open-folder?file=,
-// /api/analysis?runId= (GET, POST), POST /api/analysis/revert|xlsx?runId=, /api/export-xlsx, /api/download?runId=&kind=
+// /api/analysis?runId= (GET, POST; a POST with "baseRev" is refused with 409 "conflict" when the saved analysis is
+// another revision now: see Experiments.SaveAnalysis), POST /api/analysis/revert|xlsx?runId=, /api/export-xlsx, /api/download?runId=&kind=
 // (the complete .pk or .xlsx: the online view's downloads), POST /api/experiments/rename|regenerate-xlsx|recycle|restore
 // (Experiments.cs); /api/settings (GET, POST),
 // /api/layouts (GET, POST), POST /api/layouts/delete|import-xlsx (Settings.cs); /api/health, /api/support-bundle,
@@ -163,14 +164,17 @@ namespace SAAControl
                     if (method == "GET") return experiments.GetAnalysis(First(query, "runId"));
                     {
                         // {"analysis": {...}, "savedBy": who saved it (the online view: "<name> (online)"; else the
-                        // analysis' own savedBy, else the Windows user), "xlsx": when the workbook follows (or ?xlsx=)}
+                        // analysis' own savedBy, else the Windows user), "xlsx": when the workbook follows (or ?xlsx=),
+                        // "baseRev": the revision the change was made on (optional; see Experiments.SaveAnalysis: 409
+                        // "conflict" when the saved analysis is another revision now)}
                         var posted = Body(body);
                         if (!(posted.TryGetValue("analysis", out object a) && a is Dictionary<string, object> analysis))
                             throw new ApiError(400, "the body must be {\"analysis\": {...}}");
+                        long? baseRev = BaseRev(posted);
                         string by = SavedBy(posted);
                         if (by != null) analysis = new Dictionary<string, object>(analysis) { ["savedBy"] = by };
                         return experiments.SaveAnalysis(First(query, "runId"), analysis, Session.UserOnMachine(User()),
-                                                        WorkbookWhen(query, posted, Experiments.WorkbookAuto));
+                                                        WorkbookWhen(query, posted, Experiments.WorkbookAuto), baseRev);
                     }
                 case "/api/analysis/revert":
                 {
@@ -252,6 +256,17 @@ namespace SAAControl
         /// <summary>Who saved, as a POST's body says ("savedBy": the online view sends "&lt;name&gt; (online)"); null: not said.</summary>
         static string SavedBy(Dictionary<string, object> posted) =>
             posted != null && posted.TryGetValue("savedBy", out object by) && by is string text && text.Trim().Length > 0 ? SettingsStore.Plain(text, 200) : null;
+
+        /// <summary>The revision a save of an analysis was made on, as a POST's body says ("baseRev": a whole number, 0 = there
+        /// was no saved analysis); null: not said, or null (the last save wins, as before). Anything else is refused (400):
+        /// a guard that is not understood must not let the save through as an unguarded one.</summary>
+        static long? BaseRev(Dictionary<string, object> posted)
+        {
+            if (posted == null || !posted.TryGetValue("baseRev", out object said) || said == null) return null;
+            if (said is long whole && whole >= 0) return whole;
+            if (said is double number && number >= 0 && number < 9e15 && Math.Floor(number) == number) return (long)number;
+            throw new ApiError(400, "baseRev must be a whole number of 0 or more (the \"rev\" of the analysis the change was made on)");
+        }
 
         /// <summary>When the workbook follows a save (?xlsx= or the body's "xlsx"): "now" (Ctrl+S; also 1, true, yes),
         /// "leave" (the experiment was left or closed; also close, flush), "auto" (the page saved by itself; also 0, false,
@@ -673,6 +688,9 @@ namespace SAAControl
                         begun = true;
                         var said = new Dictionary<string, object> { ["error"] = refused.Message };
                         if (refused.MessageZh != null) said["errorZh"] = refused.MessageZh;
+                        if (refused.Fields != null)
+                            foreach (var field in refused.Fields)
+                                if (!said.ContainsKey(field.Key)) said[field.Key] = field.Value;
                         SendJson(stream, said, refused.Status);
                         return true;
                     }
