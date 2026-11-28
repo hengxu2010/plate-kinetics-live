@@ -53,7 +53,16 @@ namespace SAAControl
         readonly List<string> toOpen = new List<string>();        // experiment files to show once the page is there
         bool pageReady;                        // the page has loaded
         readonly Timer opening = new Timer { Interval = 700 };    // (the page's own start is given a moment)
+        readonly List<string> toOpenLocal = new List<string>();   // local files/folders to open in standalone desktop mode
         string currentFolder;                  // the folder of the experiment the page shows: downloads are saved there
+        string lastExportFolder;               // last folder chosen in SaveFileDialog (PDF/project exports)
+        double savedZoom = 1.0;                // persisted WebView2 ZoomFactor
+        bool isFullscreen;
+        FormBorderStyle prevBorderStyle = FormBorderStyle.Sizable;
+        FormWindowState prevWindowState = FormWindowState.Normal;
+        Rectangle prevBounds;
+        CoreWebView2Environment wvEnv;         // shared WebView2 environment (reused for hidden PrintToPdfAsync)
+        bool updateCheckStarted;
         readonly List<DateTime> failures = new List<DateTime>();  // the web control's failures (it is made again a few times)
 
         /// <summary>The Experiments folder of the program's data folder (the page asks the window to open it in Explorer).</summary>
@@ -62,6 +71,21 @@ namespace SAAControl
         /// <summary>This process records (the program without its service): closing the window stops recording, so the
         /// user is asked first.</summary>
         public bool RecordsHere { get; set; }
+
+        /// <summary>True for standalone Plate Kinetics Analysis (and Live installed in Analysis-only mode).</summary>
+        public bool Standalone { get; set; }
+
+        /// <summary>True when running in Analysis-only mode (drives GitHub updater repo selection).</summary>
+        public bool AnalysisOnly { get; set; }
+
+        /// <summary>Optional virtual host name mapped to VirtualHostFolder (avoids binding any local TCP port).</summary>
+        public string VirtualHostName { get; set; }
+
+        /// <summary>Local folder mapped to VirtualHostName.</summary>
+        public string VirtualHostFolder { get; set; }
+
+        /// <summary>Current app version string for GitHub update checks.</summary>
+        public string CurrentVersion { get; set; }
 
         // "Leave this page? Unsaved changes may be lost." (asked instead of Edge's "Leave site?")
         const string LeaveQuestion = "\u79bb\u5f00\u6b64\u9875\uff1f\u672a\u4fdd\u5b58\u7684\u66f4\u6539\u53ef\u80fd\u4f1a\u4e22\u5931\u3002\n" +
@@ -119,17 +143,45 @@ namespace SAAControl
                 var files = toOpen.ToList();
                 toOpen.Clear();
                 foreach (string file in files) ShowRun(file);
+                if (toOpenLocal.Count > 0)
+                {
+                    var local = toOpenLocal.ToList();
+                    toOpenLocal.Clear();
+                    SendLocalPaths(local);
+                }
+            };
+            AllowDrop = true;
+            DragEnter += (s, e) =>
+            {
+                if (e.Data != null && e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy;
+            };
+            DragDrop += (s, e) =>
+            {
+                if (e.Data != null && e.Data.GetData(DataFormats.FileDrop) is string[] dropped && dropped.Length > 0)
+                    OpenLocalPaths(dropped);
             };
         }
 
         static WebView2 NewView() => new WebView2 { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.White };
 
-        /// <summary>Show experiment files (.pk) in the page, once it is there.</summary>
+        /// <summary>Show experiment files (.pk) or project files (.pkproj) in the page, once it is there.</summary>
         public void Open(IEnumerable<string> files)
         {
             foreach (string file in files ?? Enumerable.Empty<string>())
-                if (!string.IsNullOrWhiteSpace(file)) toOpen.Add(file);
-            if (toOpen.Count > 0 && pageReady && IsHandleCreated) opening.Start();
+            {
+                if (string.IsNullOrWhiteSpace(file)) continue;
+                if (file.EndsWith(PkFile.Extension, StringComparison.OrdinalIgnoreCase) && !Standalone) toOpen.Add(file);
+                else toOpenLocal.Add(file);
+            }
+            if ((toOpen.Count > 0 || toOpenLocal.Count > 0) && pageReady && IsHandleCreated) opening.Start();
+        }
+
+        /// <summary>Open local files or folders (.pk, .pkproj, .json, .xlsx, .csv, .txt, .qps, .ruc) in standalone mode.</summary>
+        public void OpenLocalPaths(IEnumerable<string> paths)
+        {
+            foreach (string p in paths ?? Enumerable.Empty<string>())
+                if (!string.IsNullOrWhiteSpace(p)) toOpenLocal.Add(p);
+            if (toOpenLocal.Count > 0 && pageReady && IsHandleCreated) opening.Start();
         }
 
         void Post(Dictionary<string, object> message)
@@ -259,6 +311,61 @@ namespace SAAControl
                             // "The manual is not there (the Help folder beside the program)."
                             MessageBox.Show(this, "\u627e\u4e0d\u5230\u8bf4\u660e\u4e66\uff08\u7a0b\u5e8f\u65c1\u8fb9\u7684 Help \u6587\u4ef6\u5939\uff09\u3002\n" +
                                             "The manual is not there (the Help folder beside the program).", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        break;
+                    case "pageReady":
+                        OnPageReadyMessage();
+                        break;
+                    case "exportPdf":
+                    {
+                        bool landscape = message.TryGetValue("landscape", out object ls) && ls is bool b && b;
+                        var _ = ExportPdfAsync(Field("html"), Field("filename"), landscape);
+                        break;
+                    }
+                    case "pickProjectFile":
+                        BeginInvoke(new Action(PickProjectFile));
+                        break;
+                    case "pickDataFiles":
+                        BeginInvoke(new Action(PickDataFiles));
+                        break;
+                    case "openRecent":
+                        if (!string.IsNullOrWhiteSpace(Field("path"))) OpenLocalPaths(new[] { Field("path") });
+                        break;
+                    case "revealFile":
+                        RevealFile(Field("path"));
+                        break;
+                    case "clearRecent":
+                        SaveRecent(new List<Dictionary<string, object>>());
+                        Post(new Dictionary<string, object> { ["cmd"] = "recentFiles", ["items"] = new List<object>() });
+                        break;
+                    case "saveProjectFile":
+                        BeginInvoke(new Action(() => SaveProjectFile(Field("path"), Field("suggestedName"), Field("text"))));
+                        break;
+                    case "autosaveWrite":
+                        WriteAutosave(Field("json"));
+                        break;
+                    case "zoom":
+                    {
+                        bool reset = message.TryGetValue("reset", out object r) && r is bool rb && rb;
+                        double delta = message.TryGetValue("delta", out object d) && d != null ? Convert.ToDouble(d) : 0;
+                        BeginInvoke(new Action(() => ApplyZoom(reset ? 1.0 : savedZoom + delta)));
+                        break;
+                    }
+                    case "toggleFullscreen":
+                        BeginInvoke(new Action(ToggleFullscreen));
+                        break;
+                    case "checkUpdate":
+                    {
+                        bool manual = message.TryGetValue("manual", out object mn) && mn is bool mb && mb;
+                        var _ = RunUpdateCheckAsync(manual);
+                        break;
+                    }
+                    case "installUpdate":
+                    {
+                        var _ = RunInstallUpdateAsync(Field("version"), Field("assetUrl"), Field("sha256"));
+                        break;
+                    }
+                    case "dismissUpdate":
+                        Updater.DismissVersion(appName, Field("version"));
                         break;
                 }
             }
@@ -440,6 +547,11 @@ namespace SAAControl
                     StartPosition = FormStartPosition.Manual;
                     Bounds = r;
                     if (p.TryGetValue("maximized", out var m) && m is bool max && max) WindowState = FormWindowState.Maximized;
+                    if (p.TryGetValue("zoom", out var z) && z != null)
+                    {
+                        double zv = Convert.ToDouble(z);
+                        if (zv >= 0.6 && zv <= 2.0) savedZoom = zv;
+                    }
                     return;
                 }
                 catch (Exception) { }
@@ -450,16 +562,405 @@ namespace SAAControl
         {
             try
             {
-                var r = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+                var r = isFullscreen ? prevBounds : (WindowState == FormWindowState.Normal ? Bounds : RestoreBounds);
                 var p = new Dictionary<string, object>
                 {
                     ["x"] = (long)r.X, ["y"] = (long)r.Y, ["width"] = (long)r.Width, ["height"] = (long)r.Height,
-                    ["maximized"] = WindowState == FormWindowState.Maximized,
+                    ["maximized"] = isFullscreen ? prevWindowState == FormWindowState.Maximized : WindowState == FormWindowState.Maximized,
+                    ["zoom"] = Math.Round(savedZoom, 2),
                 };
                 Directory.CreateDirectory(userDir);
                 File.WriteAllText(placementFile, Json.Serialize(p));
             }
             catch (Exception) { }
+        }
+
+        // ---- Desktop features: native PDF, recent files, batch open, direct save, local autosave, zoom, fullscreen, GitHub updater ----
+
+        static readonly HashSet<string> SupportedDataExts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".pk", ".pkproj", ".pka", ".json", ".xlsx", ".xls", ".csv", ".tsv", ".txt", ".qps", ".qpsx", ".pcrd", ".ruc"
+        };
+
+        string RecentFilePath => Path.Combine(userDir, "recent.json");
+        string AutosaveFilePath => Path.Combine(userDir, "autosave.json");
+
+        void OnPageReadyMessage()
+        {
+            Post(new Dictionary<string, object> { ["cmd"] = "recentFiles", ["items"] = LoadRecent().Cast<object>().ToList() });
+            if (Standalone && File.Exists(AutosaveFilePath) && toOpenLocal.Count == 0)
+            {
+                try
+                {
+                    string json = File.ReadAllText(AutosaveFilePath, System.Text.Encoding.UTF8);
+                    if (!string.IsNullOrWhiteSpace(json))
+                        Post(new Dictionary<string, object> { ["cmd"] = "autosaveRestored", ["json"] = json });
+                }
+                catch (Exception) { }
+            }
+            if (toOpenLocal.Count > 0) opening.Start();
+            if (!updateCheckStarted)
+            {
+                updateCheckStarted = true;
+                var _ = DelayedUpdateCheckAsync();
+            }
+        }
+
+        async Task DelayedUpdateCheckAsync()
+        {
+            await Task.Delay(6000);
+            if (!IsDisposed && !closeAsked && !closeConfirmed) await RunUpdateCheckAsync(false);
+        }
+
+        async Task RunUpdateCheckAsync(bool manual)
+        {
+            string ver = !string.IsNullOrWhiteSpace(CurrentVersion) ? CurrentVersion : AnalysisRunner.ProgramVersion();
+            var res = await Updater.CheckAsync(appName, ver, AnalysisOnly || Standalone, manual);
+            if (IsDisposed) return;
+            Post(new Dictionary<string, object>
+            {
+                ["cmd"] = "updateInfo",
+                ["available"] = res.Available,
+                ["manual"] = manual,
+                ["version"] = res.Version,
+                ["notes"] = res.Notes,
+                ["url"] = res.ReleaseUrl,
+                ["assetUrl"] = res.AssetUrl,
+                ["sha256"] = res.Sha256,
+                ["error"] = res.Error,
+            });
+        }
+
+        async Task RunInstallUpdateAsync(string version, string assetUrl, string sha256)
+        {
+            Post(new Dictionary<string, object> { ["cmd"] = "updateInfo", ["available"] = true, ["state"] = "downloading", ["version"] = version ?? "", ["progress"] = 0 });
+            string err = await Updater.DownloadAndInstallAsync(appName, version, assetUrl, sha256, AnalysisOnly || Standalone, pct =>
+            {
+                if (!IsDisposed)
+                    BeginInvoke(new Action(() => Post(new Dictionary<string, object> { ["cmd"] = "updateInfo", ["available"] = true, ["state"] = "downloading", ["version"] = version ?? "", ["progress"] = pct })));
+            });
+            if (IsDisposed) return;
+            if (err != null)
+            {
+                Post(new Dictionary<string, object> { ["cmd"] = "updateInfo", ["available"] = true, ["state"] = "error", ["version"] = version ?? "", ["error"] = err });
+                return;
+            }
+            Post(new Dictionary<string, object> { ["cmd"] = "updateInfo", ["available"] = true, ["state"] = "installing", ["version"] = version ?? "" });
+            // Installer launched with /S /RELAUNCH: close this window cleanly so files update without locking
+            closeConfirmed = true;
+            BeginInvoke(new Action(Close));
+        }
+
+        async Task ExportPdfAsync(string html, string filename, bool landscape)
+        {
+            if (string.IsNullOrEmpty(html) || wvEnv == null)
+            {
+                Post(new Dictionary<string, object> { ["cmd"] = "pdfExported", ["ok"] = false, ["error"] = "PDF engine unavailable" });
+                return;
+            }
+            string savePath = null;
+            var pickDone = new TaskCompletionSource<string>();
+            BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    string name = string.IsNullOrWhiteSpace(filename) ? "report.pdf" : Path.GetFileName(filename);
+                    if (!name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)) name += ".pdf";
+                    string initDir = lastExportFolder != null && Directory.Exists(lastExportFolder) ? lastExportFolder
+                                   : currentFolder != null && Directory.Exists(currentFolder) ? currentFolder
+                                   : !string.IsNullOrEmpty(ExperimentsFolder) && Directory.Exists(ExperimentsFolder) ? ExperimentsFolder : null;
+                    using (var dlg = new SaveFileDialog
+                    {
+                        FileName = name, OverwritePrompt = true, AddExtension = true, DefaultExt = "pdf", RestoreDirectory = true,
+                        Filter = "PDF (*.pdf)|*.pdf|*.*|*.*",
+                    })
+                    {
+                        if (initDir != null) dlg.InitialDirectory = initDir;
+                        pickDone.TrySetResult(dlg.ShowDialog(this) == DialogResult.OK ? dlg.FileName : null);
+                    }
+                }
+                catch (Exception ex) { pickDone.TrySetException(ex); }
+            }));
+            try { savePath = await pickDone.Task; }
+            catch (Exception ex)
+            {
+                Post(new Dictionary<string, object> { ["cmd"] = "pdfExported", ["ok"] = false, ["error"] = ex.Message });
+                return;
+            }
+            if (string.IsNullOrEmpty(savePath))
+            {
+                Post(new Dictionary<string, object> { ["cmd"] = "pdfExported", ["ok"] = false, ["cancelled"] = true });
+                return;
+            }
+            lastExportFolder = Path.GetDirectoryName(savePath);
+            WebView2 hidden = null;
+            try
+            {
+                var pdfDone = new TaskCompletionSource<bool>();
+                BeginInvoke(new Action(async () =>
+                {
+                    try
+                    {
+                        hidden = new WebView2 { Visible = false, Width = landscape ? 1123 : 794, Height = landscape ? 794 : 1123 };
+                        Controls.Add(hidden);
+                        await hidden.EnsureCoreWebView2Async(wvEnv);
+                        var navDone = new TaskCompletionSource<bool>();
+                        hidden.CoreWebView2.NavigationCompleted += (s, ev) => navDone.TrySetResult(ev.IsSuccess);
+                        hidden.CoreWebView2.NavigateToString(html);
+                        await navDone.Task;
+                        await Task.Delay(120);
+                        var ps = hidden.CoreWebView2.Environment.CreatePrintSettings();
+                        ps.Orientation = landscape ? CoreWebView2PrintOrientation.Landscape : CoreWebView2PrintOrientation.Portrait;
+                        ps.ShouldPrintBackgrounds = true;
+                        ps.ShouldPrintHeaderAndFooter = false;
+                        // CSS @page sets exact A4 margins (13mm 14mm / 10mm 12mm); keep WebView2 margins 0 to avoid double margins
+                        ps.MarginTop = 0; ps.MarginBottom = 0; ps.MarginLeft = 0; ps.MarginRight = 0;
+                        bool ok = await hidden.CoreWebView2.PrintToPdfAsync(savePath, ps);
+                        pdfDone.TrySetResult(ok);
+                    }
+                    catch (Exception ex) { pdfDone.TrySetException(ex); }
+                    finally
+                    {
+                        if (hidden != null)
+                        {
+                            try { Controls.Remove(hidden); hidden.Dispose(); } catch (Exception) { }
+                        }
+                    }
+                }));
+                bool okRes = await pdfDone.Task;
+                Post(new Dictionary<string, object>
+                {
+                    ["cmd"] = "pdfExported", ["ok"] = okRes, ["path"] = savePath, ["name"] = Path.GetFileName(savePath),
+                    ["error"] = okRes ? "" : "PrintToPdf returned false",
+                });
+                if (okRes) Log.Info("exported native PDF to " + savePath);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("native PDF export failed: " + ex.Message);
+                Post(new Dictionary<string, object> { ["cmd"] = "pdfExported", ["ok"] = false, ["error"] = ex.Message });
+            }
+        }
+
+        List<Dictionary<string, object>> LoadRecent()
+        {
+            var list = new List<Dictionary<string, object>>();
+            try
+            {
+                if (!File.Exists(RecentFilePath)) return list;
+                if (Json.Parse(File.ReadAllText(RecentFilePath, System.Text.Encoding.UTF8)) is List<object> arr)
+                {
+                    foreach (object o in arr)
+                        if (o is Dictionary<string, object> d && d.TryGetValue("path", out object p) && p is string ps && File.Exists(ps))
+                            list.Add(new Dictionary<string, object> { ["path"] = ps, ["name"] = Path.GetFileName(ps) });
+                }
+            }
+            catch (Exception) { }
+            return list;
+        }
+
+        void SaveRecent(List<Dictionary<string, object>> list)
+        {
+            try
+            {
+                Directory.CreateDirectory(userDir);
+                File.WriteAllText(RecentFilePath, Json.Serialize(list.Cast<object>().ToList(), ensureAscii: false), new System.Text.UTF8Encoding(false));
+            }
+            catch (Exception) { }
+        }
+
+        void RememberRecent(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return;
+            string full = Path.GetFullPath(path);
+            var list = LoadRecent().Where(d => !string.Equals(d["path"] as string, full, StringComparison.OrdinalIgnoreCase)).ToList();
+            list.Insert(0, new Dictionary<string, object> { ["path"] = full, ["name"] = Path.GetFileName(full) });
+            if (list.Count > 10) list = list.Take(10).ToList();
+            SaveRecent(list);
+            Post(new Dictionary<string, object> { ["cmd"] = "recentFiles", ["items"] = list.Cast<object>().ToList() });
+        }
+
+        void RevealFile(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return;
+            try
+            {
+                string full = Path.GetFullPath(path);
+                string args = File.Exists(full) ? "/select,\"" + full + "\"" : Directory.Exists(full) ? "\"" + full + "\"" : null;
+                if (args != null) Process.Start(new ProcessStartInfo("explorer.exe", args) { UseShellExecute = true });
+            }
+            catch (Exception) { }
+        }
+
+        void PickProjectFile()
+        {
+            using (var dlg = new OpenFileDialog
+            {
+                Multiselect = false, RestoreDirectory = true,
+                Filter = "Plate Kinetics (*.pkproj;*.pka;*.json;*.pk)|*.pkproj;*.pka;*.json;*.pk|All files (*.*)|*.*",
+            })
+            {
+                if (dlg.ShowDialog(this) == DialogResult.OK && !string.IsNullOrEmpty(dlg.FileName))
+                    SendLocalPaths(new[] { dlg.FileName });
+            }
+        }
+
+        void PickDataFiles()
+        {
+            using (var dlg = new OpenFileDialog
+            {
+                Multiselect = true, RestoreDirectory = true,
+                Filter = "Kinetic data (*.xlsx;*.xls;*.csv;*.tsv;*.txt;*.pk;*.qps;*.qpsx;*.pcrd;*.ruc)|*.xlsx;*.xls;*.csv;*.tsv;*.txt;*.pk;*.qps;*.qpsx;*.pcrd;*.ruc|All files (*.*)|*.*",
+            })
+            {
+                if (dlg.ShowDialog(this) == DialogResult.OK && dlg.FileNames.Length > 0)
+                    SendLocalPaths(dlg.FileNames);
+            }
+        }
+
+        void SendLocalPaths(IEnumerable<string> rawPaths)
+        {
+            var files = new List<string>();
+            foreach (string raw in rawPaths ?? Enumerable.Empty<string>())
+            {
+                try
+                {
+                    string full = Path.GetFullPath(raw);
+                    if (Directory.Exists(full))
+                    {
+                        foreach (string f in Directory.GetFiles(full).OrderBy(x => x))
+                            if (SupportedDataExts.Contains(Path.GetExtension(f))) files.Add(f);
+                    }
+                    else if (File.Exists(full))
+                    {
+                        files.Add(full);
+                    }
+                }
+                catch (Exception) { }
+            }
+            if (files.Count == 0) return;
+            var batch = new List<object>();
+            foreach (string full in files)
+            {
+                try
+                {
+                    string ext = Path.GetExtension(full).ToLowerInvariant();
+                    string name = Path.GetFileName(full);
+                    if (ext == ".pk")
+                    {
+                        var read = PkFile.ReadFile(full, true, true);
+                        batch.Add(new Dictionary<string, object>
+                        {
+                            ["kind"] = "pk", ["name"] = name, ["path"] = full,
+                            ["run"] = read.Run, ["analysis"] = read.Analysis, ["info"] = read.Info,
+                        });
+                    }
+                    else if (ext == ".pkproj" || ext == ".pka" || ext == ".json")
+                    {
+                        batch.Add(new Dictionary<string, object>
+                        {
+                            ["kind"] = "project", ["name"] = name, ["path"] = full,
+                            ["text"] = File.ReadAllText(full, System.Text.Encoding.UTF8),
+                        });
+                    }
+                    else
+                    {
+                        byte[] bytes = File.ReadAllBytes(full);
+                        batch.Add(new Dictionary<string, object>
+                        {
+                            ["kind"] = "data", ["name"] = name, ["path"] = full,
+                            ["dataBase64"] = Convert.ToBase64String(bytes),
+                        });
+                    }
+                    RememberRecent(full);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning("could not read local file " + full + ": " + ex.Message);
+                }
+            }
+            if (batch.Count > 0)
+                Post(new Dictionary<string, object> { ["cmd"] = "openLocalBatch", ["files"] = batch });
+        }
+
+        void SaveProjectFile(string existingPath, string suggestedName, string text)
+        {
+            if (text == null) return;
+            string target = existingPath;
+            if (string.IsNullOrWhiteSpace(target))
+            {
+                using (var dlg = new SaveFileDialog
+                {
+                    FileName = string.IsNullOrWhiteSpace(suggestedName) ? "project.pkproj" : Path.GetFileName(suggestedName),
+                    OverwritePrompt = true, AddExtension = true, DefaultExt = "pkproj", RestoreDirectory = true,
+                    Filter = "Plate Kinetics project (*.pkproj;*.json)|*.pkproj;*.json|All files (*.*)|*.*",
+                })
+                {
+                    if (lastExportFolder != null && Directory.Exists(lastExportFolder)) dlg.InitialDirectory = lastExportFolder;
+                    if (dlg.ShowDialog(this) != DialogResult.OK)
+                    {
+                        Post(new Dictionary<string, object> { ["cmd"] = "projectSaved", ["ok"] = false, ["cancelled"] = true });
+                        return;
+                    }
+                    target = dlg.FileName;
+                }
+            }
+            try
+            {
+                string full = Path.GetFullPath(target);
+                string tmp = full + ".tmp-" + Guid.NewGuid().ToString("N").Substring(0, 6);
+                File.WriteAllText(tmp, text, new System.Text.UTF8Encoding(false));
+                if (File.Exists(full)) File.Replace(tmp, full, null);
+                else File.Move(tmp, full);
+                lastExportFolder = Path.GetDirectoryName(full);
+                RememberRecent(full);
+                Post(new Dictionary<string, object> { ["cmd"] = "projectSaved", ["ok"] = true, ["path"] = full, ["name"] = Path.GetFileName(full) });
+            }
+            catch (Exception ex)
+            {
+                Post(new Dictionary<string, object> { ["cmd"] = "projectSaved", ["ok"] = false, ["error"] = ex.Message });
+            }
+        }
+
+        void WriteAutosave(string json)
+        {
+            if (string.IsNullOrEmpty(json)) return;
+            try
+            {
+                Directory.CreateDirectory(userDir);
+                string tmp = AutosaveFilePath + ".tmp";
+                File.WriteAllText(tmp, json, new System.Text.UTF8Encoding(false));
+                if (File.Exists(AutosaveFilePath)) File.Replace(tmp, AutosaveFilePath, null);
+                else File.Move(tmp, AutosaveFilePath);
+            }
+            catch (Exception) { }
+        }
+
+        void ApplyZoom(double factor)
+        {
+            savedZoom = Math.Max(0.6, Math.Min(2.0, Math.Round(factor, 2)));
+            try { if (view != null) view.ZoomFactor = savedZoom; } catch (Exception) { }
+            SavePlacement();
+        }
+
+        void ToggleFullscreen()
+        {
+            if (!isFullscreen)
+            {
+                prevBorderStyle = FormBorderStyle;
+                prevWindowState = WindowState;
+                prevBounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+                FormBorderStyle = FormBorderStyle.None;
+                WindowState = FormWindowState.Maximized;
+                isFullscreen = true;
+            }
+            else
+            {
+                FormBorderStyle = prevBorderStyle;
+                WindowState = prevWindowState;
+                if (prevWindowState == FormWindowState.Normal && prevBounds.Width > 0) Bounds = prevBounds;
+                isFullscreen = false;
+            }
         }
 
         async Task StartAsync()
@@ -484,8 +985,12 @@ namespace SAAControl
                 }
                 catch (Exception error) { Log.Warning("the window's web profile could not be trimmed (" + error.Message + ")"); }
                 var env = await CoreWebView2Environment.CreateAsync(null, folder, new CoreWebView2EnvironmentOptions(WebProfile.BrowserArguments));
+                wvEnv = env;
                 await view.EnsureCoreWebView2Async(env);
                 var core = view.CoreWebView2;
+                if (!string.IsNullOrEmpty(VirtualHostName) && !string.IsNullOrEmpty(VirtualHostFolder) && Directory.Exists(VirtualHostFolder))
+                    core.SetVirtualHostNameToFolderMapping(VirtualHostName, VirtualHostFolder, CoreWebView2HostResourceAccessKind.Allow);
+                try { if (Math.Abs(savedZoom - 1.0) > 0.005) view.ZoomFactor = savedZoom; } catch (Exception) { }
                 core.Settings.AreDevToolsEnabled = false;
                 core.Settings.IsStatusBarEnabled = false;
                 core.Settings.AreBrowserAcceleratorKeysEnabled = true;
@@ -498,7 +1003,10 @@ namespace SAAControl
                 // where the page is shown: the program's window, for which user
                 var host = new Dictionary<string, object>
                 {
-                    ["window"] = true, ["user"] = Session.ThisUser(), ["pc"] = Session.Machine(), ["edition"] = Runtime.Edition, ["recordsHere"] = RecordsHere,
+                    ["window"] = true, ["desktop"] = true, ["standalone"] = Standalone, ["analysisOnly"] = AnalysisOnly,
+                    ["nativePdf"] = true, ["updater"] = true, ["appName"] = appName,
+                    ["version"] = !string.IsNullOrWhiteSpace(CurrentVersion) ? CurrentVersion : AnalysisRunner.ProgramVersion(),
+                    ["user"] = Session.ThisUser(), ["pc"] = Session.Machine(), ["edition"] = Runtime.Edition, ["recordsHere"] = RecordsHere,
                 };
                 await core.AddScriptToExecuteOnDocumentCreatedAsync("window.PKHost = " + Json.Serialize(host) + ";");
                 // links that open a new window (a shared room's web address) go to the default browser
@@ -523,7 +1031,7 @@ namespace SAAControl
                     if (e.IsSuccess && e.NavigationId == pageNavigation)
                     {
                         pageReady = true;
-                        if (toOpen.Count > 0) opening.Start();
+                        if (toOpen.Count > 0 || toOpenLocal.Count > 0) opening.Start();
                     }
                 };
                 core.NavigationStarting += (s, e) =>

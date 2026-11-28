@@ -60,14 +60,17 @@ namespace SAAControl
             public string Value(string name) => values.TryGetValue(name, out var l) && l.Count > 0 ? l[l.Count - 1] : null;
             public List<string> All(string name) => values.TryGetValue(name, out var l) ? new List<string>(l) : new List<string>();
 
-            /// <summary>The experiment file to show: --open's, else a bare argument that is a .pk (Explorer's "Open
-            /// with"); null for none.</summary>
+            /// <summary>The experiment or project file to show: --open's, else a bare argument that is a .pk or .pkproj
+            /// (Explorer's "Open with"); null for none.</summary>
             public string OpenFile()
             {
                 string file = Value("--open");
                 if (file == null)
                     foreach (string name in values.Keys)
-                        if (!name.StartsWith("--") && name.EndsWith(PkFile.Extension, StringComparison.OrdinalIgnoreCase)) file = name;
+                        if (!name.StartsWith("--") &&
+                            (name.EndsWith(PkFile.Extension, StringComparison.OrdinalIgnoreCase) ||
+                             name.EndsWith(InstallShared.PkProjExtension, StringComparison.OrdinalIgnoreCase)))
+                            file = name;
                 if (string.IsNullOrWhiteSpace(file)) return null;
                 try { return Path.GetFullPath(file.Trim().Trim('"')); }
                 catch (Exception) { return null; }
@@ -132,6 +135,8 @@ namespace SAAControl
             Runtime.AppName = appName;
             Runtime.ProgramName = InstallShared.DisplayName(appName);
             if (args.Has("--uninstall")) return Uninstaller.Run(appName);
+            if (args.Has("--analysis-only") || AnalysisRunner.IsAnalysisOnlyInstall(Files.ProgramDir))
+                return AnalysisRunner.Run(appName, argv);
             // the tray of the installed program (one per signed-in user): notifications of the runs' events
             if (args.Has("--tray")) return TrayMode.Run(appName, int.TryParse(args.Value("--port"), out int trayPort) ? trayPort : defaultPort, args.Value("--data-dir"));
             if (args.Has("--install-service")) return ServiceMode.Install(appName, serviceDescription);
@@ -622,7 +627,7 @@ namespace SAAControl
             var window = new MainWindow(appName, url, userDir, profile, carryOver ? CarryOverSources(layout) : null,
                                         Path.Combine(layout.SystemDir, profile + "-window.json"))
             {
-                ExperimentsFolder = layout.Experiments, RecordsHere = recordsHere,
+                ExperimentsFolder = layout.Experiments, RecordsHere = recordsHere, CurrentVersion = AnalysisRunner.ProgramVersion(),
             };
             EventWaitHandle show = null;
             try { show = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName(appName)); }

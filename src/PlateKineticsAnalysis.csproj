@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Standalone Plate Kinetics Analysis desktop application (Windows .NET Framework 4.8 + WebView2).
+       Zero instrument service or tray; shares Common UI/updater/installer code with Plate Kinetics Live. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>PlateKineticsAnalysis</AssemblyName>
+    <RootNamespace>SAAControl</RootNamespace>
+    <PlatformTarget>x64</PlatformTarget>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <FrameworkPathOverride>C:\Windows\Microsoft.NET\Framework64\v4.0.30319</FrameworkPathOverride>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Version>3.18.0</Version>
+    <Version Condition="'$(SAAControlVersion)' != ''">$(SAAControlVersion)</Version>
+    <Company>hx_mao</Company>
+    <Product>Plate Kinetics Analysis</Product>
+    <AssemblyTitle>Plate Kinetics Analysis</AssemblyTitle>
+    <Description>Standalone kinetic curve analysis desktop application for 96/384-well plates</Description>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon Condition="Exists('app.ico')">app.ico</ApplicationIcon>
+    <DebugType>none</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\out\PlateKineticsAnalysis\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Common\*.cs" />
+    <Compile Include="AnalysisProgram.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="Microsoft.Web.WebView2.Core"><HintPath>..\vendor\webview2\Microsoft.Web.WebView2.Core.dll</HintPath></Reference>
+    <Reference Include="Microsoft.Web.WebView2.WinForms"><HintPath>..\vendor\webview2\Microsoft.Web.WebView2.WinForms.dll</HintPath></Reference>
+    <None Include="..\vendor\webview2\WebView2Loader.dll" Link="WebView2Loader.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\web\PlateKineticsAnalysis.html" Link="web\PlateKineticsAnalysis.html" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -2087,6 +2087,7 @@ async function renderAbout(fetch) {
   const research = en('For research use only, not for diagnostic use.');
   about.body.replaceChildren(...[
     card(h('span', { translate: 'no' }, (health && health.program) || X.ME.name), versionsList(),
+      host() && !online ? h('div', { cls: 'saa-card-actions' }, button(en('Check for updates'), () => { const b = host(); if (b) b.postMessage({ cmd: 'checkUpdate', manual: true }); }, 'sm')) : null,
       h('p', { cls: 'saa-notice', translate: 'no' }, h('b', null, X.chineseOf(research)), h('br'), h('span', null, research))),
     online && editor() ? card(en('Checks of this PC'),
       health ? h('ul', { cls: 'saa-checklist', translate: 'no' }, X.checkLines(health, inChinese()).map(c => h('li', { 'data-ok': c.ok ? '1' : '0' }, icon(c.ok ? 'check' : 'alert'), h('span', null, c.text))))

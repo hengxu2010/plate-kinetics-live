@@ -416,6 +416,7 @@ const ZH = {
     'part of Windows': 'Windows 自带',
     'The analysis page on the web': '网页版分析页面',
     'The same analysis, without the instruments, for files from anywhere:': '同样的分析功能，不接仪器，可以分析任何地方来的文件：',
+    'Check for updates': '检查更新',
     // messages of the program without variable parts (Runs.cs, Archimed.cs)
     'The run has started; waiting for the data of cycle 1.': '实验已开始，等待第 1 轮数据。',
     'Omega is not running: this is the data the last measurement left behind.': 'Omega 没有在运行，这是上次测量留下的数据。',

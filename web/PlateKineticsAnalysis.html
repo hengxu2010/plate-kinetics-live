@@ -26,7 +26,7 @@
 <meta name="description" content="Plate Kinetics Analysis: kinetic curves from 96- and 384-well plates. Import with automatic layout recognition, grouping, curve parameters, statistics, figures and reports. Runs in the browser, online or offline.">
 <meta name="author" content="hx_mao">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Crect width='26' height='26' rx='6' fill='%23077682'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='7' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='19' cy='9' r='2.7'/%3E%3Ccircle cx='7' cy='17' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='17' r='2.7'/%3E%3Ccircle cx='19' cy='17' r='2.7' fill-opacity='.45'/%3E%3C/g%3E%3C/svg%3E">
-<title>孔板动力学分析 · v3.17.1</title>
+<title>孔板动力学分析 · v3.18.0</title>
 <script>
 /* A light / dark choice made in this browser is applied before the first paint (the rest lives at the end of the page). */
 try { var pkUi = JSON.parse(localStorage.getItem('pk.ui.v1') || 'null'); if (pkUi && (pkUi.theme === 'light' || pkUi.theme === 'dark')) document.documentElement.setAttribute('data-theme', pkUi.theme); } catch (e) { /* storage unavailable */ }
@@ -46,8 +46,8 @@ try { var pkUi = JSON.parse(localStorage.getItem('pk.ui.v1') || 'null'); if (pkU
   setTimeout(function () { root.className = root.className.replace(/\s*\bpk-wait\b/, ''); }, 3000);
 })();
 </script>
-<meta name="application-version" content="v3.17.1">
-<meta name="application-build" content="pk-v3-17-1-ff24f0dc86ab">
+<meta name="application-version" content="v3.18.0">
+<meta name="application-build" content="pk-v3-18-0-688676c30d31">
 <style>
 :root {
   /* Layout idea: inputs on the left (plate, groups, settings), outputs on the right (curves, results).
@@ -755,6 +755,15 @@ svg.chart:not(.chart-ov) .tb-neg { opacity: .28; }
 .nt-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .nt-ta { display: block; width: 100%; box-sizing: border-box; min-height: 270px; resize: vertical; padding: 11px 13px; font: 13px/1.65 var(--font-sans); border: 1px solid var(--hair-2); border-radius: 9px; background: var(--surface); color: var(--ink); }
 .nt-ta:focus { outline: none; border-color: var(--accent); }
+.heat-ctl { display: inline-flex; align-items: center; gap: 5px; margin-left: 6px; }
+.heat-ctl select { height: 22px; font-size: 11px; padding: 0 6px; border-radius: 5px; border: 1px solid var(--hair-2); background: var(--surface); color: var(--ink); }
+.heat-ctl button { height: 22px; padding: 0 6px; font-size: 11px; }
+.pk-upd-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 14px; background: var(--accent-wash); border-bottom: 1px solid var(--accent); color: var(--ink); font-size: 12.5px; }
+.pk-upd-acts { display: flex; align-items: center; gap: 6px; flex: none; }
+.pop.rc-pop { width: 310px; }
+.rc-head { font-size: 11px; font-weight: 600; color: var(--muted); padding: 2px 8px 4px; }
+.rc-row { display: flex; align-items: center; gap: 2px; }
+.rc-row .rc-open { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* "Parameter markers": a menu of the marks the chart draws */
 #btnMarkers .mk-n { color: var(--muted); font-variant-numeric: tabular-nums; }
 .pop.mk-pop { width: 270px; }
@@ -1046,7 +1055,7 @@ html.pk-wait body { visibility: hidden; }
       <circle cx="7" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/><circle cx="13" cy="17" r="2.6" fill="var(--accent)" fill-opacity=".55"/><circle cx="19" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/>
     </svg>
     <div class="brand-copy">
-      <div class="brand-name"><span>Plate Kinetics Analysis</span><span class="brand-author" translate="no">by hx_mao</span><span class="brand-version" id="brandVersion" role="button" tabindex="0" translate="no" aria-label="Version v3.17.1">v3.17.1</span></div>
+      <div class="brand-name"><span>Plate Kinetics Analysis</span><span class="brand-author" translate="no">by hx_mao</span><span class="brand-version" id="brandVersion" role="button" tabindex="0" translate="no" aria-label="Version v3.18.0">v3.18.0</span></div>
       <div class="brand-sub">PLATE KINETICS · 96 / 384</div>
     </div>
   </div>
@@ -3510,6 +3519,39 @@ const LOCALES = {
       'Reagents & Conditions': '试剂与体系条件',
       'Write experiment notes, observations, anomalies or conclusions here…': '在此记录实验目的、样品处理、体系条件、现象观察或结论…',
       'Group statistics list': '分组统计列表',
+      'Group statistics · {0}': '分组统计 · {0}',
+      'Stats · ': '统计 · ',
+      'Color scale': '热图配色',
+      'Reverse color scale': '反转色阶方向',
+      'Reverse': '反转',
+      'Blue (default)': '蓝色（默认）',
+      'Viridis': '翠紫 (Viridis)',
+      'Plasma': '暖紫 (Plasma)',
+      'Teal green': '青绿色',
+      'Amber–Red': '橙红',
+      'Blue–Red': '蓝红对比',
+      'Grayscale': '灰度',
+      'Updates & About': '更新与关于',
+      'Check for updates and app info': '检查软件更新与版本信息',
+      'Check for updates': '检查更新',
+      'New version v{0} is available': '发现新版本 v{0}',
+      'Downloading update v{0}… {1}%': '正在下载更新 v{0}… {1}%',
+      'Installing update v{0}…': '正在安装更新 v{0}…',
+      'Update failed: {0}': '更新失败：{0}',
+      'Release notes': '更新内容',
+      'Update now': '立即更新',
+      'Later': '稍后',
+      'Already up to date (v{0})': '已是最新版本 (v{0})',
+      'Update check failed: {0}': '检查更新失败：{0}',
+      'Saved PDF: {0}': '已保存 PDF：{0}',
+      'PDF export failed: {0}': 'PDF 导出失败：{0}',
+      'Open project file…': '打开项目文件…',
+      'Import data files / folder…': '导入数据文件 / 文件夹…',
+      'Recent files': '最近打开的文件',
+      'No recent files yet': '暂无最近文件',
+      'Clear recent list': '清空最近列表',
+      'Show in folder': '在文件夹中显示',
+      'Restored local desktop autosave backup': '已恢复本地自动备份',
       '+ positive · hatched = excluded': '+ 为阳性 · 斜线为已排除',
       'PDF report (direct print / save as PDF)': 'PDF 报告（直接导出 / 打印）',
       'Print or save a formatted A4 PDF report directly (layout, curves, group statistics, cross table and per-well results)': '直接调起排版好的 A4 PDF 导出/打印（含实验记录、高清孔板排布、曲线、统计/交叉表与每孔结果）',
@@ -7574,9 +7616,25 @@ function ordinalRamp(baseHex, n, dark) {
   }
   return out;
 }
+const HEAT_PALETTES = {
+  blue:    { name: 'Blue (default)', colors: ['#cde2fb', '#b7d3f6', '#9ec5f4', '#86b6ef', '#6da7ec', '#5598e7', '#3987e5', '#2a78d6', '#256abf', '#1c5cab', '#184f95', '#104281', '#0d366b'] },
+  viridis: { name: 'Viridis',    colors: ['#440154', '#482475', '#414487', '#355f8d', '#2a788e', '#21918c', '#22a884', '#44bf70', '#7ad151', '#bddf26', '#fde725'] },
+  plasma:  { name: 'Plasma',     colors: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'] },
+  teal:    { name: 'Teal green', colors: ['#e6f7f5', '#c5ebe7', '#9ddad4', '#71c6bf', '#49afa7', '#27958e', '#117b76', '#0a615d', '#074946', '#053230'] },
+  warm:    { name: 'Amber–Red',  colors: ['#fff7dc', '#fee4a2', '#fec669', '#fd9c3c', '#f46d25', '#dc3f1c', '#b71d1a', '#8c0e16', '#5e060e'] },
+  rdbu:    { name: 'Blue–Red',   colors: ['#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#f7f7f7', '#fddbc7', '#f4a582', '#d6604d', '#b2182b'] },
+  gray:    { name: 'Grayscale',  colors: ['#f2f4f5', '#dde2e4', '#c2cacd', '#a3aeb2', '#828f94', '#637075', '#475358', '#2e373b', '#171d20'] }
+};
+function heatRamp(dark) {
+  const key = S && S.view && HEAT_PALETTES[S.view.heatPal] ? S.view.heatPal : 'blue';
+  let ramp = HEAT_PALETTES[key].colors.slice();
+  if (S && S.view && S.view.heatRev) ramp.reverse();
+  if (dark && (key === 'blue' || key === 'teal' || key === 'warm' || key === 'gray')) ramp.reverse();
+  return ramp;
+}
 function heatColor(v, lo, hi, dark) {
   const f = hi > lo ? clamp((v - lo) / (hi - lo), 0, 1) : 0.5;
-  const ramp = dark ? SEQ.slice().reverse() : SEQ;
+  const ramp = heatRamp(dark);
   const x = f * (ramp.length - 1), i = Math.floor(x);
   return i >= ramp.length - 1 ? ramp[ramp.length - 1] : mixHex(ramp[i], ramp[i + 1], x - i);
 }
@@ -7671,7 +7729,7 @@ const DEFAULT_VIEW = {
   viewVer: VIEW_VER, palette: 'sci', grid: false, symbols: false, labels: 'end', lineW: 1.8, chartH: null,
   axes: { x: { min: null, max: null, step: null }, y: {} }, exportW: 1000, exportH: 680,
   source: 'selected', yMode: 'sig', logY: false, smooth: false, markers: true, band: 'sd', reps: false, winShade: true, joins: true,
-  plateMode: 'spark', timeUnit: 'h', sigLabel: 'Fluorescence (RFU)', tab: 'wells', onlySel: true, cmpParam: 'lag',
+  plateMode: 'spark', heatPal: 'blue', heatRev: false, showName: false, timeUnit: 'h', sigLabel: 'Fluorescence (RFU)', tab: 'wells', onlySel: true, cmpParam: 'lag',
   cols: ['lag', 't50', 'Fmax', 'tPlateau', 'maxSlope', 'tMaxSlope', 'sMaxSlope', 'auc'], xcols: ['lag'], colsVer: COLS_VER,
   // group table: which spread to show beside the mean; comparison plot: significance testing
   gstat: 'sd', stat: { mode: 'none', test: 'welch', adjust: 'holm', ctrl: '' }
@@ -7680,7 +7738,7 @@ const VIEW_ENUMS = {
   source: ['selected', 'all', 'groups'], yMode: ['sig', 'base', 'norm', 'fold'], band: ['sd', 'sem', 'none'],
   labels: ['end', 'below', 'none'], timeUnit: ['h', 'min'], tab: ['wells', 'groups', 'compare', 'raw'], gstat: ['sd', 'sem', 'cv', 'median']
 };
-const VIEW_FLAGS = ['grid', 'symbols', 'logY', 'smooth', 'markers', 'reps', 'onlySel', 'winShade', 'joins'];
+const VIEW_FLAGS = ['grid', 'symbols', 'logY', 'smooth', 'markers', 'reps', 'onlySel', 'winShade', 'heatRev', 'showName', 'joins'];
 const STAT_ENUMS = { mode: ['none', 'ctrl', 'pairs'], test: ['welch', 'mwu', 'fisher'], adjust: ['holm', 'bonferroni', 'none'] };
 /** View preferences come from localStorage or from a project file that somebody else may have made,
     and several of them end up in markup: keep only well-formed values, fall back to the default otherwise. */
@@ -7692,6 +7750,7 @@ function migrateView(v) {
   for (const k in VIEW_ENUMS) if (!VIEW_ENUMS[k].includes(out[k])) out[k] = DEFAULT_VIEW[k];
   for (const k of VIEW_FLAGS) out[k] = out[k] == null ? DEFAULT_VIEW[k] : !!out[k];
   if (!Object.prototype.hasOwnProperty.call(PALETTES, out.palette)) out.palette = DEFAULT_VIEW.palette;
+  if (typeof HEAT_PALETTES !== 'undefined' && !Object.prototype.hasOwnProperty.call(HEAT_PALETTES, out.heatPal)) out.heatPal = DEFAULT_VIEW.heatPal;
   const isParam = k => typeof k === 'string' && Object.prototype.hasOwnProperty.call(PARAMS, k);
   if (!isParam(out.cmpParam) || out.cmpParam === 'thr') out.cmpParam = DEFAULT_VIEW.cmpParam;
   if (out.plateMode !== 'spark' && out.plateMode !== 'call' && !(typeof out.plateMode === 'string' && out.plateMode.startsWith('heat:') && isParam(out.plateMode.slice(5)))) out.plateMode = 'spark';
@@ -10224,9 +10283,10 @@ function openAbout() {
       </div>
       <p class="hint">${L('Version')} <span translate="no">${esc(APP.version)}</span> · ${L('Workbooks are read with SheetJS Community Edition 0.20.3 (Apache-2.0).')}</p>
     </div>`,
-    foot: `<span class="left" translate="no">${esc(appFileName(APP.version))}</span><button class="btn" type="button" data-cancel>${L('Close')}</button><button class="btn primary" type="button" data-ok>${ICON.dl}${L('Download')}</button>`
+    foot: `<span class="left" translate="no">${esc(typeof DESK !== 'undefined' && DESK.active() && window.PKHost && window.PKHost.standalone ? ('Plate Kinetics Analysis ' + (window.PKHost.version || APP.version)) : appFileName(APP.version))}</span>${typeof DESK !== 'undefined' && DESK.active() && window.PKHost && window.PKHost.updater ? `<button class="btn" type="button" data-upd>${esc(L('Check for updates'))}</button>` : ''}<button class="btn" type="button" data-cancel>${L('Close')}</button>${typeof DESK !== 'undefined' && DESK.active() && window.PKHost && window.PKHost.standalone ? '' : `<button class="btn primary" type="button" data-ok>${ICON.dl}${L('Download')}</button>`}`
   });
   $('[data-cancel]', m.el).onclick = m.close;
+  const updBtn = $('[data-upd]', m.el); if (updBtn) updBtn.onclick = () => { DESK.post({ cmd: 'checkUpdate', manual: true }); toast(L('Checking for updates…'), 2500); };
   $('[data-copy-mail]', m.el).onclick = async () => {
     try { await navigator.clipboard.writeText(APP.mail); toast(L('Email address copied')); }
     catch (e) {                 // no clipboard on this page (not a secure address): select the address instead
@@ -10236,8 +10296,7 @@ function openAbout() {
     }
   };
   const go = $('[data-ok]', m.el);
-  go.onclick = async () => { go.disabled = true; try { await downloadApp(); } finally { go.disabled = false; } };
-  go.focus();
+  if (go) { go.onclick = async () => { go.disabled = true; try { await downloadApp(); } finally { go.disabled = false; } }; go.focus(); }
 }
 
 /* ===================== plate, selection bar, groups, settings, tabs ===================== */
@@ -10738,10 +10797,12 @@ function renderPlate() {
   $$('.well', el).forEach(n => wellEls.set(n.dataset.w, n));
   fitPlate();
   if (hk) {
-    const ramp = (dark ? SEQ.slice().reverse() : SEQ).join(',');
+    const ramp = heatRamp(dark).join(',');
+    const palOpts = Object.entries(HEAT_PALETTES).map(([k, p]) => `<option value="${k}"${(S.view.heatPal || 'blue') === k ? ' selected' : ''}>${esc(L(p.name))}</option>`).join('');
+    const heatCtl = `<span class="heat-ctl"><select id="heatPal" aria-label="${esc(L('Color scale'))}" title="${esc(L('Color scale'))}">${palOpts}</select><button class="btn ghost" id="heatRev" type="button" title="${esc(L('Reverse color scale'))}">${esc(L('Reverse'))}${S.view.heatRev ? ' ✓' : ''}</button></span>`;
     foot.innerHTML = isFinite(hmin)
-      ? `<span>${esc(plabel(hk))}</span><span class="mono">${esc(fmtAuto(hmin, PARAMS[hk].kind))}</span><span class="ramp" style="background:linear-gradient(90deg,${ramp})"></span><span class="mono">${esc(fmtAuto(hmax, PARAMS[hk].kind))}</span><span>“—” = no value (negative or excluded)</span>${hdiv > 1 ? `<span class="inwells">${L('In the wells: value ÷ {0}', hdiv === 1e3 ? '1000' : hdiv === 1e6 ? '10⁶' : '10⁹')}</span>` : hdiv < 1 ? `<span class="inwells">${L('In the wells: value × {0}', hdiv === 1e-3 ? '1000' : '10⁶')}</span>` : ''}`
-      : `<span>${L('{~0}: no values to show', esc(plabel(hk)))}</span>`;
+      ? `<span>${esc(plabel(hk))}</span><span class="mono">${esc(fmtAuto(hmin, PARAMS[hk].kind))}</span><span class="ramp" style="background:linear-gradient(90deg,${ramp})"></span><span class="mono">${esc(fmtAuto(hmax, PARAMS[hk].kind))}</span>${heatCtl}<span>“—” = no value (negative or excluded)</span>${hdiv > 1 ? `<span class="inwells">${L('In the wells: value ÷ {0}', hdiv === 1e3 ? '1000' : hdiv === 1e6 ? '10⁶' : '10⁹')}</span>` : hdiv < 1 ? `<span class="inwells">${L('In the wells: value × {0}', hdiv === 1e-3 ? '1000' : '10⁶')}</span>` : ''}`
+      : `<span>${L('{~0}: no values to show', esc(plabel(hk)))}</span>${heatCtl}`;
   } else if (pv) {
     const pos = dataWells(ds).filter(w => previewPos(ds, w.id, res[w.id], st)).length;
     foot.innerHTML = `<span class="tbf"><b style="color:${posC}">+</b> ${esc(tbFootText(pos, nData))}</span><span>Calling rules: Analysis settings → Threshold &amp; positive call</span>`;
@@ -13665,16 +13726,16 @@ const paramCols = () => S.view.cols.filter(k => PARAMS[k]);
 const crossParamCols = () => (Array.isArray(S.view.xcols) ? S.view.xcols : ['lag']).filter(k => PARAMS[k]);
 /** Rows of numbers for copy / CSV / XLSX: per-well parameters. */
 function wellParamRows(ds, ws, keys, allSets) {
-  const res = ds.res;
+  const res = ds.res, showName = !!(S.view && S.view.showName);
   const sis = allSets && ds.sets.length > 1 ? ds.sets.map((s, i) => i) : [ds.gs];
   const views = sis.map(si => setView(ds, si));
   const gcols = sis.length > 1 ? views.map(V => ud(L('Group · ') + V.name)) : ['Group'];
-  const head = ['Well', 'Name'].concat(gcols, ['Call'], keys.map(plabel));
+  const head = ['Well'].concat(showName ? ['Name'] : [], gcols, ['Call'], keys.map(plabel));
   const rows = [head];
   for (const w of ws) {
     const r = res[w.id];
     const gs = views.map(V => { const gid = V.gid(w), g = gid ? V.groups.find(x => x.id === gid) : null; return g ? gCell(g) : ''; });
-    rows.push([w.id, w.name ? ud(w.name) : ''].concat(gs, [callText(r)], keys.map(k => { const v = pval(r, k); return isFinite(v) ? +v.toPrecision(10) : null; })));
+    rows.push([w.id].concat(showName ? [w.name ? ud(w.name) : ''] : [], gs, [callText(r)], keys.map(k => { const v = pval(r, k); return isFinite(v) ? +v.toPrecision(10) : null; })));
   }
   return rows;
 }
@@ -13821,12 +13882,12 @@ function methodNote(ds) {
 }
 /** The per-well parameter table as markup (the screen table and the report share it). */
 function wellTableHtml(ds, ws, keys, dark) {
-  const res = ds.res, dec = {};
+  const res = ds.res, dec = {}, showName = !!(S.view && S.view.showName);
   keys.forEach(k => { let mx = 0; ws.forEach(w => { const v = Math.abs(pval(res[w.id], k)); if (isFinite(v) && v > mx) mx = v; }); dec[k] = decFor(mx, PARAMS[k].kind); });
-  const head = thHtml('well', 'Well', '', true) + thHtml('name', 'Name', '', true) + thHtml('group', 'Group', '', true) + thHtml('call', 'Call', '', true) + keys.map(k => thHtml(k, PARAMS[k].label, punit(k))).join('');
+  const head = thHtml('well', 'Well', '', true) + (showName ? thHtml('name', 'Name', '', true) : '') + thHtml('group', 'Group', '', true) + thHtml('call', 'Call', '', true) + keys.map(k => thHtml(k, PARAMS[k].label, punit(k))).join('');
   const body = ws.map(w => {
     const r = res[w.id], g = gById(ds, w.group), c = wellColorHex(ds, w, dark);
-    return `<tr data-w="${w.id}"${ds.sel.has(w.id) ? ' class="sel"' : ''}><td class="txt"><span class="sw" style="--c:${c || 'transparent'}"></span>${w.id}</td><td class="txt" title="${esc(w.name)}" translate="no">${esc(w.name)}</td><td class="txt" translate="no">${g ? (g.name ? esc(g.name) : `<span class="sw" style="--c:${resolveColor(g.color, dark)}"></span>`) : ''}</td><td class="txt">${callHtml(r)}</td>` +
+    return `<tr data-w="${w.id}"${ds.sel.has(w.id) ? ' class="sel"' : ''}><td class="txt"><span class="sw" style="--c:${c || 'transparent'}"></span>${w.id}</td>${showName ? `<td class="txt" title="${esc(w.name)}" translate="no">${esc(w.name)}</td>` : ''}<td class="txt" translate="no">${g ? (g.name ? esc(g.name) : `<span class="sw" style="--c:${resolveColor(g.color, dark)}"></span>`) : ''}</td><td class="txt">${callHtml(r)}</td>` +
       keys.map(k => { const v = pval(r, k); return `<td${isFinite(v) ? '' : ' class="na"'}>${esc(fmt(v, dec[k]))}</td>`; }).join('') + '</tr>';
   }).join('');
   return `<table class="data"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
@@ -14234,10 +14295,14 @@ async function exportCompare(type) {
 function colsPopover(anchor, forCross) {
   const cur = forCross ? crossParamCols() : S.view.cols;
   const head = forCross ? 'Cross table parameters' : 'Columns shown';
-  const html = `<h4>${head}</h4><div style="display:grid;gap:5px">${PARAM_KEYS.map(k => `<label class="chk"><input type="checkbox" value="${k}"${cur.includes(k) ? ' checked' : ''}> ${esc(PARAMS[k].label)}${punit(k) ? ` <span class="unit" translate="no">${esc(punit(k))}</span>` : ''}</label>`).join('')}</div>`;
+  const nameOpt = !forCross && S.view.tab === 'wells'
+    ? `<label class="chk"><input type="checkbox" data-showname${S.view.showName ? ' checked' : ''}> ${esc(L('Sample name'))}</label><div style="border-top:1px solid var(--hair);margin:3px 0"></div>`
+    : '';
+  const html = `<h4>${head}</h4><div style="display:grid;gap:5px">${nameOpt}${PARAM_KEYS.map(k => `<label class="chk"><input type="checkbox" value="${k}"${cur.includes(k) ? ' checked' : ''}> ${esc(PARAMS[k].label)}${punit(k) ? ` <span class="unit" translate="no">${esc(punit(k))}</span>` : ''}</label>`).join('')}</div>`;
   openPop(anchor, html, p => {
-    p.addEventListener('change', () => {
-      const picked = $$('input:checked', p).map(i => i.value);
+    p.addEventListener('change', e => {
+      if (e.target && e.target.hasAttribute('data-showname')) { S.view.showName = e.target.checked; inv('results'); return; }
+      const picked = $$('input[value]:checked', p).map(i => i.value);
       if (forCross) S.view.xcols = picked;
       else S.view.cols = picked;
       inv('results');
@@ -15052,6 +15117,9 @@ function fitSvgText(text, maxPx, fs) {
 function renderPlateSvgBlock(ds, cfg) {
   const { rows, cols } = ds.plate, big = cols > 12, res = ds.res || {};
   const mini = !!cfg.mini, showMarks = cfg.showMarks !== false, compact = !!cfg.compact;
+  const hk = cfg.heatKey && PARAMS[cfg.heatKey] ? cfg.heatKey : null;
+  let hmin = Infinity, hmax = -Infinity;
+  if (hk) { for (const id of ds.order) { const v = pval(res[id], hk); if (isFinite(v)) { if (v < hmin) hmin = v; if (v > hmax) hmax = v; } } }
   const cw = mini ? (big ? 17 : 36) : (big ? 30 : 62);
   const ch = mini ? (big ? 13 : 23) : (big ? 21 : 42);
   const gap = mini ? (big ? 1.5 : 2.5) : (big ? 2.5 : 4.5);
@@ -15163,8 +15231,10 @@ function renderPlateSvgBlock(ds, cfg) {
     const g = primaryM && activeShown ? primaryM.of.get(id) : null;
     const col = w.color ? resolveColor(w.color, false) : g ? resolveColor(g.color, false) : null;
     const mk = !w.color && g ? markOf(g.color) : null;
-    const fill = !w.y ? '#fafbfc' : col ? (mk ? '#ffffff' : rgba(col, 0.16)) : '#ffffff';
-    const stroke = !w.y ? '#d4dadc' : col ? rgba(col, 0.45) : '#d5dbdd';
+    const hv = hk ? pval(res[id], hk) : NaN;
+    const hFill = hk && isFinite(hv) ? heatColor(hv, hmin, hmax, false) : null;
+    const fill = !w.y ? '#fafbfc' : hk ? (hFill || '#f7f8f9') : col ? (mk ? '#ffffff' : rgba(col, 0.16)) : '#ffffff';
+    const stroke = !w.y ? '#d4dadc' : hk ? (hFill || '#d8dee0') : col ? rgba(col, 0.45) : '#d5dbdd';
     const dash = !w.y ? ' stroke-dasharray="2.5 2"' : '';
     p.push(`<rect x="${n1(x)}" y="${n1(y)}" width="${cw}" height="${ch}" rx="${rad}" fill="${fill}" stroke="${stroke}" stroke-width="0.9"${dash}/>`);
     if (col && (w.y || !cfg.isStack)) {
@@ -15198,18 +15268,28 @@ function renderPlateSvgBlock(ds, cfg) {
       const px = sqUsedW ? x + cw - sqUsedW - 3 : x + cw - 4.5;
       p.push(`<text x="${n1(px)}" y="${n1(y + barH + (big ? 9 : 11))}" text-anchor="end" font-size="${big ? 8.5 : 10.5}" font-weight="700" fill="#d03b3b">+</text>`);
     }
-    if (!mini) {
+    if (hk && w.y) {
+      if (hFill) {
+        const ink = inkOn(hFill);
+        const valTxt = hk === 'fold' ? hv.toFixed(1) : PARAMS[hk].kind === 'T' ? hv.toFixed(S.view.timeUnit === 'min' ? 0 : 1) : fmtAuto(hv, PARAMS[hk].kind);
+        if (!mini && !big) p.push(`<text x="${n1(x + 4)}" y="${n1(y + barH + 11.5)}" font-size="7.8" fill="${ink}" fill-opacity="0.72">${id}</text>`);
+        p.push(`<text x="${n1(x + cw / 2)}" y="${n1(y + ch - (mini ? 5 : 7))}" text-anchor="middle" font-size="${mini ? 7.5 : big ? 7.5 : 10}" font-weight="700" fill="${ink}">${esc(valTxt)}</text>`);
+      } else {
+        if (!mini && !big) p.push(`<text x="${n1(x + 4)}" y="${n1(y + barH + 11.5)}" font-size="7.8" fill="#959fa2">${id}</text>`);
+        p.push(`<text x="${n1(x + cw / 2)}" y="${n1(y + ch - (mini ? 5 : 7))}" text-anchor="middle" font-size="${mini ? 7.5 : big ? 7.5 : 10}" fill="#959fa2">—</text>`);
+      }
+    } else if (!mini) {
       if (!big) {
-        p.push(`<text x="${n1(x + 3.5)}" y="${n1(y + barH + 10.5)}" font-size="8" fill="#889295">${id}</text>`);
+        p.push(`<text x="${n1(x + 4)}" y="${n1(y + barH + 11.5)}" font-size="7.8" fill="#889295">${id}</text>`);
         const first = g ? gName(g) : (!anyGrp ? (w.name || '') : '');
         const rest = cfg.isStack && cfg.oth ? cfg.oth.map(M => M.of.get(id)).filter(Boolean).map(gName).filter(t => g || t !== first).join('·') : '';
         if (first) {
-          const l1 = fitSvgText(first, cw - 7, 9.5);
-          p.push(`<text x="${n1(x + 3.5)}" y="${n1(y + ch - (rest ? 13 : 5.5))}" font-size="9.5" font-weight="${g ? '600' : '400'}" fill="${w.excluded ? '#8a9295' : g ? '#13191b' : '#555f62'}"${w.excluded ? ' text-decoration="line-through"' : ''}>${esc(l1)}</text>`);
+          const l1 = fitSvgText(first, cw - 8, 9.2);
+          p.push(`<text x="${n1(x + 4)}" y="${n1(y + ch - (rest ? 12.5 : 5))}" font-size="9.2" font-weight="${g ? '600' : '400'}" fill="${w.excluded ? '#8a9295' : g ? '#13191b' : '#555f62'}"${w.excluded ? ' text-decoration="line-through"' : ''}>${esc(l1)}</text>`);
         }
         if (rest) {
-          const l2 = fitSvgText(rest, cw - 7, 8.2);
-          p.push(`<text x="${n1(x + 3.5)}" y="${n1(y + ch - 3.5)}" font-size="8.2" fill="#636d70">${esc(l2)}</text>`);
+          const l2 = fitSvgText(rest, cw - 8, 8);
+          p.push(`<text x="${n1(x + 4)}" y="${n1(y + ch - 3)}" font-size="8" fill="#636d70">${esc(l2)}</text>`);
         }
       } else {
         const lbl = g ? gName(g) : (!anyGrp ? (w.name || '') : '');
@@ -15294,10 +15374,13 @@ function plateLayoutSvg(ds, opt) {
   const showMarks = opt.marks != null ? !!opt.marks : PLATE_EXP.marks;
   const showLegend = opt.legend != null ? !!opt.legend : PLATE_EXP.legend;
   const showTitle = opt.title !== false, compact = !!opt.compact;
-  const titleH = showTitle ? 44 : 0, footH = opt.footer !== false ? 26 : 0;
+  const heatKey = opt.heatKey != null ? opt.heatKey : (S.view.plateMode && S.view.plateMode.startsWith('heat:') ? S.view.plateMode.slice(5) : null);
+  const titleH = showTitle ? 44 : 0, footH = (opt.footer !== false ? 26 : 0) + (heatKey ? 24 : 0);
   const modeLabel = mode === 'stack' ? L('Stack') : mode === 'split' ? L('Split') : (multi ? ds.sets[ds.gs].name : '');
   const titleText = `${ds.name} · ${L('Plate layout')}${modeLabel ? ' (' + modeLabel + ')' : ''}`;
-  const defs = '<defs><pattern id="pkExclHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#b5bec1" stroke-width="1.3"/></pattern></defs>';
+  const hRamp = heatKey ? heatRamp(false) : null;
+  const hGrad = hRamp ? `<linearGradient id="pkHeatGrad" x1="0%" y1="0%" x2="100%" y2="0%">${hRamp.map((c, idx) => `<stop offset="${(idx / (hRamp.length - 1) * 100).toFixed(1)}%" stop-color="${c}"/>`).join('')}</linearGradient>` : '';
+  const defs = `<defs><pattern id="pkExclHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#b5bec1" stroke-width="1.3"/></pattern>${hGrad}</defs>`;
   let content = '', W = 800, H = 400;
 
   if (mode === 'split' && multi) {
@@ -15336,7 +15419,7 @@ function plateLayoutSvg(ds, opt) {
     const pa = plateExportAnnot(ds, mode);
     const fl = mode === 'stack' && lv.allFr && otherFramed(ds) ? framedLayers(ds) : [ds.gs];
     const blk = renderPlateSvgBlock(ds, {
-      mini: false, compact, isStack: pa.stack, showMarks, showLegend,
+      mini: false, compact, heatKey, isStack: pa.stack, showMarks, showLegend,
       primaryMap: pa.maps[ds.gs], activeShown: pa.activeShown,
       oth: pa.oth, sqL: pa.sqL, turn: pa.turn,
       tracks: pa.tracks, blockLayers: pa.blockLayers,
@@ -15357,6 +15440,19 @@ function plateLayoutSvg(ds, opt) {
     parts.push(`<text x="16" y="40" font-size="10.5" fill="#636d70">${esc(sub)}</text>`);
   }
   parts.push(content);
+  if (heatKey && PARAMS[heatKey]) {
+    let hlo = Infinity, hhi = -Infinity;
+    for (const id of ds.order) { const v = pval((ds.res || {})[id], heatKey); if (isFinite(v)) { if (v < hlo) hlo = v; if (v > hhi) hhi = v; } }
+    if (isFinite(hlo)) {
+      const hy = H - (opt.footer !== false ? 34 : 18), bx = compact ? 4 : 16;
+      const lbl = plabel(heatKey), loT = fmtAuto(hlo, PARAMS[heatKey].kind), hiT = fmtAuto(hhi, PARAMS[heatKey].kind);
+      parts.push(`<text x="${bx}" y="${hy + 10}" font-size="10" font-weight="600" fill="#3a4346">${esc(lbl)}</text>`);
+      const xBar = bx + Math.max(80, textUnits(lbl) * 6.5 + 14);
+      parts.push(`<text x="${xBar - 6}" y="${hy + 10}" text-anchor="end" font-size="9.5" fill="#555f62">${esc(loT)}</text>`);
+      parts.push(`<rect x="${xBar}" y="${hy + 1}" width="150" height="10" rx="3" fill="url(#pkHeatGrad)" stroke="#c7cfd1" stroke-width="0.6"/>`);
+      parts.push(`<text x="${xBar + 156}" y="${hy + 10}" font-size="9.5" fill="#555f62">${esc(hiT)}</text>`);
+    }
+  }
   if (opt.footer !== false) {
     parts.push(`<text x="16" y="${H - 9}" font-size="9.5" fill="#7c8588">${esc(provenanceText(ds))}</text>`);
   }
@@ -15606,8 +15702,14 @@ function plateLayoutSheets(ds, mode, opt) {
   sheets.forEach(sh => sh.rows.push([], [{ v: src, nt: 1 }]));
   return sheets;
 }
-/** Open a hidden print iframe to trigger Print / Save as PDF directly without popup blockers. */
-function printHtmlDoc(htmlStr, fallbackFilename) {
+/** Export HTML as PDF: uses native WebView2 PrintToPdfAsync inside desktop exe, or hidden print iframe in browsers. */
+function printHtmlDoc(htmlStr, fallbackFilename, opt) {
+  opt = opt || {};
+  if (typeof DESK !== 'undefined' && DESK.active() && window.PKHost && window.PKHost.nativePdf) {
+    const pdfName = String(fallbackFilename || 'report.pdf').replace(/\.html?$/i, '') + '.pdf';
+    DESK.post({ cmd: 'exportPdf', html: htmlStr, filename: pdfName, landscape: !!opt.landscape });
+    return true;
+  }
   try {
     const frame = document.createElement('iframe');
     frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
@@ -15649,11 +15751,11 @@ function plateLayoutPdfHtml(ds, fig) {
   const title = `${ds.name} · ${L('Plate layout')}`;
   return `<!DOCTYPE html><html lang="${C.locale() ? C.locale().lang : 'en'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
 <style>
-@page{size:A4 landscape;margin:10mm}
+@page{size:A4 landscape;margin:10mm 12mm}
 *{box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
-html,body{margin:0;padding:0;background:#fff}
-body{padding:6px;text-align:center}
-svg{display:block;width:100%;height:auto;max-height:186mm;margin:0 auto}
+html,body{width:100%;max-width:100%;margin:0;padding:0;background:#fff}
+body{padding:4px;text-align:center}
+svg{display:block;width:100%;max-width:100%;height:auto;max-height:185mm;margin:0 auto}
 @media print{body{padding:0}}
 </style></head><body>${fig.svg}</body></html>`;
 }
@@ -15695,7 +15797,7 @@ async function exportPlate(fmtType, mode) {
     return;
   }
   if (fmtType === 'pdf') {
-    printHtmlDoc(plateLayoutPdfHtml(ds, fig), base + '.html');
+    printHtmlDoc(plateLayoutPdfHtml(ds, fig), base + '.html', { landscape: true });
   }
 }
 function openPlateExportPop(anchor) {
@@ -15824,10 +15926,32 @@ function buildExport(ds, o) {
   }
   if (o.group) {
     const keys = ['lag', 'raf', 't50', 'Fmax', 'tPlateau', 'maxSlope', 'tMaxSlope', 'sMaxSlope', 'auc', 'F0', 'dF', 'fold'].concat(S.view.cols.includes('tMax') ? ['tMax'] : [], fitOn ? ['k', 'r2'] : []);
-    const rows = groupStatRows(ds, keys, true, scope);
-    rows[0] = rows[0].map(v => ({ v, bold: true }));
     const multi = ds.sets.length > 1;
-    sheets.push({ name: 'Group statistics', rows, freeze: { r: 1, c: multi ? 2 : 1 }, widths: (multi ? [16] : []).concat([20, 9, 9, 10, 12], Array(keys.length * 4).fill(12)) });
+    if (multi && typeof hasAssignedGroups === 'function') {
+      const lv = lvOf(ds), prevMode = lv.mode;
+      lv.mode = 'expand';
+      let pushed = 0;
+      try {
+        ds.sets.forEach((s, si) => {
+          if (!hasAssignedGroups(ds, si)) return;
+          const rows = withSet(ds, si, () => groupStatRows(ds, keys, false, scope));
+          if (rows.length > 1) {
+            rows[0] = rows[0].map(v => ({ v, bold: true }));
+            sheets.push({ name: L('Stats · ') + s.name, ntName: 1, rows, freeze: { r: 1, c: 1 }, widths: [20, 9, 9, 10, 12].concat(Array(keys.length * 4).fill(12)) });
+            pushed++;
+          }
+        });
+      } finally { lv.mode = prevMode; }
+      if (!pushed) {
+        const rows = groupStatRows(ds, keys, true, scope);
+        rows[0] = rows[0].map(v => ({ v, bold: true }));
+        sheets.push({ name: 'Group statistics', rows, freeze: { r: 1, c: 2 }, widths: [16, 20, 9, 9, 10, 12].concat(Array(keys.length * 4).fill(12)) });
+      }
+    } else {
+      const rows = groupStatRows(ds, keys, true, scope);
+      rows[0] = rows[0].map(v => ({ v, bold: true }));
+      sheets.push({ name: 'Group statistics', rows, freeze: { r: 1, c: 1 }, widths: [20, 9, 9, 10, 12].concat(Array(keys.length * 4).fill(12)) });
+    }
     if (typeof withExportCross === 'function' && typeof crossTableRows === 'function') {
       const xrows = withExportCross(ds, () => crossTableRows(ds));
       if (xrows && xrows.length > 1) {
@@ -16016,18 +16140,18 @@ function withView(ds, patch, sel, fn) {
 }
 const REPORT_CSS = `
 :root{--c:transparent}*{box-sizing:border-box}
-body{margin:0 auto;padding:28px 32px 40px;max-width:1080px;color:#111;background:#fff;font:12.5px/1.5 "Segoe UI",system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif}
-header{display:flex;align-items:flex-start;gap:16px;border-bottom:2px solid #111;padding-bottom:10px}
-h1{margin:0;font-size:21px;line-height:1.25}.sub{margin:3px 0 0;color:#555}
+body{margin:0 auto;padding:24px 28px 36px;max-width:960px;color:#111;background:#fff;font:12px/1.5 "Segoe UI",system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif}
+header{display:flex;align-items:flex-start;gap:16px;border-bottom:2px solid #111;padding-bottom:9px}
+h1{margin:0;font-size:19px;line-height:1.25;overflow-wrap:anywhere}.sub{margin:3px 0 0;color:#555;font-size:11.5px}
 header button{margin-left:auto;font:inherit;padding:6px 14px;border:1px solid #888;border-radius:6px;background:#fff;cursor:pointer;white-space:nowrap}
-.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:8px 20px;margin:14px 0 0}
-.facts div{border-left:3px solid #077682;padding-left:9px}.facts dt{color:#666;font-size:11px}.facts dd{margin:0;font-weight:600;overflow-wrap:anywhere}
-h2{font-size:14.5px;margin:28px 0 10px;padding-bottom:5px;border-bottom:1px solid #bbb;break-after:avoid}
-figure{margin:12px 0;break-inside:avoid}figure svg{display:block;width:100%;height:auto}
-.note{color:#555;font-size:11px;margin:6px 0 0}.scroll{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:10.5px;font-variant-numeric:tabular-nums}
-th,td{padding:3px 7px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap}
-thead th{background:#f1f3f3;border-bottom:1px solid #999;font-weight:600;vertical-align:bottom}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px 16px;margin:12px 0 0}
+.facts div{border-left:3px solid #077682;padding-left:8px;min-width:0}.facts dt{color:#666;font-size:10.5px}.facts dd{margin:0;font-weight:600;font-size:11.5px;overflow-wrap:anywhere}
+h2{font-size:14px;margin:22px 0 9px;padding-bottom:4px;border-bottom:1px solid #bbb;break-after:avoid}
+figure{width:100%;margin:10px auto;text-align:center;break-inside:avoid}figure svg{display:block;width:100%;max-width:100%;height:auto;max-height:148mm;margin:0 auto}
+.note{color:#555;font-size:10.5px;margin:6px 0 0}.scroll{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;max-width:100%;table-layout:auto;font-size:10px;font-variant-numeric:tabular-nums}
+th,td{padding:3px 5px;border-bottom:1px solid #ddd;text-align:right;overflow-wrap:anywhere}
+thead th{background:#f1f3f3;border-bottom:1px solid #999;font-weight:600;vertical-align:bottom;white-space:normal;line-height:1.25}
 th.txt,td.txt{text-align:left}th .u{display:block;font-weight:400;color:#666;font-size:9.5px}th .ar{display:none}
 td.na,.dim,.hint{color:#777}tr{break-inside:avoid}
 .sw{display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--c);margin-right:6px;vertical-align:-1px;border:1px solid rgba(0,0,0,.15)}
@@ -16053,10 +16177,11 @@ table.xt td.na{background:#fff}
 .xc-s .r{color:#666}.xc-s .vq{width:7px;height:7px;margin-right:0}
 .vq{display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--c);vertical-align:-1px;margin-right:3px;border:1px solid rgba(0,0,0,.15)}
 .res-foot{color:#555;font-size:10.5px;margin:6px 0 0}
-.plate-fig{margin:6px 0;break-inside:avoid}.plate-fig svg{display:block;width:100%;height:auto;max-height:155mm;margin:0 auto}
-footer{margin-top:30px;padding-top:8px;border-top:1px solid #ccc;color:#777;font-size:10.5px}
-@page{size:A4;margin:12mm}
-@media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}body{padding:0;max-width:none}.facts{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 16px}.noprint{display:none}.scroll{overflow:visible}table{font-size:8.5px}th,td{padding:3px 5px}h2{margin:20px 0 8px}}
+.gs-block{margin-bottom:12px}
+.plate-fig{width:100%;margin:6px auto;text-align:center;break-inside:avoid}.plate-fig svg{display:block;width:100%;max-width:100%;height:auto;max-height:148mm;margin:0 auto}
+footer{margin-top:24px;padding-top:8px;border-top:1px solid #ccc;color:#777;font-size:10px}
+@page{size:A4 portrait;margin:13mm 14mm}
+@media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}html,body{width:100%;max-width:100%;margin:0;padding:0}body{font-size:9.5pt}.facts{grid-template-columns:repeat(auto-fit,minmax(28mm,1fr));gap:6px 12px}.noprint{display:none}.scroll{overflow:visible;max-width:100%}table{width:100%;max-width:100%;font-size:7.5pt}thead th{white-space:normal;word-break:normal;overflow-wrap:normal;line-height:1.25}th,td{white-space:normal;word-break:normal;overflow-wrap:break-word;padding:2.5px 3.5px}th.txt,td.txt{white-space:nowrap}h2{margin:16px 0 7px}}
 `;
 /** The plate as a table: well name (or its group), tinted with the well's colour, "+" on positive wells, excluded wells struck out. */
 function reportPlate(ds) {
@@ -16109,20 +16234,29 @@ function buildReport(ds, o) {
   if (o.curves) {
     const draw = (patch, title) => withView(ds, patch, sel, () => {
       const data = buildChartData(ds, false);
-      return data.series.length ? `<figure>${data.panels ? layerFacetsExport(ds, data, col).svg : drawChart({ W: 1000, H: 540, data, col, markers: S.view.markers, ds, forExport: true, title }).svg}</figure>` : '';
+      return data.series.length ? `<figure>${data.panels ? layerFacetsExport(ds, data, col).svg : drawChart({ W: 960, H: 540, data, col, markers: S.view.markers, ds, forExport: true, title }).svg}</figure>` : '';
     });
     let h = '';
     if (ds.groups.some(g => g.visible)) h += draw({ source: 'groups' }, ds.name + L(' · group means') + (S.view.band !== 'none' ? (S.view.band === 'sem' ? ' ± SEM' : ' ± SD') : ''));
     h += draw({ source: sel.size ? 'selected' : 'all' }, ds.name + L(' · individual wells'));
     if (h) out.push(section(L('Kinetic curves'), h));
   }
-  if (o.group && (groups.length || (scope && anyStats.length))) {
-    const t = groupTableHtml(ds, keys, false, scope);
+  if (o.group && (groups.length || (scope && anyStats.length) || ds.sets.some((_, si) => hasAssignedGroups(ds, si)))) {
     const xHtml = typeof withExportCross === 'function' && typeof crossTableHtml === 'function' ? withExportCross(ds, () => crossTableHtml(ds)) : '';
     let h = '';
-    if (t) {
-      if (xHtml) h += `<h3 class="sub-h">${esc(L('Group statistics list'))}</h3>`;
-      h += `<div class="scroll">${t.table}</div><p class="note" translate="no">${scope ? L('Selected wells only ({0}). ', scopeCount(ds, scope)) : ''}${t.note}</p>`;
+    if (ds.sets.length > 1) {
+      const lv = lvOf(ds), prevMode = lv.mode;
+      lv.mode = 'expand';
+      try {
+        ds.sets.forEach((s, si) => {
+          if (!hasAssignedGroups(ds, si)) return;
+          const t = withSet(ds, si, () => groupTableHtml(ds, keys, false, scope));
+          if (t) h += `<div class="gs-block"><h3 class="sub-h">${esc(L('Group statistics · {0}', s.name))}</h3><div class="scroll">${t.table}</div><p class="note" translate="no">${scope ? L('Selected wells only ({0}). ', scopeCount(ds, scope)) : ''}${t.note}</p></div>`;
+        });
+      } finally { lv.mode = prevMode; }
+    } else {
+      const t = groupTableHtml(ds, keys, false, scope);
+      if (t) h += `<div class="gs-block"><div class="scroll">${t.table}</div><p class="note" translate="no">${scope ? L('Selected wells only ({0}). ', scopeCount(ds, scope)) : ''}${t.note}</p></div>`;
     }
     if (xHtml) {
       h += `<div class="xt-block"><h3 class="sub-h">${esc(L('Cross table'))}</h3><div class="scroll">${xHtml}</div></div>`;
@@ -16132,7 +16266,7 @@ function buildReport(ds, o) {
       const items = compareItems(ds, k, false, scope);
       if (!(items.some(it => it.gid) || scope) || !items.some(it => it.vals.length)) continue;
       const sig = o.stat ? compareStats(ds, k, items) : null;
-      h += `<figure>${drawDots({ W: 1000, H: 430, items, col, key: k, forExport: true, sig, title: L('{0} (mean ± SD)', tr(PARAMS[k].label)) }).svg}</figure>`;
+      h += `<figure>${drawDots({ W: 960, H: 480, items, col, key: k, forExport: true, sig, title: L('{0} (mean ± SD)', tr(PARAMS[k].label)) }).svg}</figure>`;
       if (sig && sig.rows.length) h += `<div class="scroll">${statTableHtml(k, sig)}</div>` + (sig.overall ? `<p class="note" translate="no">${esc(statOverallText(sig))}</p>` : '');
     }
     if (h) out.push(section(L('Group statistics'), h));
@@ -17682,6 +17816,13 @@ async function saveProject(as) {
   try {
     projCommit();
     const text = JSON.stringify(projectObj()), fp = projFp();
+    if (typeof DESK !== 'undefined' && DESK.active() && window.PKHost && window.PKHost.standalone) {
+      const r = await DESK.saveNative(as === true);
+      if (!r || !r.ok) { if (r && r.error && !r.cancelled) toast(L('Not saved: {~0}', r.error), 6000); return false; }
+      S.dirty = false; projKeep(fp); projShow();
+      toast(L('Saved to {0}', r.name || r.path));
+      return true;
+    }
     let h = as === true ? null : PROJ.handle;
     if (h) {
       // the current file: still there, and not written by anything else since it was opened or saved here
@@ -18198,7 +18339,12 @@ const AUTOSAVE = (() => {
       stored.forEach(k => { data.delete(k); a.written.delete(k); changed = true; });      // datasets that were closed
       if (changed) tx.objectStore(META).put({ saved: now, count: list.length, json }, KEY);
       await finished;
-      if (changed) { a.lastJson = json; a.saved = now; a.count = list.length; }
+      if (changed) {
+        a.lastJson = json; a.saved = now; a.count = list.length;
+        if (typeof DESK !== 'undefined' && DESK.active() && window.PKHost && window.PKHost.standalone) {
+          DESK.post({ cmd: 'autosaveWrite', json: JSON.stringify(projectObj()) });
+        }
+      }
       a.live = a.live || list.length > 0;
       a.fails = 0;
     } catch (e) {
@@ -18623,7 +18769,7 @@ const PKCollabCore = (() => {
 })();
 
 const COLLAB = (() => {
-  const K = PKCollabCore, BUILD = 'pk-v3-17-1-ff24f0dc86ab', API = '/api/collab/rooms';
+  const K = PKCollabCore, BUILD = 'pk-v3-18-0-688676c30d31', API = '/api/collab/rooms';
   const route = /^\/share\/([A-Za-z0-9_-]{20,128})\/?$/.exec(typeof location === 'undefined' ? '' : location.pathname);
   const c = { active: !!route, roomId: route ? route[1] : null, state: null, connected: false, closed: false,
     intents: [], conflicts: [], inFlight: null, undoStack: [], redoStack: [], seen: new Set(), deferred: [],
@@ -19291,7 +19437,10 @@ function init() {
   setupPlate(); setupSelBar(); setupGroups(); setupSettings(); setupTabs(); setupSplice(); setupChart(); setupTimeBar(); setupNotes(); setupResults(); setupLayers();
 
   $('#btnImport').addEventListener('click', () => openImport());
-  $('#btnOpen').addEventListener('click', openProjectPick);
+  $('#btnOpen').addEventListener('click', e => {
+    if (typeof DESK !== 'undefined' && DESK.active() && window.PKHost && window.PKHost.standalone) DESK.openRecentPop(e.currentTarget);
+    else openProjectPick();
+  });
   $('#projInput').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) openProjectFile(f); });
   $('#btnSave').addEventListener('click', () => saveProject());
   setupProjectFile();
@@ -19315,6 +19464,11 @@ function init() {
   $('#plateFmt').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setPlateFormat(+b.dataset.v); });
   $('#plateMode').addEventListener('change', e => { S.view.plateMode = e.target.value; inv('plate'); });
   const peBtn = $('#btnPlateExport'); if (peBtn) peBtn.addEventListener('click', e => openPlateExportPop(e.currentTarget));
+  const pFoot = $('#plateFoot');
+  if (pFoot) {
+    pFoot.addEventListener('change', e => { if (e.target && e.target.id === 'heatPal') { S.view.heatPal = e.target.value; inv('plate'); } });
+    pFoot.addEventListener('click', e => { if (e.target && e.target.closest('#heatRev')) { S.view.heatRev = !S.view.heatRev; inv('plate'); } });
+  }
   $('#btnUndo').addEventListener('click', undo);
   $('#btnRedo').addEventListener('click', redo);
 
@@ -19381,6 +19535,12 @@ function init() {
     if (mod && k === 'z' && !typing) { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
     else if (mod && k === 'y' && !typing) { e.preventDefault(); redo(); }
     else if (mod && k === 'a' && !typing && curDS()) { e.preventDefault(); selectIds(curDS().order, false); }
+    else if (mod && k === 'o' && !typing) { e.preventDefault(); if (typeof DESK !== 'undefined' && DESK.active() && window.PKHost && window.PKHost.standalone) DESK.post({ cmd: 'pickProjectFile' }); else openProjectPick(); }
+    else if (mod && k === 'e' && !typing && curDS()) { e.preventDefault(); openExport(); }
+    else if (!mod && e.key === 'F11' && typeof DESK !== 'undefined' && DESK.active()) { e.preventDefault(); DESK.post({ cmd: 'toggleFullscreen' }); }
+    else if (mod && (e.key === '=' || e.key === '+') && typeof DESK !== 'undefined' && DESK.active()) { e.preventDefault(); DESK.post({ cmd: 'zoom', delta: 0.1 }); }
+    else if (mod && e.key === '-' && typeof DESK !== 'undefined' && DESK.active()) { e.preventDefault(); DESK.post({ cmd: 'zoom', delta: -0.1 }); }
+    else if (mod && e.key === '0' && typeof DESK !== 'undefined' && DESK.active()) { e.preventDefault(); DESK.post({ cmd: 'zoom', reset: true }); }
     else if (!mod && !e.altKey && (e.key === '?' || e.key === '？') && !typing) { e.preventDefault(); openHelp(); }
     else if (!mod && !e.altKey && k === 'g' && !typing && curDS()) { e.preventDefault(); const ds = curDS(); if (ds.sel.size) addToGroup('__new'); else addPresetGroup(ds, { focus: true }); }
     else if (!mod && !e.altKey && /^[0-9]$/.test(e.key) && !typing && curDS() && curDS().sel.size) {
@@ -19402,8 +19562,202 @@ function init() {
   if (window.matchMedia) { const mq = matchMedia('(prefers-color-scheme: dark)'); const f = () => invAll(); if (mq.addEventListener) mq.addEventListener('change', f); else if (mq.addListener) mq.addListener(f); }
   new MutationObserver(() => invAll()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 }
+
+/* ---------- desktop app bridge (WebView2 standalone Plate Kinetics Analysis & Plate Kinetics Live) ---------- */
+const DESK = {
+  recent: [],
+  projectPath: '',
+  update: null,
+  ready: false,
+  pendingSave: null,
+  active: () => !!(window.PKHost && (window.PKHost.desktop || window.PKHost.window) && window.chrome && window.chrome.webview && typeof window.chrome.webview.postMessage === 'function'),
+  post(msg) {
+    if (!DESK.active()) return false;
+    try { window.chrome.webview.postMessage(msg); return true; } catch (e) { return false; }
+  },
+  showUpdateBanner(info) {
+    if (!info || !info.version) return;
+    DESK.update = info;
+    const id = 'pkUpdateBar';
+    let bar = $('#' + id);
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = id;
+      bar.className = 'pk-upd-bar';
+      const notice = $('#notice');
+      if (notice && notice.parentNode) notice.parentNode.insertBefore(bar, notice);
+      else document.body.prepend(bar);
+    }
+    const busy = info.state === 'downloading' || info.state === 'installing';
+    const msg = info.state === 'downloading' ? L('Downloading update v{0}… {1}%', info.version, info.progress || 0)
+      : info.state === 'installing' ? L('Installing update v{0}…', info.version)
+      : info.state === 'error' ? L('Update failed: {0}', info.error || '')
+      : L('New version v{0} is available', info.version);
+    bar.innerHTML = `<span class="pk-upd-msg" translate="no">${esc(msg)}</span>
+      <span class="pk-upd-acts">
+        ${info.url ? `<button class="btn sm ghost" type="button" data-ua="notes">${esc(L('Release notes'))}</button>` : ''}
+        ${!busy && info.assetUrl ? `<button class="btn sm primary" type="button" data-ua="install">${esc(L('Update now'))}</button>` : ''}
+        ${!busy ? `<button class="btn sm ghost" type="button" data-ua="later">${esc(L('Later'))}</button>` : ''}
+      </span>`;
+    bar.hidden = false;
+    bar.onclick = e => {
+      const b = e.target.closest('[data-ua]');
+      if (!b) return;
+      const a = b.dataset.ua;
+      if (a === 'notes' && info.url) window.open(info.url, '_blank', 'noopener');
+      else if (a === 'install') DESK.post({ cmd: 'installUpdate', version: info.version, assetUrl: info.assetUrl, sha256: info.sha256 || '' });
+      else if (a === 'later') { bar.hidden = true; DESK.post({ cmd: 'dismissUpdate', version: info.version }); }
+    };
+  },
+  async openIncomingFile(msg) {
+    try {
+      const name = String(msg.name || 'file');
+      const path = String(msg.path || '');
+      const kind = String(msg.kind || '').toLowerCase();
+      if (kind === 'pk' && msg.run) {
+        // .pk run opened directly in standalone analyzer (no live shell)
+        if (window.SAAShell) return; // Live shell handles openRun itself
+        const r = msg.run, chs = Array.isArray(r.channels) ? r.channels : [];
+        if (!chs.length) { toast(L('No kinetic channels found in {0}', name)); return; }
+        let added = 0;
+        for (let ci = 0; ci < chs.length; ci++) {
+          const ch = chs[ci], t = Array.isArray(r.t) ? r.t : (Array.isArray(ch.t) ? ch.t : []);
+          const wellsObj = ch.wells || {};
+          const series = Object.entries(wellsObj).map(([id, y]) => ({ id, y }));
+          if (!series.length || t.length < 2) continue;
+          const ds = newDataset({
+            t, series, names: r.names || {}, plate: r.plate || { rows: 8, cols: 12 },
+            channel: ch.name || ('Ch' + (ci + 1)), warnings: [], timeInfo: r.timeInfo || { unit: 'h' },
+            sourceInfo: { source: name, provenance: name }
+          }, { name: chs.length > 1 ? `${name.replace(/\.pk$/i, '')} · ${ch.name || ci + 1}` : name.replace(/\.pk$/i, ''), file: name });
+          S.ds.push(ds);
+          S.cur = S.ds.length - 1;
+          if (msg.analysis && typeof applyDatasetAnalysis === 'function') applyDatasetAnalysis(ds.id, msg.analysis, { undo: false });
+          added++;
+        }
+        if (added) { S.dirty = true; invAll(); toast(L('Opened {0}', name)); }
+        return;
+      }
+      if (kind === 'project' || /\.(pkproj|pka|json)$/i.test(name)) {
+        const text = typeof msg.text === 'string' ? msg.text : '';
+        if (!text) return;
+        const f = new File([text], name, { type: 'application/json' });
+        await openProjectFile(f, null);
+        if (path) { DESK.projectPath = path; PROJ.name = name.replace(/\.(pkproj|pka|json)$/i, ''); projShow(); }
+        return;
+      }
+      if (typeof msg.dataBase64 === 'string') {
+        const bin = atob(msg.dataBase64), bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const f = new File([bytes], name);
+        openImport([f]);
+      }
+    } catch (e) { toast(L('Could not open file: {0}', e && e.message ? e.message : e), 6000); }
+  },
+  async openIncomingBatch(files) {
+    if (!Array.isArray(files) || !files.length) return;
+    const dataFiles = [];
+    for (const msg of files) {
+      const name = String(msg.name || 'file'), kind = String(msg.kind || '').toLowerCase();
+      if (kind === 'pk' || kind === 'project' || /\.(pk|pkproj|pka|json)$/i.test(name)) {
+        await DESK.openIncomingFile(msg);
+      } else if (typeof msg.dataBase64 === 'string') {
+        const bin = atob(msg.dataBase64), bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        dataFiles.push(new File([bytes], name));
+      }
+    }
+    if (dataFiles.length) openImport(dataFiles);
+  },
+  saveNative(as) {
+    return new Promise(resolve => {
+      const text = JSON.stringify(projectObj());
+      DESK.pendingSave = resolve;
+      const ok = DESK.post({
+        cmd: 'saveProjectFile',
+        path: as ? '' : (DESK.projectPath || ''),
+        suggestedName: projSuggest().replace(/\.json$/i, '.pkproj'),
+        text
+      });
+      if (!ok) { DESK.pendingSave = null; resolve(null); }
+      setTimeout(() => { if (DESK.pendingSave === resolve) { DESK.pendingSave = null; resolve(null); } }, 60000);
+    });
+  },
+  openRecentPop(anchor) {
+    const items = DESK.recent || [];
+    const listHtml = items.length
+      ? items.map((it, idx) => `<div class="rc-row"><button class="mi rc-open" type="button" data-ri="${idx}" title="${esc(it.path)}" translate="no">${esc(it.name)}</button><button class="btn icon ghost sm" type="button" data-rf="${idx}" title="${esc(L('Show in folder'))}">📁</button></div>`).join('')
+      : `<p class="hint" style="margin:6px 8px">${esc(L('No recent files yet'))}</p>`;
+    const html = `<div class="pe-acts">
+      <button class="mi" type="button" data-ra="proj">${esc(L('Open project file…'))}</button>
+      <button class="mi" type="button" data-ra="imp">${esc(L('Import data files / folder…'))}</button>
+      <div class="pe-sep"></div>
+      <div class="rc-head">${esc(L('Recent files'))}</div>
+      ${listHtml}
+      ${items.length ? `<div class="pe-sep"></div><button class="mi" type="button" data-ra="clr">${esc(L('Clear recent list'))}</button>` : ''}
+    </div>`;
+    openPop(anchor, html, p => {
+      p.classList.add('pe-pop', 'rc-pop');
+      p.addEventListener('click', e => {
+        const ra = e.target.closest('[data-ra]');
+        if (ra) {
+          closePop();
+          if (ra.dataset.ra === 'proj') DESK.post({ cmd: 'pickProjectFile' });
+          else if (ra.dataset.ra === 'imp') DESK.post({ cmd: 'pickDataFiles' });
+          else if (ra.dataset.ra === 'clr') DESK.post({ cmd: 'clearRecent' });
+          return;
+        }
+        const ri = e.target.closest('[data-ri]');
+        if (ri) { closePop(); const it = items[+ri.dataset.ri]; if (it) DESK.post({ cmd: 'openRecent', path: it.path }); return; }
+        const rf = e.target.closest('[data-rf]');
+        if (rf) { closePop(); const it = items[+rf.dataset.rf]; if (it) DESK.post({ cmd: 'revealFile', path: it.path }); }
+      });
+    });
+  },
+  init() {
+    if (!DESK.active()) return;
+    DESK.ready = true;
+    const h = window.PKHost || {};
+    if (h.standalone) {
+      const dlBtn = $('#btnOffline');
+      if (dlBtn) { dlBtn.textContent = L('Updates & About'); dlBtn.title = L('Check for updates and app info'); }
+    }
+    window.chrome.webview.addEventListener('message', e => {
+      const m = e && e.data;
+      if (!m || typeof m !== 'object') return;
+      if (m.cmd === 'recentFiles' && Array.isArray(m.items)) DESK.recent = m.items;
+      else if (m.cmd === 'openLocalFile') DESK.openIncomingFile(m);
+      else if (m.cmd === 'openLocalBatch') DESK.openIncomingBatch(m.files);
+      else if (m.cmd === 'openRun' && h.standalone) DESK.openIncomingFile(Object.assign({ kind: 'pk' }, m));
+      else if (m.cmd === 'projectSaved') {
+        if (m.ok && m.path) { DESK.projectPath = m.path; PROJ.name = String(m.name || '').replace(/\.(pkproj|pka|json)$/i, '') || PROJ.name; }
+        if (DESK.pendingSave) { const fn = DESK.pendingSave; DESK.pendingSave = null; fn(m); }
+      }
+      else if (m.cmd === 'pdfExported') {
+        if (m.ok && m.path) toast(L('Saved PDF: {0}', m.name || m.path));
+        else if (m.error && !m.cancelled) toast(L('PDF export failed: {0}', m.error), 6000);
+      }
+      else if (m.cmd === 'updateInfo') {
+        if (m.available) DESK.showUpdateBanner(m);
+        else if (m.manual) toast(m.error ? L('Update check failed: {0}', m.error) : L('Already up to date (v{0})', h.version || APP.version), 4500);
+      }
+      else if (m.cmd === 'autosaveRestored' && m.json && !S.ds.length) {
+        try {
+          const obj = JSON.parse(m.json);
+          if (obj && Array.isArray(obj.datasets) && obj.datasets.length) {
+            loadProject(obj);
+            toast(L('Restored local desktop autosave backup'), 3500);
+          }
+        } catch (err) { /* ignore corrupt backup */ }
+      }
+    });
+    DESK.post({ cmd: 'pageReady', version: APP.version });
+  }
+};
+
 function boot() {
   init();
+  DESK.init();
   COLLAB.init();
   if (!AUTOSAVE.enabled()) { invAll(); AUTOSAVE.start(); }
   else {

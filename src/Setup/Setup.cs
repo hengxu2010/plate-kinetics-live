@@ -88,6 +88,9 @@ namespace SAAControl.Setup
         {
             bool silent = args.Any(a => a.Equals("/S", StringComparison.OrdinalIgnoreCase));
             bool noDesktop = args.Any(a => a.Equals("/NODESKTOP", StringComparison.OrdinalIgnoreCase));
+            bool analysisOnlyArg = args.Any(a => a.Equals("/ANALYSISONLY", StringComparison.OrdinalIgnoreCase));
+            bool fullArg = args.Any(a => a.Equals("/FULL", StringComparison.OrdinalIgnoreCase));
+            bool relaunch = args.Any(a => a.Equals("/RELAUNCH", StringComparison.OrdinalIgnoreCase));
             string folderArgument = Options.FolderArgument(Environment.CommandLine);
             string moveArgument = Options.MoveTarget(args, out bool move);
             string name = Path.GetFileNameWithoutExtension(Application.ExecutablePath);
@@ -121,10 +124,10 @@ namespace SAAControl.Setup
                     return Exit.Missing;
                 }
                 Payload payload = Payload.Load(settings);
-                if (silent) return move ? SilentMove(settings, payload, moveArgument, noDesktop) : Silent(settings, payload, folderArgument, noDesktop);
+                if (silent) return move ? SilentMove(settings, payload, moveArgument, noDesktop, relaunch) : Silent(settings, payload, folderArgument, noDesktop, analysisOnlyArg, fullArg, relaunch);
 
                 string start = move ? moveArgument ?? Installer.StandardFolder(settings) : folderArgument ?? Installer.DefaultFolder(settings);
-                using (var form = new SetupForm(settings, payload, start))
+                using (var form = new SetupForm(settings, payload, start, analysisOnlyArg, fullArg))
                 {
                     Application.Run(form);
                     return form.Installed ? Exit.Ok : Exit.NotInstalled;
@@ -141,16 +144,18 @@ namespace SAAControl.Setup
             }
         }
 
-        static int Silent(SetupSettings settings, Payload payload, string folderArgument, bool noDesktop)
+        static int Silent(SetupSettings settings, Payload payload, string folderArgument, bool noDesktop, bool analysisOnlyArg, bool fullArg, bool relaunch)
         {
             string folder = folderArgument ?? Installer.DefaultFolder(settings);
+            bool analysisOnly = settings.IsStandaloneAnalysis || (!fullArg && (analysisOnlyArg || File.Exists(Path.Combine(folder, InstallShared.AnalysisOnlyMarker))));
             try
             {
-                InstallResult result = Installer.Install(settings, payload, folder, noDesktop ? DesktopChoice.KeepOnly : DesktopChoice.Default);
-                StartTray(result);
+                InstallResult result = Installer.Install(settings, payload, folder, noDesktop ? DesktopChoice.KeepOnly : DesktopChoice.Default, analysisOnly);
+                if (!result.AnalysisOnly) StartTray(result);
+                if (relaunch) RelaunchProgram(result);
                 Detail(settings.Name, result);
                 Report(settings.Name, result.Summary(settings), true);
-                return result.Service ? Exit.Ok : Exit.ServiceFailed;
+                return (result.AnalysisOnly || result.Service) ? Exit.Ok : Exit.ServiceFailed;
             }
             catch (Exception error)
             {
@@ -162,16 +167,17 @@ namespace SAAControl.Setup
 
         /// <summary>--move-to: the installed program into another folder (the standard one when none is given); into the
         /// folder it is in already: an ordinary update.</summary>
-        static int SilentMove(SetupSettings settings, Payload payload, string target, bool noDesktop)
+        static int SilentMove(SetupSettings settings, Payload payload, string target, bool noDesktop, bool relaunch)
         {
             string folder = target ?? Installer.StandardFolder(settings);
             string installed = Installer.InstalledFolder(settings);
-            if (installed == null || InstallShared.SameFolder(installed, folder)) return Silent(settings, payload, folder, noDesktop);
+            if (installed == null || InstallShared.SameFolder(installed, folder)) return Silent(settings, payload, folder, noDesktop, false, false, relaunch);
             try
             {
                 InstallResult result = Mover.Move(settings, payload, folder, noDesktop ? DesktopChoice.KeepOnly : DesktopChoice.Default,
                                                   new SystemMoveHost(settings), new MoveOptions());
                 StartTray(result);
+                if (relaunch) RelaunchProgram(result);
                 Detail(settings.Name, result);
                 Report(settings.Name, result.Summary(settings), true);
                 return Exit.Ok;
@@ -182,6 +188,17 @@ namespace SAAControl.Setup
                 Report(settings.Name, "move FAILED (exit " + code + "): " + error.Message + " [from " + installed + " to " + folder + "]", true);
                 return code;
             }
+        }
+
+        /// <summary>Launch the newly updated app as the signed-in shell user (used by /RELAUNCH after auto-update).</summary>
+        public static void RelaunchProgram(InstallResult result)
+        {
+            try
+            {
+                if (result == null || string.IsNullOrEmpty(result.ExePath) || !File.Exists(result.ExePath)) return;
+                InstallShared.StartAsShellUser(result.ExePath, "", result.Folder);
+            }
+            catch (Exception) { }
         }
 
         /// <summary>The tray, in the session of the user who installs (as that user, never as administrator); over SSH
@@ -248,7 +265,7 @@ namespace SAAControl.Setup
             for (bool again = true; again;)
             {
                 again = false;
-                foreach (string option in new[] { "/S", "/NODESKTOP" })
+                foreach (string option in new[] { "/S", "/NODESKTOP", "/ANALYSISONLY", "/FULL", "/RELAUNCH" })
                     if (value.EndsWith(" " + option, StringComparison.OrdinalIgnoreCase) || value.EndsWith("\t" + option, StringComparison.OrdinalIgnoreCase))
                     {
                         value = value.Substring(0, value.Length - option.Length).TrimEnd();
@@ -315,8 +332,9 @@ namespace SAAControl.Setup
 
     sealed class SetupSettings
     {
-        public string Name, Exe, Version;
+        public string Name, Exe, Version, Mode;
         public int Port;
+        public bool IsStandaloneAnalysis => string.Equals(Mode, "analysis", StringComparison.OrdinalIgnoreCase);
         public string DisplayName => InstallShared.DisplayName(Name);     // shortcuts, the list of apps, the texts
         public string Former => InstallShared.FormerName(Name);           // the name up to 2026-11-23 (SAAControl), or null
 
@@ -338,6 +356,7 @@ namespace SAAControl.Setup
                 Name = values.TryGetValue("name", out string name) ? name : "",
                 Exe = values.TryGetValue("exe", out string exe) ? exe : "",
                 Version = values.TryGetValue("version", out string version) ? version : "",
+                Mode = values.TryGetValue("mode", out string mode) ? mode : "",
                 Port = values.TryGetValue("port", out string port) && int.TryParse(port, out int number) ? number : 0,
             };
             if (settings.Name.Length == 0 || settings.Exe.Length == 0 || !InstallShared.IsSafeRelative(settings.Exe) || settings.Exe.Contains("\\"))
@@ -643,7 +662,7 @@ namespace SAAControl.Setup
     sealed class InstallResult
     {
         public string Folder, ExePath, RenamedOld, ExeHash, DataFolder;
-        public bool Updated, Desktop, Service;
+        public bool Updated, Desktop, Service, AnalysisOnly;
         public bool FormerReplaced;     // the program under its former name was there and is replaced
         public string PreviousExe;      // the program file of the version installed before, kept aside (".replaced-N")
         public string FormerRemoved;    // what became of the program under its former name (SAAControl)
@@ -678,8 +697,12 @@ namespace SAAControl.Setup
             if (OpenWindows.Count > 0) line.Append("; program windows still open: " + string.Join(", ", OpenWindows));
             line.Append("; desktop shortcut: " + (Desktop ? "yes" : "no"));
             if (DataFolder != null) line.Append("; data folder: " + DataFolder);
-            line.Append("; service: " + (Service ? "running" : "NOT running"));
-            if (Service) line.Append(", restarted by Windows after a failure: " + (Recovery ? "yes" : "NO"));
+            if (AnalysisOnly) line.Append("; mode: analysis-only");
+            else
+            {
+                line.Append("; service: " + (Service ? "running" : "NOT running"));
+                if (Service) line.Append(", restarted by Windows after a failure: " + (Recovery ? "yes" : "NO"));
+            }
             if (Tray != null) line.Append("; tray: " + Tray);
             if (FormerRemoved != null) line.Append("; " + FormerRemoved);
             if (Problems.Count > 0) line.Append("; WARNING: " + string.Join("; ", Problems));
@@ -1179,8 +1202,9 @@ namespace SAAControl.Setup
             }
         }
 
-        public static InstallResult Install(SetupSettings settings, Payload payload, string folderText, DesktopChoice desktop)
+        public static InstallResult Install(SetupSettings settings, Payload payload, string folderText, DesktopChoice desktop, bool analysisOnly = false)
         {
+            if (settings.IsStandaloneAnalysis) analysisOnly = true;
             string folder = FullFolder(folderText);
             FolderInfo info = Inspect(settings, folder);
             if (info.OtherProgram != null)
@@ -1195,11 +1219,11 @@ namespace SAAControl.Setup
             // The program under its former name (SAAControl, until 2026-11-23) is replaced: its service is stopped here
             // and removed - with its files, shortcuts and entry in the list of apps - only once the program under the
             // new name runs. Its desktop shortcut decides whether the new program gets one: read before anything changes.
-            string former = settings.Former;
-            bool formerDesktop = info.FormerProgram && FormerDesktopLink(former, folder) != null;
+            string former = analysisOnly ? null : settings.Former;
+            bool formerDesktop = former != null && info.FormerProgram && FormerDesktopLink(former, folder) != null;
 
             // what measures now: the recording pauses for the moment of the update (the window asked first; noted here)
-            List<string> measuring = MeasuringNow(settings, folder);
+            List<string> measuring = settings.IsStandaloneAnalysis ? new List<string>() : MeasuringNow(settings, folder);
 
             // The services are stopped for the copying (each catches up on what happened meanwhile when it starts
             // again): the former program's first, then the program's own. One that does not stop in time is started
@@ -1209,12 +1233,15 @@ namespace SAAControl.Setup
             var paused = Stopwatch.StartNew();
             bool formerRegistered = former != null && InstallShared.ServiceRegistered(former);
             bool formerWasRunning = formerRegistered && StopService(former);
-            bool serviceWasRunning;
-            try { serviceWasRunning = StopService(settings.Name); }
-            catch (Exception)
+            bool serviceWasRunning = false;
+            if (!settings.IsStandaloneAnalysis)
             {
-                if (formerWasRunning) StartService(former, 30, out _);       // back as it was
-                throw;
+                try { serviceWasRunning = StopService(settings.Name); }
+                catch (Exception)
+                {
+                    if (formerWasRunning) StartService(former, 30, out _);       // back as it was
+                    throw;
+                }
             }
             bool dataUnderFormerName = !Directory.Exists(Path.Combine(folder, InstallShared.DataFolder)) &&
                                        Directory.Exists(Path.Combine(folder, InstallShared.OldDataFolders[0]));
@@ -1223,7 +1250,7 @@ namespace SAAControl.Setup
             {
                 // something else answers on the port: a copy of the program that records by itself, which the user
                 // closes first
-                string answering = PingApp(settings.Port);
+                string answering = settings.Port > 0 ? PingApp(settings.Port) : null;
                 if (answering != null && (answering == settings.Name || answering == former))
                 {
                     string blocking = "port " + settings.Port + " (" + answering + ")";
@@ -1242,6 +1269,7 @@ namespace SAAControl.Setup
                     Folder = folder,
                     ExePath = Path.Combine(folder, settings.Exe),
                     Updated = info.OurInstall || info.NewProgram,
+                    AnalysisOnly = analysisOnly,
                 };
                 result.ExeHash = Sha256(payload.Find(settings.Exe).Data).Substring(0, 16);
                 result.Measuring.AddRange(measuring);
@@ -1250,15 +1278,36 @@ namespace SAAControl.Setup
 
                 CopyFiles(settings, payload, folder, info, result);
 
-                // the program's service: registered for the installed program file, started, its watcher going
-                string serviceError = RegisterService(settings, result.ExePath);
-                if (serviceError != null)
-                    throw new SetupException(Exit.ServiceFailed, string.Format(T.ServiceFailedZh, settings.DisplayName, serviceError),
-                                             string.Format(T.ServiceFailedEn, settings.DisplayName, serviceError));
-                result.Service = true;
-                if (serviceWasRunning || formerWasRunning) result.PausedSeconds = paused.Elapsed.TotalSeconds;
+                string modeMarker = Path.Combine(folder, InstallShared.AnalysisOnlyMarker);
+                if (analysisOnly)
+                {
+                    if (!settings.IsStandaloneAnalysis)
+                    {
+                        File.WriteAllText(modeMarker, "analysis-only\r\n", new UTF8Encoding(false));
+                        // If switching an existing Full install to Analysis-only, remove the background service and tray
+                        if (InstallShared.ServiceRegistered(settings.Name))
+                        {
+                            try { StopService(settings.Name); } catch (Exception) { }
+                            ScDelete(settings.Name);
+                        }
+                        InstallShared.RemoveRunEntry(settings.Name, result.ExePath);
+                        InstallShared.StopTrays(settings.Name, processName, 10);
+                    }
+                    else if (File.Exists(modeMarker)) InstallShared.TryDelete(modeMarker);
+                }
+                else
+                {
+                    if (File.Exists(modeMarker)) InstallShared.TryDelete(modeMarker);
+                    // the program's service: registered for the installed program file, started, its watcher going
+                    string serviceError = RegisterService(settings, result.ExePath);
+                    if (serviceError != null)
+                        throw new SetupException(Exit.ServiceFailed, string.Format(T.ServiceFailedZh, settings.DisplayName, serviceError),
+                                                 string.Format(T.ServiceFailedEn, settings.DisplayName, serviceError));
+                    result.Service = true;
+                    if (serviceWasRunning || formerWasRunning) result.PausedSeconds = paused.Elapsed.TotalSeconds;
+                }
             }
-            catch (Exception error) when (serviceWasRunning || formerRegistered)
+            catch (Exception error) when (!analysisOnly && (serviceWasRunning || formerRegistered))
             {
                 if (serviceWasRunning) WithNote(error, RestoreService(settings, Path.Combine(folder, settings.Exe), result?.PreviousExe));
                 else WithNote(error, BackToFormer(settings, former, folder, Path.Combine(folder, settings.Exe), dataUnderFormerName));
@@ -1274,28 +1323,28 @@ namespace SAAControl.Setup
             }
             // the program runs: its rights, shortcuts, entry, file type and tray; then the former program goes, and the
             // data folder gets its name
-            Finish(settings, folder, result, payload, desktop, info.FormerProgram, formerDesktop);
-            if (former != null)
+            Finish(settings, folder, result, payload, desktop, former != null && info.FormerProgram, formerDesktop);
+            if (!analysisOnly && former != null)
             {
                 result.FormerReplaced = formerRegistered || info.FormerProgram;
                 result.FormerRemoved = RemoveFormer(settings, former, folder, payload, result.ExePath);
                 if (formerRegistered) RestartForDataFolder(settings, folder, result);
             }
-            ExperimentsShortcut(settings, folder, result);
+            if (!analysisOnly) ExperimentsShortcut(settings, folder, result);
             // the marker of a move into this folder that ended halfway once its service ran from here: installed here now
             if (File.Exists(Mover.Marker(folder, settings))) InstallShared.TryDelete(Mover.Marker(folder, settings));
             return result;
         }
 
         /// <summary>Once the program runs (on a first installation: once it is there): the rights on its folders, its
-        /// shortcuts, its entry in Windows' list of apps, the .pk files' type and its tray's start at sign-in, for every
+        /// shortcuts, its entry in Windows' list of apps, the .pk/.pkproj files' type and its tray's start at sign-in, for every
         /// user of the PC. A step that fails is noted, not fatal: the program records all the same. (The service runs
         /// meanwhile: setting the rights on a large data folder takes a moment.)</summary>
         public static void Finish(SetupSettings settings, string folder, InstallResult result, Payload payload, DesktopChoice desktop,
                                   bool formerHere, bool formerDesktop)
         {
             string exe = result.ExePath;
-            result.DataFolder = PrepareDataFolder(folder, result);
+            if (!result.AnalysisOnly) result.DataFolder = PrepareDataFolder(folder, result);
             try
             {
                 InstallShared.CreateShortcut(InstallShared.AllUsersStartMenuShortcut(settings.DisplayName), exe, folder, settings.DisplayName);
@@ -1316,11 +1365,16 @@ namespace SAAControl.Setup
             catch (Exception error) { result.Problems.Add("the entry in the list of apps: " + error.Message); }
             try { InstallShared.RegisterPk(settings.Name, exe); }
             catch (Exception error) { result.Problems.Add("the .pk file type: " + error.Message); }
-            // the tray: at every sign-in, for every user (notifications of finished and stopped runs)
-            try { InstallShared.SetRunEntry(settings.Name, exe); }
-            catch (Exception error) { result.Problems.Add("the tray's start at sign-in: " + error.Message); }
-            result.Recovery = InstallShared.RestartsAfterFailure(settings.Name);
-            if (result.Service && !result.Recovery) result.Problems.Add("Windows would not restart the service after a failure (its recovery actions could not be set)");
+            try { InstallShared.RegisterPkProj(settings.Name, exe); }
+            catch (Exception error) { result.Problems.Add("the .pkproj file type: " + error.Message); }
+            if (!result.AnalysisOnly)
+            {
+                // the tray: at every sign-in, for every user (notifications of finished and stopped runs)
+                try { InstallShared.SetRunEntry(settings.Name, exe); }
+                catch (Exception error) { result.Problems.Add("the tray's start at sign-in: " + error.Message); }
+                result.Recovery = InstallShared.RestartsAfterFailure(settings.Name);
+                if (result.Service && !result.Recovery) result.Problems.Add("Windows would not restart the service after a failure (its recovery actions could not be set)");
+            }
         }
 
         /// <summary>The Start menu shortcut to the Experiments folder (made once the data folder has its final name).</summary>
@@ -2807,14 +2861,16 @@ namespace SAAControl.Setup
         readonly TextBox folderBox = new TextBox();
         readonly Button browseButton = new Button(), installButton = new Button(), openButton = new Button(), closeButton = new Button();
         readonly CheckBox desktopBox = new CheckBox();
+        readonly RadioButton modeFullRadio = new RadioButton(), modeAnalysisRadio = new RadioButton();
         readonly Label hintLabel = new Label(), statusLabel = new Label();
         bool busy;
         string installedExe;
         string moveFrom;           // the folder the program is in now, when installing into the chosen one moves it
 
         public bool Installed => installedExe != null;
+        bool IsAnalysisMode => settings.IsStandaloneAnalysis || modeAnalysisRadio.Checked;
 
-        public SetupForm(SetupSettings settings, Payload payload, string folder)
+        public SetupForm(SetupSettings settings, Payload payload, string folder, bool analysisOnlyArg = false, bool fullArg = false)
         {
             this.settings = settings;
             this.payload = payload;
@@ -2863,6 +2919,34 @@ namespace SAAControl.Setup
             hintLabel.MaximumSize = new Size(wrapWidth, 0);
             hintLabel.ForeColor = SystemColors.GrayText;
             hintLabel.Margin = new Padding(0, u / 3, 0, u / 2);
+
+            var modePanel = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                Margin = new Padding(0, 0, 0, u / 2),
+            };
+            if (!settings.IsStandaloneAnalysis)
+            {
+                var modeLabel = new Label { AutoSize = true, Text = T.ModeLabel, Margin = new Padding(0, 0, 0, u / 4) };
+                modeFullRadio.AutoSize = true;
+                modeFullRadio.MaximumSize = new Size(wrapWidth, 0);
+                modeFullRadio.Text = T.ModeFull;
+                modeFullRadio.Margin = new Padding(u / 2, 0, 0, u / 4);
+                modeAnalysisRadio.AutoSize = true;
+                modeAnalysisRadio.MaximumSize = new Size(wrapWidth, 0);
+                modeAnalysisRadio.Text = T.ModeAnalysis;
+                modeAnalysisRadio.Margin = new Padding(u / 2, 0, 0, 0);
+                bool startAnalysis = !fullArg && (analysisOnlyArg || File.Exists(Path.Combine(folder, InstallShared.AnalysisOnlyMarker)));
+                modeAnalysisRadio.Checked = startAnalysis;
+                modeFullRadio.Checked = !startAnalysis;
+                modePanel.Controls.Add(modeLabel);
+                modePanel.Controls.Add(modeFullRadio);
+                modePanel.Controls.Add(modeAnalysisRadio);
+            }
+
             desktopBox.AutoSize = true;
             desktopBox.Text = T.Desktop;
             desktopBox.Margin = new Padding(0, 0, 0, u / 2);
@@ -2905,6 +2989,7 @@ namespace SAAControl.Setup
             table.Controls.Add(browseButton, 1, row);
             row++;
             Wide(hintLabel);
+            if (!settings.IsStandaloneAnalysis) Wide(modePanel);
             Wide(desktopBox);
             Wide(statusLabel);
             Wide(buttons);
@@ -2918,6 +3003,8 @@ namespace SAAControl.Setup
             desktopBox.Checked = Installer.DesktopByDefault(settings, folder);
 
             folderBox.TextChanged += (sender, e) => UpdateHint();
+            modeFullRadio.CheckedChanged += (sender, e) => UpdateHint();
+            modeAnalysisRadio.CheckedChanged += (sender, e) => UpdateHint();
             browseButton.Click += (sender, e) => Browse();
             installButton.Click += async (sender, e) => await InstallClicked();
             openButton.Click += (sender, e) => OpenProgram();
@@ -2985,7 +3072,12 @@ namespace SAAControl.Setup
                         english.Add(string.Format(T.OldProgramEn, settings.Exe, old));
                     }
                     string data = Path.GetFileName(InstallShared.DataFolderIn(folder));
-                    if (info.DataFolder)
+                    if (IsAnalysisMode)
+                    {
+                        chinese.Add(T.AnalysisOnlyHintZh);
+                        english.Add(T.AnalysisOnlyHintEn);
+                    }
+                    else if (info.DataFolder)
                     {
                         chinese.Add(string.Format(T.DataStaysZh, data));
                         english.Add(string.Format(T.DataStaysEn, data));
@@ -3028,15 +3120,20 @@ namespace SAAControl.Setup
             if (busy || Installed) return;
             string folderText = folderBox.Text;
             string from = moveFrom;
+            bool analysisOnly = IsAnalysisMode;
             DesktopChoice desktop = desktopBox.Checked ? DesktopChoice.Create : DesktopChoice.Remove;
 
             // an instrument measures: the recording pauses for the moment of the update or the move (it loses nothing);
             // a move is a bigger step: both are asked first
-            SetBusy(true);
-            ShowStatus(T.Checking, SystemColors.ControlText);
-            List<string> measuring = await Task.Run(() => Installer.MeasuringNow(settings, Installer.InstalledFolder(settings) ?? folderText));
-            SetBusy(false);
-            ShowStatus("", SystemColors.ControlText);
+            List<string> measuring = new List<string>();
+            if (!settings.IsStandaloneAnalysis && (!analysisOnly || Installer.ServiceRunning(settings.Name)))
+            {
+                SetBusy(true);
+                ShowStatus(T.Checking, SystemColors.ControlText);
+                measuring = await Task.Run(() => Installer.MeasuringNow(settings, Installer.InstalledFolder(settings) ?? folderText));
+                SetBusy(false);
+                ShowStatus("", SystemColors.ControlText);
+            }
             string question = null;
             string names = string.Join(", ", measuring);
             if (from != null)
@@ -3056,8 +3153,8 @@ namespace SAAControl.Setup
             {
                 InstallResult result = await Task.Run(() => from != null
                     ? Mover.Move(settings, payload, folderText, desktop, new SystemMoveHost(settings), new MoveOptions())
-                    : Installer.Install(settings, payload, folderText, desktop));
-                Program.StartTray(result);
+                    : Installer.Install(settings, payload, folderText, desktop, analysisOnly));
+                if (!result.AnalysisOnly) Program.StartTray(result);
                 Program.Detail(settings.Name, result);
                 Program.Report(settings.Name, result.Summary(settings), false);
                 installedExe = result.ExePath;
@@ -3066,7 +3163,7 @@ namespace SAAControl.Setup
                 installButton.Visible = false;
                 openButton.Visible = true;
                 AcceptButton = openButton;
-                ShowStatus(Done(result), result.Service && result.Problems.Count == 0 ? Color.FromArgb(0, 110, 40) : Color.DarkOrange);
+                ShowStatus(Done(result), (result.AnalysisOnly || result.Service) && result.Problems.Count == 0 ? Color.FromArgb(0, 110, 40) : Color.DarkOrange);
             }
             catch (Exception error)
             {
@@ -3124,6 +3221,7 @@ namespace SAAControl.Setup
 
         async Task WarnIfRunning()
         {
+            if (settings.IsStandaloneAnalysis) return;
             Tuple<string, string> running = await Task.Run(() =>
             {
                 try { return Installer.Running(settings); }
@@ -3159,6 +3257,8 @@ namespace SAAControl.Setup
             bool editable = !on && !Installed;
             folderBox.ReadOnly = !editable;
             browseButton.Enabled = editable;
+            modeFullRadio.Enabled = editable;
+            modeAnalysisRadio.Enabled = editable;
             desktopBox.Enabled = editable;
             installButton.Enabled = editable;
             closeButton.Enabled = !on;
@@ -3216,6 +3316,11 @@ namespace SAAControl.Setup
         public const string Browse = "\u6d4f\u89c8\u2026\nBrowse\u2026";
         public const string BrowseDescription = "\u9009\u62e9\u5b89\u88c5\u6587\u4ef6\u5939\uff08\u88c5\u8fc7\u7684\u8bdd\uff0c\u9009\u5b83\u73b0\u5728\u6240\u5728\u7684\u6587\u4ef6\u5939\uff1b\u9009\u522b\u7684\u6587\u4ef6\u5939\u5c31\u4f1a\u628a\u5b83\u642c\u8fc7\u53bb\uff09\nChoose the folder (where it is installed now; another folder moves it there)";
         public const string Desktop = "\u5728\u684c\u9762\u4e0a\u653e\u4e00\u4e2a\u5feb\u6377\u65b9\u5f0f\nPut a shortcut on the desktop";
+        public const string ModeLabel = "\u5b89\u88c5\u6a21\u5f0f / Install mode:";
+        public const string ModeFull = "\u5b8c\u6574\u5b89\u88c5\uff08\u4eea\u5668\u5b9e\u65f6\u76d1\u6d4b + \u5206\u6790\uff0c\u9ed8\u8ba4\uff09\nFull install (live instrument monitoring + analysis)";
+        public const string ModeAnalysis = "\u4ec5\u5b89\u88c5\u5206\u6790\u8f6f\u4ef6\uff08\u65e0\u540e\u53f0\u670d\u52a1\uff0c\u9002\u5408\u975e\u4eea\u5668\u7535\u8111\uff09\nAnalysis software only (no background service)";
+        public const string AnalysisOnlyHintZh = "\u4ec5\u5b89\u88c5\u72ec\u7acb\u5206\u6790\u8f6f\u4ef6\uff08\u4e0d\u5b89\u88c5\u540e\u53f0\u670d\u52a1\u548c\u6258\u76d8\uff0c\u652f\u6301\u53cc\u51fb\u6253\u5f00 .pk / .pkproj \u6587\u4ef6\u4e0e GitHub \u81ea\u52a8\u66f4\u65b0\uff09\u3002";
+        public const string AnalysisOnlyHintEn = "Installs the standalone analysis window only (no background service or tray; registers .pk / .pkproj and GitHub auto-updates).";
         public const string Install = "\u5b89\u88c5\nInstall";
         public const string Update = "\u66f4\u65b0\nUpdate";
         public const string MoveButton = "\u642c\u5230\u8fd9\u91cc\nMove here";
@@ -3227,9 +3332,11 @@ namespace SAAControl.Setup
         public const string Installing = "\u6b63\u5728\u5b89\u88c5\u2026\nInstalling\u2026";
         public const string Moving = "\u6b63\u5728\u642c\uff0c\u8bf7\u7a0d\u5019\uff08\u7ea6 1 \u5206\u949f\uff09\u2026\nMoving, please wait (about a minute)\u2026";
         public const string Failed = "\u5b89\u88c5\u5931\u8d25\uff1a{0}\nInstallation failed: {0}";
-        public const string Usage = "{0}-Setup.exe [/S] [/NODESKTOP] [--move-to [<folder>]] [/D=<folder>]\n\n" +
+        public const string Usage = "{0}-Setup.exe [/S] [/NODESKTOP] [/ANALYSISONLY] [/RELAUNCH] [--move-to [<folder>]] [/D=<folder>]\n\n" +
                                     "/S  \u4e0d\u663e\u793a\u7a97\u53e3\uff0c\u7ed3\u679c\u89c1\u9000\u51fa\u7801\uff080 = \u6210\u529f\uff09\u548c %TEMP%\\{0}-setup.log\n    no window; the exit code (0 = installed) and %TEMP%\\{0}-setup.log tell the result\n" +
                                     "/NODESKTOP  \u4e0d\u5728\u684c\u9762\u4e0a\u65b0\u5efa\u5feb\u6377\u65b9\u5f0f\n    no new desktop shortcut\n" +
+                                    "/ANALYSISONLY  \u4ec5\u5b89\u88c5\u5206\u6790\u8f6f\u4ef6\uff08\u65e0\u540e\u53f0\u670d\u52a1\u548c\u6258\u76d8\uff09\n    analysis software only (no background service or tray)\n" +
+                                    "/RELAUNCH  \u9759\u9ed8\u5b89\u88c5\u5b8c\u6210\u540e\u81ea\u52a8\u91cd\u65b0\u6253\u5f00\u7a0b\u5e8f\n    relaunch the program after silent install\n" +
                                     "--move-to [<folder>]  \u628a\u88c5\u597d\u7684\u7a0b\u5e8f\u8fde\u540c\u6570\u636e\u642c\u5230\u8fd9\u4e2a\u6587\u4ef6\u5939\uff08\u4e0d\u5199\u5c31\u662f Program Files \u91cc\u7684\u6807\u51c6\u4f4d\u7f6e\uff09\uff1b\u539f\u6765\u7684\u6587\u4ef6\u5939\u539f\u6837\u4fdd\u7559\n    move the installed program with its data into this folder (none: the standard one under Program Files); the former folder is left as it is\n" +
                                     "/D=<folder>  \u5b89\u88c5\u5230\u8fd9\u4e2a\u6587\u4ef6\u5939\uff08\u653e\u5728\u6700\u540e\uff09\n    install into this folder (last on the line)\n\n" +
                                     "\u9000\u51fa\u7801 / exit codes: 0 ok, 1 failed, 2 running, 3 folder, 4 installer incomplete, 5 not installed, 6 service, 7 prerequisite, 8 disk space, 9 move undone";

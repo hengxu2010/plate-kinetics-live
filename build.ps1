@@ -20,6 +20,7 @@
 #   ... -Name PlateKineticsLive-InstallerTest -ProgramDir <folder with PlateKineticsLive-InstallerTest.exe> -WebDir <web files> -Port 47899
 param(
     [string]$Version = (Get-Date -Format 'yyyy.M.d.HHmm'),
+    [string]$AnalysisVersion = '',
     [string[]]$Only = @(),
     [string]$OutDir = (Join-Path $PSScriptRoot 'dist'),
     [string]$WorkDir = (Join-Path $PSScriptRoot 'build'),
@@ -27,6 +28,7 @@ param(
     [string]$ProgramDir = '',
     [string]$WebDir = '',
     [int]$Port = 0,
+    [string]$Mode = '',
     [switch]$Offline,
     [string]$RedistDir = (Join-Path $PSScriptRoot 'redist'),
     [string]$HelpDir = (Join-Path $PSScriptRoot 'help')
@@ -43,7 +45,8 @@ $dlls = 'Microsoft.Web.WebView2.Core.dll', 'Microsoft.Web.WebView2.WinForms.dll'
 $webTypes = '.html', '.js', '.css'                # the page and the shell: every such file of the web folder
 $licences = 'LICENSE.txt', 'NOTICE.txt', 'THIRD-PARTY-NOTICES.txt'   # beside the exe too, when help\ has them
 $programs = @(
-    @{ Name = 'PlateKineticsLive'; Project = (Join-Path $src 'PlateKineticsLive.csproj'); Web = (Join-Path $PSScriptRoot 'web'); Port = 47815 }
+    @{ Name = 'PlateKineticsLive'; Project = (Join-Path $src 'PlateKineticsLive.csproj'); Web = (Join-Path $PSScriptRoot 'web'); Port = 47815; Mode = 'live'; WebOnly = @() },
+    @{ Name = 'PlateKineticsAnalysis'; Project = (Join-Path $src 'PlateKineticsAnalysis.csproj'); Web = (Join-Path $PSScriptRoot 'web'); Port = 0; Mode = 'analysis'; WebOnly = @('PlateKineticsAnalysis.html') }
 )
 $OutDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir)
 $WorkDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($WorkDir)
@@ -119,7 +122,13 @@ function New-Zip([string]$Zip, [string]$Folder, [string]$Prefix) {
 }
 
 # The installer of one program: the payload zip and the settings, then Setup.csproj with both embedded.
-function New-Installer([string]$AppName, [string]$Exe, [string]$Web, [int]$AppPort) {
+function New-Installer([string]$AppName, [string]$Exe, [string]$Web, [int]$AppPort, [string]$AppMode = '', [string[]]$WebOnly = @(), [string]$AppVersion = '') {
+    $ver = if ($AppVersion) { $AppVersion } else { $Version }
+    $fv = $null
+    $p = $null
+    if ([version]::TryParse($ver, [ref]$p) -and @($p.Major, $p.Minor, $p.Build, $p.Revision | Where-Object { $_ -gt 65535 }).Count -eq 0) {
+        $fv = $p.ToString()
+    }
     $work = Join-Path $WorkDir $AppName
     $payload = Join-Path $work 'payload'
     if (Test-Path $payload) { Remove-Item $payload -Recurse -Force }
@@ -129,24 +138,27 @@ function New-Installer([string]$AppName, [string]$Exe, [string]$Web, [int]$AppPo
     foreach ($dll in $dlls) { Copy-Item (Join-Path $vendor $dll) $payload }
     Copy-Item (Join-Path $vendor 'LICENSE-WebView2.txt') $payload
     $pages = @(Get-ChildItem $Web -File | Where-Object { $webTypes -contains $_.Extension.ToLower() })
+    if ($WebOnly.Count -gt 0) { $pages = @($pages | Where-Object { $WebOnly -contains $_.Name }) }
     if (-not ($pages | Where-Object { $_.Name -eq 'PlateKineticsAnalysis.html' })) { throw ('no PlateKineticsAnalysis.html in ' + $Web) }
     foreach ($file in $pages) { Copy-Item $file.FullName (Join-Path $payload 'web') }
     ('{0}: web\{1}' -f $AppName, (($pages | ForEach-Object Name) -join ', web\')) | Out-Host
 
-    # the manuals: every file of help\ as Help\, and the licence texts beside the exe too
+    # the manuals (Live builds) and licence texts beside the exe
     $help = @()
     if (Test-Path (Join-Path $HelpDir 'index.html')) {
-        $help = @(Get-ChildItem $HelpDir -Recurse -File)
-        foreach ($file in $help) {
-            $to = Join-Path (Join-Path $payload 'Help') $file.FullName.Substring($HelpDir.Length + 1)
-            New-Item -ItemType Directory -Force (Split-Path $to) | Out-Null
-            Copy-Item $file.FullName $to
+        if ($AppMode -ne 'analysis') {
+            $help = @(Get-ChildItem $HelpDir -Recurse -File)
+            foreach ($file in $help) {
+                $to = Join-Path (Join-Path $payload 'Help') $file.FullName.Substring($HelpDir.Length + 1)
+                New-Item -ItemType Directory -Force (Split-Path $to) | Out-Null
+                Copy-Item $file.FullName $to
+            }
         }
         foreach ($licence in $licences) {
             if (Test-Path (Join-Path $HelpDir $licence)) { Copy-Item (Join-Path $HelpDir $licence) $payload }
             else { Write-Warning ('no ' + $licence + ' in ' + $HelpDir + ': the program is shipped without it') }
         }
-    } else { Write-Warning ('no ' + (Join-Path $HelpDir 'index.html') + ': the program is shipped without its manual') }
+    } elseif ($AppMode -ne 'analysis') { Write-Warning ('no ' + (Join-Path $HelpDir 'index.html') + ': the program is shipped without its manual') }
     ('{0}: Help\ {1} files; beside the exe: {2}' -f $AppName, $help.Count, ((Get-ChildItem $payload -File -Filter '*.txt' | ForEach-Object Name) -join ', ')) | Out-Host
 
     $zip = Join-Path $work 'payload.zip'
@@ -156,11 +168,12 @@ function New-Installer([string]$AppName, [string]$Exe, [string]$Web, [int]$AppPo
     New-Zip (Join-Path $OutDir ($AppName + '-portable.zip')) $payload ($AppName + '/')
 
     $settings = Join-Path $work 'setup.settings'
-    $text = 'name=' + $AppName + "`r`n" + 'exe=' + (Split-Path $Exe -Leaf) + "`r`n" + 'version=' + $Version + "`r`n" + 'port=' + $AppPort + "`r`n"
+    $text = 'name=' + $AppName + "`r`n" + 'exe=' + (Split-Path $Exe -Leaf) + "`r`n" + 'version=' + $ver + "`r`n" + 'port=' + $AppPort + "`r`n"
+    if ($AppMode) { $text += 'mode=' + $AppMode + "`r`n" }
     [IO.File]::WriteAllText($settings, $text, (New-Object Text.UTF8Encoding $false))
 
-    $properties = @("-p:SetupName=$AppName", "-p:SetupPayload=$zip", "-p:SetupSettings=$settings", "-p:SetupVersion=$Version")
-    if ($fileVersion) { $properties += "-p:SetupFileVersion=$fileVersion" }
+    $properties = @("-p:SetupName=$AppName", "-p:SetupPayload=$zip", "-p:SetupSettings=$settings", "-p:SetupVersion=$ver")
+    if ($fv) { $properties += "-p:SetupFileVersion=$fv" }
     $bin = Build-Project (Join-Path $src 'Setup\Setup.csproj') (Join-Path $work 'setup') $properties
     $setup = Join-Path $OutDir ($AppName + '-Setup.exe')
     Copy-Item (Join-Path $bin ($AppName + '-Setup.exe')) $setup -Force
@@ -172,16 +185,17 @@ if ($Name) {
     if (-not $ProgramDir -or -not $WebDir) { throw '-Name needs -ProgramDir and -WebDir' }
     $exe = Join-Path $ProgramDir ($Name + '.exe')
     if (-not (Test-Path $exe)) { throw ('not found: ' + $exe) }
-    $built += New-Installer $Name $exe $WebDir $Port
+    $built += New-Installer $Name $exe $WebDir $Port $Mode
 } else {
     foreach ($program in $programs) {
         if ($Only.Count -gt 0 -and $Only -notcontains $program.Name) { continue }
         if (-not (Test-Path $program.Project)) { throw ('not found: ' + $program.Project + ' (the project file of the program)') }
-        $bin = Build-Project $program.Project (Join-Path (Join-Path $WorkDir $program.Name) 'program') @("-p:SAAControlVersion=$Version")
+        $appVer = if ($program.Mode -eq 'analysis' -and $AnalysisVersion) { $AnalysisVersion } else { $Version }
+        $bin = Build-Project $program.Project (Join-Path (Join-Path $WorkDir $program.Name) 'program') @("-p:SAAControlVersion=$appVer")
         $exe = Join-Path $bin ($program.Name + '.exe')
         if (-not (Test-Path $exe)) { throw ('the build made no ' + $exe) }
         '{0}  sha256 {1}' -f $exe, (Get-FileHash $exe -Algorithm SHA256).Hash.Substring(0, 16).ToLower()
-        $built += New-Installer $program.Name $exe $program.Web $program.Port
+        $built += New-Installer $program.Name $exe $program.Web $program.Port $program.Mode $program.WebOnly $appVer
     }
 }
 

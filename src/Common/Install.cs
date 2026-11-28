@@ -172,11 +172,15 @@ namespace SAAControl
                     .Select(d => Path.Combine(dir, d)).ToList();
                 foreach (string folder in folders) InstallShared.TryRemoveEmptyFolder(folder);
 
-                // 3. the entry in Windows' list of apps and the .pk file type, when they are this installation's
+                // 3. the entry in Windows' list of apps and the .pk / .pkproj file types, when they are this installation's
                 bool entry = InstallShared.RemoveEntry(appName, dir, exe);
                 bool fileType = false;
                 try { fileType = InstallShared.UnregisterPk(appName, exe); }
                 catch (Exception error) { InstallShared.Log(appName, "uninstall: the .pk file type stays (" + error.Message + ")"); }
+                try { InstallShared.UnregisterPkProj(appName, exe); }
+                catch (Exception) { }
+                string modeMarker = Path.Combine(dir, "analysis-only.mode");
+                if (File.Exists(modeMarker)) InstallShared.TryDelete(modeMarker);
 
                 // 4. once this process has ended: its exe, what could not be removed now, then the folders left empty;
                 //    the program's folder itself only when the installer made it (never the desktop or the like)
@@ -279,6 +283,7 @@ namespace SAAControl
         {
             if (string.Equals(name, "PlateKineticsLive", StringComparison.OrdinalIgnoreCase)) return "Plate Kinetics Live";
             if (string.Equals(name, "PlateKineticsLive-Archimed", StringComparison.OrdinalIgnoreCase)) return "Plate Kinetics Live (Archimed)";
+            if (string.Equals(name, "PlateKineticsAnalysis", StringComparison.OrdinalIgnoreCase)) return "Plate Kinetics Analysis";
             return name;
         }
 
@@ -287,6 +292,7 @@ namespace SAAControl
         {
             if (string.Equals(name, "PlateKineticsLive", StringComparison.OrdinalIgnoreCase)) return "Plate Kinetics Live (BMG)";
             if (string.Equals(name, "PlateKineticsLive-Archimed", StringComparison.OrdinalIgnoreCase)) return "Plate Kinetics Live (Archimed)";
+            if (string.Equals(name, "PlateKineticsAnalysis", StringComparison.OrdinalIgnoreCase)) return "Plate Kinetics Analysis";
             return name;
         }
 
@@ -302,6 +308,7 @@ namespace SAAControl
         // its earlier names, newest first: up to 2026-11-23, and up to 2026-11-19 ("SAA experiment data")
         public static readonly string[] OldDataFolders = { "SAAControl-data", "SAA\u5b9e\u9a8c\u6570\u636e" };
         public const string ManifestSuffix = "-installed-files.txt";
+        public const string AnalysisOnlyMarker = "analysis-only.mode";
         const string CreatedLine = "# folder created by the installer: yes";
 
         /// <summary>The data folder in a program's folder as the program finds it: the one of its name, else the first
@@ -573,11 +580,17 @@ namespace SAAControl
         // ---- the .pk experiment files: a file type for the whole machine (HKLM\Software\Classes) ----
 
         public const string PkExtension = ".pk";
+        public const string PkProjExtension = ".pkproj";
         const string PkContentType = "application/vnd.plate-kinetics.experiment+zip";
-        static readonly string[] OurPkTypes = { PkProgId("PlateKineticsLive"), PkProgId("PlateKineticsLive-Archimed") };
+        const string PkProjContentType = "application/vnd.plate-kinetics.project+json";
+        static readonly string[] OurPkTypes = { PkProgId("PlateKineticsLive"), PkProgId("PlateKineticsLive-Archimed"), PkProgId("PlateKineticsAnalysis") };
+        static readonly string[] OurPkProjTypes = { PkProjProgId("PlateKineticsAnalysis"), PkProjProgId("PlateKineticsLive"), PkProjProgId("PlateKineticsLive-Archimed") };
 
         /// <summary>The program's file type for .pk files.</summary>
         public static string PkProgId(string name) => name + ".Experiment.1";
+
+        /// <summary>The program's file type for .pkproj project files.</summary>
+        public static string PkProjProgId(string name) => name + ".Project.1";
 
         /// <summary>Makes double-clicking a .pk file open it in the program ("exe" --open "file"): the program's own file
         /// type, listed among the programs that open .pk; .pk itself goes to it unless another product has it (the two
@@ -661,6 +674,71 @@ namespace SAAControl
                                 empty = with == null || (with.ValueCount == 0 && with.SubKeyCount == 0);
                     }
                 if (empty) root.DeleteSubKeyTree(PkExtension, false);
+            }
+            AssociationsChanged();
+            return true;
+        }
+
+        /// <summary>Register .pkproj project files so double-clicking opens them in the app.</summary>
+        public static void RegisterPkProj(string name, string exe, RegistryKey classes = null)
+        {
+            using (RegistryKey machine = classes == null ? Machine() : null)
+            using (RegistryKey own = classes == null ? machine.CreateSubKey(@"Software\Classes") : null)
+            {
+                RegistryKey root = classes ?? own;
+                string progId = PkProjProgId(name);
+                string typeName = "\u5b54\u677f\u52a8\u529b\u5b66\u5206\u6790\u9879\u76ee / Plate Kinetics project";
+                using (RegistryKey type = root.CreateSubKey(progId))
+                {
+                    type.SetValue("", typeName);
+                    type.SetValue("FriendlyTypeName", typeName);
+                    using (RegistryKey icon = type.CreateSubKey("DefaultIcon")) icon.SetValue("", "\"" + exe + "\",0");
+                    using (RegistryKey command = type.CreateSubKey(@"shell\open\command")) command.SetValue("", "\"" + exe + "\" --open \"%1\"");
+                }
+                using (RegistryKey extension = root.CreateSubKey(PkProjExtension))
+                {
+                    string current = extension.GetValue("") as string;
+                    bool foreign = !string.IsNullOrEmpty(current) && !OurPkProjTypes.Contains(current, StringComparer.OrdinalIgnoreCase) && KeyExists(root, current);
+                    if (!foreign)
+                    {
+                        extension.SetValue("", progId);
+                        extension.SetValue("Content Type", PkProjContentType);
+                    }
+                    using (RegistryKey with = extension.CreateSubKey("OpenWithProgids")) with.SetValue(progId, "");
+                }
+            }
+            AssociationsChanged();
+        }
+
+        /// <summary>Remove .pkproj file association registered for this exe.</summary>
+        public static bool UnregisterPkProj(string name, string exe, RegistryKey classes = null)
+        {
+            string progId = PkProjProgId(name);
+            using (RegistryKey machine = classes == null ? Machine() : null)
+            using (RegistryKey look = classes == null ? machine.OpenSubKey(@"Software\Classes") : null)
+            {
+                RegistryKey readRoot = classes ?? look;
+                if (readRoot == null) return false;
+                string command;
+                using (RegistryKey open = readRoot.OpenSubKey(progId + @"\shell\open\command")) command = open?.GetValue("") as string;
+                if (command == null || command.IndexOf(exe, StringComparison.OrdinalIgnoreCase) < 0) return false;
+            }
+            using (RegistryKey machine = classes == null ? Machine() : null)
+            using (RegistryKey own = classes == null ? machine.OpenSubKey(@"Software\Classes", true) : null)
+            {
+                RegistryKey root = classes ?? own;
+                root.DeleteSubKeyTree(progId, false);
+                using (RegistryKey extension = root.OpenSubKey(PkProjExtension, true))
+                    if (extension != null)
+                    {
+                        using (RegistryKey with = extension.OpenSubKey("OpenWithProgids", true)) with?.DeleteValue(progId, false);
+                        if (string.Equals(extension.GetValue("") as string, progId, StringComparison.OrdinalIgnoreCase))
+                        {
+                            string other = OurPkProjTypes.FirstOrDefault(t => !t.Equals(progId, StringComparison.OrdinalIgnoreCase) && KeyExists(root, t));
+                            if (other != null) extension.SetValue("", other);
+                            else { extension.DeleteValue("", false); extension.DeleteValue("Content Type", false); }
+                        }
+                    }
             }
             AssociationsChanged();
             return true;
