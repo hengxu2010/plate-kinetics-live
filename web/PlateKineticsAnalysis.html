@@ -26,7 +26,7 @@
 <meta name="description" content="Plate Kinetics Analysis: kinetic curves from 96- and 384-well plates. Import with automatic layout recognition, grouping, curve parameters, statistics, figures and reports. Runs in the browser, online or offline.">
 <meta name="author" content="hx_mao">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Crect width='26' height='26' rx='6' fill='%23077682'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='7' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='19' cy='9' r='2.7'/%3E%3Ccircle cx='7' cy='17' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='17' r='2.7'/%3E%3Ccircle cx='19' cy='17' r='2.7' fill-opacity='.45'/%3E%3C/g%3E%3C/svg%3E">
-<title>孔板动力学分析 · v3.16.1</title>
+<title>孔板动力学分析 · v3.17.0</title>
 <script>
 /* A light / dark choice made in this browser is applied before the first paint (the rest lives at the end of the page). */
 try { var pkUi = JSON.parse(localStorage.getItem('pk.ui.v1') || 'null'); if (pkUi && (pkUi.theme === 'light' || pkUi.theme === 'dark')) document.documentElement.setAttribute('data-theme', pkUi.theme); } catch (e) { /* storage unavailable */ }
@@ -46,8 +46,8 @@ try { var pkUi = JSON.parse(localStorage.getItem('pk.ui.v1') || 'null'); if (pkU
   setTimeout(function () { root.className = root.className.replace(/\s*\bpk-wait\b/, ''); }, 3000);
 })();
 </script>
-<meta name="application-version" content="v3.16.1">
-<meta name="application-build" content="pk-v3-16-1-12d050424b26">
+<meta name="application-version" content="v3.17.0">
+<meta name="application-build" content="pk-v3-17-0-4089532a55e1">
 <style>
 :root {
   /* Layout idea: inputs on the left (plate, groups, settings), outputs on the right (curves, results).
@@ -735,6 +735,37 @@ svg.chart:not(.chart-ov) .tb-neg { opacity: .28; }
 .ds-tab .nb.has { color: var(--accent); }
 .ds-tab .nb.has svg path:first-child { fill: var(--accent-wash-2); }
 .pop.notes { width: 360px; }
+.pop.pe-pop { width: 274px; padding: 10px 10px 9px; }
+.pe-mode { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.pe-acts { display: flex; flex-direction: column; gap: 2px; }
+.pe-acts .mi { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
+.pe-acts .mi:hover { background: var(--surface-2); }
+.pe-acts .mi svg { width: 14px; height: 14px; flex: none; color: var(--ink-2); }
+.pe-sep { border-top: 1px solid var(--hair); margin: 4px 2px; }
+.pe-opts { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hair); }
+.pe-opts .chk { font-size: 11.5px; }
+#btnPlateNotes { position: relative; }
+#btnPlateNotes.has { color: var(--accent-strong); border-color: var(--accent); background: var(--accent-wash); }
+#btnPlateNotes.has::after { content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.nt-ed { display: flex; flex-direction: column; gap: 10px; }
+.nt-meta-box { border: 1px solid var(--hair); border-radius: 8px; padding: 7px 10px; background: var(--surface-2); }
+.nt-meta-box summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ink-2); user-select: none; }
+.nt-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 12px; margin-top: 9px; }
+@media (max-width: 640px) { .nt-meta-grid { grid-template-columns: minmax(0, 1fr); } }
+.nt-f { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 6px; align-items: center; font-size: 12px; color: var(--ink-2); }
+.nt-f input { width: 100%; height: 27px; padding: 0 8px; font-size: 12.5px; }
+.nt-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nt-bar .nt-tpl { height: 27px; font-size: 12px; max-width: 190px; }
+.nt-ta { display: block; width: 100%; box-sizing: border-box; min-height: 280px; resize: vertical; padding: 10px 12px; font: 13px/1.6 var(--font-sans); border: 1px solid var(--hair-2); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.nt-prev { min-height: 280px; max-height: 55vh; overflow: auto; padding: 12px 14px; border: 1px solid var(--hair); border-radius: 8px; background: var(--surface-2); font-size: 13px; line-height: 1.6; }
+.nt-meta { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 14px; margin: 0 0 12px; padding: 8px 10px; border-radius: 7px; background: var(--surface); border: 1px solid var(--hair); }
+.nt-meta dt { font-size: 11px; color: var(--muted); }
+.nt-meta dd { margin: 0; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.nt-body h3, .nt-body h4, .nt-body h5 { margin: 12px 0 5px; font-weight: 700; color: var(--ink); }
+.nt-body h3 { font-size: 14.5px; } .nt-body h4 { font-size: 13.5px; } .nt-body h5 { font-size: 13px; }
+.nt-body p { margin: 0 0 8px; } .nt-body ul, .nt-body ol { margin: 0 0 8px; padding-left: 20px; }
+.nt-body hr { border: 0; border-top: 1px solid var(--hair-2); margin: 10px 0; }
+.nt-body code { font-family: var(--font-mono); font-size: 12px; padding: 1px 4px; border-radius: 4px; background: var(--hair); }
 /* "Parameter markers": a menu of the marks the chart draws */
 #btnMarkers .mk-n { color: var(--muted); font-variant-numeric: tabular-nums; }
 .pop.mk-pop { width: 270px; }
@@ -1026,7 +1057,7 @@ html.pk-wait body { visibility: hidden; }
       <circle cx="7" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/><circle cx="13" cy="17" r="2.6" fill="var(--accent)" fill-opacity=".55"/><circle cx="19" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/>
     </svg>
     <div class="brand-copy">
-      <div class="brand-name"><span>Plate Kinetics Analysis</span><span class="brand-author" translate="no">by hx_mao</span><span class="brand-version" id="brandVersion" role="button" tabindex="0" translate="no" aria-label="Version v3.16.1">v3.16.1</span></div>
+      <div class="brand-name"><span>Plate Kinetics Analysis</span><span class="brand-author" translate="no">by hx_mao</span><span class="brand-version" id="brandVersion" role="button" tabindex="0" translate="no" aria-label="Version v3.17.0">v3.17.0</span></div>
       <div class="brand-sub">PLATE KINETICS · 96 / 384</div>
     </div>
   </div>
@@ -1070,6 +1101,8 @@ html.pk-wait body { visibility: hidden; }
           </optgroup>
           <option value="call">Wells: positive / negative</option>
         </select>
+        <button class="btn sm ghost" id="btnPlateNotes" type="button" title="Open experiment notes editor (structured info, templates, long notes)">Notes</button>
+        <button class="btn sm" id="btnPlateExport" type="button" aria-haspopup="true" title="Export plate layout as image, PDF, Excel (with bracket lines) or CSV">Export ▾</button>
       </div>
       <div class="plate-bar" id="plateBar" hidden></div>
       <div class="card-body">
@@ -3469,6 +3502,59 @@ const LOCALES = {
       'Columns shown': '显示的参数列',
       'Cross table parameters': '交叉表显示参数',
       'Choose which parameters appear in each cell of the cross table (defaults to lag time only)': '选择交叉表每格中显示哪些参数（默认仅显示起峰时间）',
+      'Notes': '实验记录',
+      'Export ▾': '导出 ▾',
+      'Export plate layout': '导出孔板排布',
+      'Export plate layout as image, PDF, Excel (with bracket lines) or CSV': '单独导出孔板排布（图片、PDF、带连线分组的 Excel 或 CSV）',
+      'Open experiment notes editor (structured info, templates, long notes)': '打开实验记录编辑器（结构化信息、模板、长文编辑与预览）',
+      'Plate view': '排布方式',
+      'PNG image (2×)': 'PNG 图片（2× 高清）',
+      'SVG vector': 'SVG 矢量图',
+      'PDF (single-page landscape)': 'PDF（单页横版排布）',
+      'Excel layout .xlsx (with bracket lines)': 'Excel 排布表 .xlsx（保留连线分组）',
+      'CSV grid (active layer)': 'CSV 矩阵（当前分组层）',
+      'Positive (+) & excluded marks': '显示阳性 (+) 与排除标记',
+      'Legend below plate': '底部附分组图例',
+      'Names & Calls': '孔名与判定',
+      '+ positive · hatched = excluded': '+ 为阳性 · 斜线为已排除',
+      'PDF report (direct print / save as PDF)': 'PDF 报告（直接导出 / 打印）',
+      'Print or save a formatted A4 PDF report directly (layout, curves, group statistics, cross table and per-well results)': '直接调起排版好的 A4 PDF 导出/打印（含实验记录、高清孔板排布、曲线、统计/交叉表与每孔结果）',
+      'Opened as printable HTML file: open it in a browser and print to PDF': '已降级保存为可打印 HTML 文件：用浏览器打开即可另存为 PDF',
+      'Date': '日期',
+      'Operator': '操作人',
+      'Instrument / Protocol': '仪器 / 方案',
+      'Sample source': '样品来源',
+      'Reagent / Lot': '试剂 / 批号',
+      'Conditions': '体系与条件',
+      'Experiment metadata (optional — date, operator, reagents, conditions)': '实验基本信息（选填：日期、操作人、仪器、样品、批号、体系）',
+      'Edit': '编辑',
+      'Insert template': '套用模板',
+      'Insert template…': '套用模板…',
+      '+ Timestamp': '+ 时间戳',
+      '+ Analysis summary': '+ 分析摘要',
+      'Standard kinetics / SAA log': '标准动力学 / SAA 实验记录',
+      'Comparison / troubleshooting note': '条件对比 / 问题排查记录',
+      'Objective': '实验目的',
+      'Samples & dilution': '样品与稀释方案',
+      'Reaction mix & reagent lots': '反应体系与试剂批号',
+      'Observations & anomalies': '实验现象与异常记录',
+      'Conclusion & next steps': '结论与后续计划',
+      'Variables compared': '对比条件与变量',
+      'Key findings': '关键观察结果',
+      'Issues / follow-up': '待排查问题与跟进',
+      'Analysis summary': '当前分析摘要',
+      'Analysis parameters': '分析参数',
+      'valid': '有效孔',
+      'excluded': '排除',
+      'smoothing': '平滑',
+      'No experiment notes yet': '暂无实验记录',
+      'Write detailed experiment notes here (supports ## headings, **bold**, - bullet lists, --- dividers)…': '在此记录详细实验过程与结论（支持 ## 标题、**加粗**、- 列表、--- 分隔线）…',
+      '{0} / {1} chars': '{0} / {1} 字',
+      'Saved automatically; written into Excel exports and PDF/HTML reports': '自动保存在本机；导出 Excel 与 PDF/HTML 报告时自动附带',
+      'Clear experiment notes': '清空实验记录',
+      'Clear all experiment notes for “{0}”?': '确定清空“{0}”的全部实验记录吗？',
+      'plate_layout': '孔板排布',
+      'Experiment notes (part {0})': '实验记录（第 {0} 段）',
       'The control “{0}” has no values for this parameter (negative wells report no lag time, for example), so nothing can be compared: pick another parameter, or another control under “Significance tests…”.': '对照组“{0}”在这个参数上没有数值（例如阴性孔不报告起峰时间），所以无法比较：请换一个参数，或在“显著性检验…”里换一个对照组。',
       'New grouping set': '新建分组方案',
       'Each set keeps its own groups and colours; switch between sets at any time.': '每套方案独立保存分组与颜色，可在方案之间随时切换。',
@@ -7220,6 +7306,10 @@ function xlsxFiles(sheets) {
       out.push(rx + '</row>');
     });
     out.push('</sheetData>');
+    if (Array.isArray(sh.merges) && sh.merges.length) {
+      const refs = sh.merges.map(([r0, c0, r1, c1]) => `${colName(c0)}${r0 + 1}:${colName(c1)}${r1 + 1}`);
+      out.push(`<mergeCells count="${refs.length}">` + refs.map(ref => `<mergeCell ref="${ref}"/>`).join('') + '</mergeCells>');
+    }
     return x + out.join('') + '</worksheet>';
   });
   // styles
@@ -11474,6 +11564,7 @@ function renderTabs() {
       <button class="x" type="button" data-close="${i}" aria-label="${L('Close {0}', esc(ds.name))}">${ICON.x}</button></div>`;
   }).join('');
   fitTabs();
+  if (typeof syncNotesBadge === 'function') syncNotesBadge();
 }
 /** Tabs share the room they have: when they do not fit at full width they shrink to their names, and when even
     that is too much the strip scrolls, with the current tab kept in sight. */
@@ -13047,30 +13138,222 @@ function setScope(each) {
 }
 
 /* ---------- notes about the experiment of a dataset ---------- */
-/* Each dataset can carry notes (ds.notes): what was run, samples, reagents, who and when. They are kept with the
-   project file and the autosave (beside the datasets: a shared room does not carry them), and written into the
-   notes sheet of exports and at the top of reports. The icon before the name is filled while a dataset has notes. */
+/* Each dataset can carry structured + long-form notes in ds.notes (plain readable text / lightweight Markdown so
+   project files, Plate Kinetics Live .pk archives, Excel Info sheets and PDF/HTML reports stay 100% compatible). */
+const NOTES_MAX = 50000;
+const NOTE_FIELDS = [
+  ['date', 'Date', '日期'],
+  ['operator', 'Operator', '操作人'],
+  ['instrument', 'Instrument / Protocol', '仪器 / 方案'],
+  ['sample', 'Sample source', '样品来源'],
+  ['reagent', 'Reagent / Lot', '试剂 / 批号'],
+  ['cond', 'Conditions', '体系与条件']
+];
+/** Parse optional leading Key: Value metadata header from ds.notes -> { meta: {...}, body: string }. */
+function parseNotes(raw) {
+  const text = String(raw || '').replace(/\r\n?/g, '\n');
+  const meta = Object.fromEntries(NOTE_FIELDS.map(f => [f[0], '']));
+  const keyMap = new Map();
+  NOTE_FIELDS.forEach(([k, en, zh]) => { keyMap.set(en.toLowerCase(), k); keyMap.set(zh.toLowerCase(), k); });
+  const lines = text.split('\n');
+  let i = 0, matched = false;
+  while (i < lines.length) {
+    const ln = lines[i];
+    if (!ln.trim()) { if (matched) i++; break; }
+    const m = /^([^:：\n]{1,36})[:：]\s*(.*)$/.exec(ln);
+    const key = m && keyMap.get(m[1].trim().toLowerCase());
+    if (!key) break;
+    meta[key] = m[2].trim();
+    matched = true;
+    i++;
+  }
+  const body = matched ? lines.slice(i).join('\n').replace(/^\n+/, '') : text;
+  return { meta, body };
+}
+/** Combine structured metadata + body back into clean readable plain text for ds.notes. */
+function serializeNotes(meta, body) {
+  const head = [];
+  for (const [k, en] of NOTE_FIELDS) {
+    const v = String((meta && meta[k]) || '').replace(/[\r\n]+/g, ' ').trim();
+    if (v) head.push(`${L(en)}: ${v}`);
+  }
+  const cleanBody = String(body || '').replace(/\r\n?/g, '\n');
+  if (!head.length) return cleanBody.slice(0, NOTES_MAX);
+  return (head.join('\n') + (cleanBody.trim() ? '\n\n' + cleanBody : '')).slice(0, NOTES_MAX);
+}
+/** Safe lightweight Markdown renderer for notes preview and PDF/HTML reports (HTML-escaped first). */
+function renderNotesHtml(raw) {
+  const { meta, body } = parseNotes(raw);
+  const inline = s => esc(s)
+    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  const metaItems = NOTE_FIELDS.filter(([k]) => meta[k]).map(([k, en]) => `<div><dt>${esc(L(en))}</dt><dd translate="no">${esc(meta[k])}</dd></div>`);
+  let out = metaItems.length ? `<dl class="nt-meta">${metaItems.join('')}</dl>` : '';
+  const lines = body.split('\n');
+  let i = 0, bodyHtml = '';
+  while (i < lines.length) {
+    const ln = lines[i];
+    if (!ln.trim()) { i++; continue; }
+    if (/^-{3,}\s*$/.test(ln.trim())) { bodyHtml += '<hr>'; i++; continue; }
+    const hm = /^(#{1,3})\s+(.+)$/.exec(ln);
+    if (hm) { const tag = 'h' + (hm[1].length + 2); bodyHtml += `<${tag} translate="no">${inline(hm[2].trim())}</${tag}>`; i++; continue; }
+    if (/^\s*[-*•]\s+/.test(ln)) {
+      const items = [];
+      while (i < lines.length && /^\s*[-*•]\s+/.test(lines[i])) { items.push(`<li>${inline(lines[i].replace(/^\s*[-*•]\s+/, ''))}</li>`); i++; }
+      bodyHtml += `<ul translate="no">${items.join('')}</ul>`; continue;
+    }
+    if (/^\s*\d+\.\s+/.test(ln)) {
+      const items = [];
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) { items.push(`<li>${inline(lines[i].replace(/^\s*\d+\.\s+/, ''))}</li>`); i++; }
+      bodyHtml += `<ol translate="no">${items.join('')}</ol>`; continue;
+    }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !/^-{3,}\s*$/.test(lines[i].trim()) && !/^(#{1,3})\s+/.test(lines[i]) && !/^\s*(?:[-*•]|\d+\.)\s+/.test(lines[i])) {
+      para.push(inline(lines[i])); i++;
+    }
+    bodyHtml += `<p translate="no">${para.join('<br>')}</p>`;
+  }
+  return out + (bodyHtml ? `<div class="nt-body">${bodyHtml}</div>` : (!out ? `<p class="hint">${esc(L('No experiment notes yet'))}</p>` : ''));
+}
+/** Build a ready-to-insert concise analysis summary for the current dataset. */
+function notesAnalysisSummary(ds) {
+  ensureAnalysis(ds);
+  const res = ds.res || {}, tf = TF(), tu = TU();
+  const dw = dataWells(ds), valid = dw.filter(w => !w.excluded && res[w.id] && res[w.id].n);
+  const pos = valid.filter(w => res[w.id].positive).length;
+  const ex = dw.filter(w => w.excluded).length;
+  const gList = groupStatsList(ds, null, false, null).filter(g => g.gid);
+  const lines = [
+    `## ${L('Analysis summary')} (${new Date().toLocaleString(dateLocale(), { hour12: false })})`,
+    `- **${L('Plate')}**: ${L('{0:well}', ds.plate.rows * ds.plate.cols)}, ${valid.length} ${L('valid')}` + (ex ? `, ${ex} ${L('excluded')}` : '') + `, ${L('{0}/{1} positive', pos, valid.length)} (${valid.length ? (pos / valid.length * 100).toFixed(1) : '0.0'}%)`,
+    `- **${L('Time range')}**: ${+(ds.t[0] * tf).toFixed(2)} – ${+(ds.t[ds.t.length - 1] * tf).toFixed(2)} ${tu} (${ds.t.length} ${L('time points')})`,
+    `- **${L('Analysis parameters')}**: ${L('Threshold')} ${S.set.thrMode} (k=${S.set.thrK}), ${L('smoothing')} ${S.set.smooth}, ${L('cut-off')} ${S.set.cutoff != null ? +(S.set.cutoff * tf).toFixed(2) + ' ' + tu : Lc('cutoff', 'none')}`
+  ];
+  if (gList.length) {
+    lines.push(`- **${L('Groups')}** (${ds.sets[ds.gs].name}): ` + gList.slice(0, 12).map(g => `${g.label} ${g.pos}/${g.n}${isFinite(g.st.lag.mean) ? ` (lag ${fmtAuto(g.st.lag.mean, 'T')}${g.st.lag.n > 1 ? ' ± ' + fmtAuto(g.st.lag.sd, 'T') : ''} ${tu})` : ''}`).join('; '));
+  }
+  return lines.join('\n');
+}
+function notesTemplates() {
+  return [
+    {
+      id: 'saa', label: L('Standard kinetics / SAA log'),
+      text: `## ${L('Objective')}\n- \n\n## ${L('Samples & dilution')}\n- \n\n## ${L('Reaction mix & reagent lots')}\n- \n\n## ${L('Observations & anomalies')}\n- \n\n## ${L('Conclusion & next steps')}\n- `
+    },
+    {
+      id: 'cmp', label: L('Comparison / troubleshooting note'),
+      text: `## ${L('Variables compared')}\n- \n\n## ${L('Key findings')}\n- \n\n## ${L('Issues / follow-up')}\n- `
+    }
+  ];
+}
+function syncNotesBadge() {
+  const b = $('#btnPlateNotes'), ds = curDS();
+  if (!b) return;
+  const has = !!(ds && ds.notes && ds.notes.trim());
+  b.classList.toggle('has', has);
+  b.title = has ? ds.notes.slice(0, 300) : L('Open experiment notes editor (structured info, templates, long notes)');
+}
 function openNotes(anchor, i) {
-  const ds = S.ds[i];
+  const ds = S.ds[i != null ? i : S.cur];
   if (!ds) return;
-  const el = openPop(anchor, '<h4 translate="no"></h4><textarea class="notes-ta" rows="8"></textarea><p class="hint" translate="no" style="margin:6px 0 0"></p>', p => {
-    p.classList.add('notes');
-    $('h4', p).textContent = L('Experiment notes · {0}', ds.name);
-    $('.hint', p).textContent = COLLAB.active ? L('Not shared with the room and not kept after a reload: use “Save project” to keep them')
-      : AUTOSAVE.enabled() ? L('Kept in this browser automatically; written into Excel exports and reports; use “Save project” to take it to another computer')
-      : L('Not saved automatically: use “Save project” before closing the page');
+  closePop();
+  const parsed = parseNotes(ds.notes || '');
+  const nowStamp = () => {
+    const d = new Date(), p2 = n => String(n).padStart(2, '0');
+    return `[${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}] `;
+  };
+  const hint = COLLAB.active ? L('Not shared with the room and not kept after a reload: use “Save project” to keep them')
+    : AUTOSAVE.enabled() ? L('Saved automatically; written into Excel exports and PDF/HTML reports')
+    : L('Not saved automatically: use “Save project” before closing the page');
+  const metaHtml = NOTE_FIELDS.map(([k, en]) => `<label class="nt-f"><span>${esc(L(en))}</span><input type="text" data-nm="${k}" value="${esc(parsed.meta[k])}" placeholder="${esc(L(en))}" translate="no"></label>`).join('');
+  const tpls = notesTemplates();
+  const m = openModal({
+    title: L('Experiment notes · {0}', ds.name), wide: true,
+    body: `<div class="nt-ed">
+      <details class="nt-meta-box"${Object.values(parsed.meta).some(Boolean) ? ' open' : ''}>
+        <summary>${esc(L('Experiment metadata (optional — date, operator, reagents, conditions)'))}</summary>
+        <div class="nt-meta-grid">${metaHtml}</div>
+      </details>
+      <div class="nt-bar">
+        <div class="seg sm" role="group"><button type="button" data-ntv="edit" class="on">${esc(L('Edit'))}</button><button type="button" data-ntv="prev">${esc(L('Preview'))}</button></div>
+        <select class="nt-tpl" aria-label="${esc(L('Insert template'))}"><option value="">${esc(L('Insert template…'))}</option>${tpls.map(t => `<option value="${t.id}">${esc(t.label)}</option>`).join('')}</select>
+        <button class="btn sm ghost" type="button" data-nta="time">${esc(L('+ Timestamp'))}</button>
+        <button class="btn sm ghost" type="button" data-nta="sum">${esc(L('+ Analysis summary'))}</button>
+        <span class="spacer"></span>
+        <button class="btn sm ghost" type="button" data-nta="copy">${ICON.copy}${esc(L('Copy'))}</button>
+        <button class="btn sm ghost" type="button" data-nta="md">${ICON.dl}.md</button>
+      </div>
+      <textarea class="nt-ta" rows="14" placeholder="${esc(L('Write detailed experiment notes here (supports ## headings, **bold**, - bullet lists, --- dividers)…'))}"></textarea>
+      <div class="nt-prev" hidden></div>
+      <p class="hint" style="margin:0" translate="no">${esc(hint)}</p>
+    </div>`,
+    foot: `<span class="left" id="ntCount"></span><button class="btn ghost" type="button" data-clr>${esc(L('Clear'))}</button><button class="btn primary" type="button" data-ok>${esc(L('Done'))}</button>`
   });
-  const ta = $('textarea', el);
-  ta.placeholder = L('For example: date, sample source, reagent lot, operator, instrument settings…');   // (a text box is never translated by the page)
-  ta.value = ds.notes || '';
+  const ta = $('.nt-ta', m.el), prev = $('.nt-prev', m.el), cnt = $('#ntCount', m.el);
+  ta.value = parsed.body;
+  const readMeta = () => Object.fromEntries($$('[data-nm]', m.el).map(inp => [inp.dataset.nm, inp.value]));
+  const refreshCount = () => { cnt.textContent = L('{0} / {1} chars', (ds.notes || '').length, NOTES_MAX); };
+  const commit = () => {
+    const had = !!(ds.notes && ds.notes.trim());
+    const next = serializeNotes(readMeta(), ta.value);
+    if (next !== (ds.notes || '')) {
+      ds.notes = next;
+      S.dirty = true;
+      AUTOSAVE.touch();
+      if (had !== !!(ds.notes && ds.notes.trim())) renderTabs();
+      syncNotesBadge();
+    }
+    refreshCount();
+  };
+  const insertAtCursor = txt => {
+    const a = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
+    const b = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
+    const pre = ta.value.slice(0, a), sep = pre && !pre.endsWith('\n') && txt.startsWith('##') ? '\n\n' : '';
+    ta.value = pre + sep + txt + ta.value.slice(b);
+    const pos = pre.length + sep.length + txt.length;
+    ta.focus();
+    try { ta.setSelectionRange(pos, pos); } catch (e) { /* ignore */ }
+    commit();
+  };
+  refreshCount();
+  ta.addEventListener('input', commit);
+  $$('[data-nm]', m.el).forEach(inp => inp.addEventListener('input', commit));
+  ta.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); commit(); m.close(); } });
+  $('.nt-tpl', m.el).addEventListener('change', e => {
+    const t = tpls.find(x => x.id === e.target.value);
+    e.target.value = '';
+    if (!t) return;
+    if (ta.value.trim()) insertAtCursor(t.text);
+    else { ta.value = t.text; ta.focus(); commit(); }
+  });
+  m.el.addEventListener('click', e => {
+    const vBtn = e.target.closest('[data-ntv]');
+    if (vBtn) {
+      const isPrev = vBtn.dataset.ntv === 'prev';
+      $$('[data-ntv]', m.el).forEach(x => x.classList.toggle('on', x === vBtn));
+      ta.hidden = isPrev; prev.hidden = !isPrev;
+      if (isPrev) prev.innerHTML = renderNotesHtml(ds.notes || '');
+      return;
+    }
+    const aBtn = e.target.closest('[data-nta]');
+    if (!aBtn) return;
+    const act = aBtn.dataset.nta;
+    if (act === 'time') insertAtCursor(nowStamp());
+    else if (act === 'sum') insertAtCursor(notesAnalysisSummary(ds));
+    else if (act === 'copy') copyText(ds.notes || '');
+    else if (act === 'md') saveFile(safeName(ds.name + '_notes_' + dateTag()) + '.md', (ds.notes || '') + '\n');
+  });
+  $('[data-clr]', m.el).onclick = () => {
+    if (!ds.notes) return;
+    confirmBox(L('Clear experiment notes'), L('Clear all experiment notes for “{0}”?', esc(ds.name)), L('Clear'), () => {
+      $$('[data-nm]', m.el).forEach(inp => { inp.value = ''; });
+      ta.value = '';
+      prev.innerHTML = renderNotesHtml('');
+      commit();
+    });
+  };
+  $('[data-ok]', m.el).onclick = () => { commit(); m.close(); };
   try { ta.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
-  ta.addEventListener('input', () => {
-    const had = !!ds.notes;
-    ds.notes = ta.value.slice(0, 20000);
-    S.dirty = true;
-    AUTOSAVE.touch();
-    if (had !== !!ds.notes) renderTabs();
-  });
 }
 function setupNotes() {
   const box = $('#dsTabs');
@@ -13085,6 +13368,8 @@ function setupNotes() {
   // Enter or Space on the icon opens the notes (the tab would take them to switch), a double click does not rename
   box.addEventListener('keydown', e => { if (e.target.closest('[data-notes]') && (e.key === 'Enter' || e.key === ' ')) e.stopPropagation(); }, true);
   box.addEventListener('dblclick', e => { if (e.target.closest('[data-notes]')) e.stopPropagation(); }, true);
+  const pb = $('#btnPlateNotes');
+  if (pb) pb.addEventListener('click', e => { const ds = curDS(); if (ds) openNotes(e.currentTarget, S.cur); });
 }
 function legendItems(ds, data) {
   if (data.kind !== 'well') return data.series.filter(s => !s.faint).map(s => ({ label: s.label + `  (n=${s.n})`, color: s.color, dash: s.dash }));
@@ -14645,12 +14930,19 @@ function curveSheet(ds, blocks, title, mode, withStats) {
   }
   return { name: title, rows, freeze: { r: 1, c: 1 }, widths: [11].concat(head.slice(1).map(() => 15)) };
 }
-function layoutRows(ds) {
+function layoutRows(ds, refOnly) {
   const R = ds.plate.rows, Cn = ds.plate.cols, res = ds.res;
   const hdr = [null].concat(Array.from({ length: Cn }, (_, c) => ({ v: String(c + 1), bold: true, align: 'center' })));
-  const out = [];
-  // the frames of the plate: thick outside borders of the cells, as on the screen
-  // (each "Groups · <set>" plate with the frames of that grouping set, the other plates with those of the set exported)
+  const out = [], merges = [];
+  let maxWidths = [5].concat(Array(Cn).fill(Cn > 12 ? 9 : 14));
+  // append a bracketed plate block (with merged outer tracks) vertically into out/merges
+  const appendBlock = blk => {
+    const off = out.length;
+    blk.rows.forEach(r => out.push(r));
+    (blk.merges || []).forEach(([r0, c0, r1, c1]) => merges.push([r0 + off, c0, r1 + off, c1]));
+    if (blk.widths && blk.widths.length > maxWidths.length) maxWidths = blk.widths.slice();
+    out.push([]);
+  };
   let fl = null, fw = 'medium';
   const side = col => (col ? { style: fw, color: col } : null);
   const framed = (r, c, cell) => {
@@ -14670,21 +14962,53 @@ function layoutRows(ds) {
     }
     out.push([]);
   };
+  if (!refOnly && typeof buildBracketPlateSheet === 'function' && hasAssignedGroups(ds)) {
+    const multi = ds.sets.length > 1;
+    if (multi && lvOf(ds).mode === 'stack') {
+      const pa = plateExportAnnot(ds, 'stack'), A = pa.maps[ds.gs];
+      const unBr = pa.oth.filter(M => !pa.margPlace.has(M.si));
+      appendBlock(buildBracketPlateSheet(ds, `${L('Plate layout')} · ${L('Stack')}`, {
+        tracks: pa.tracks, blockLayers: pa.blockLayers, frameSi: ds.gs, legendLayers: pa.visMaps,
+        cellFn: w => {
+          const g = pa.activeShown ? A.of.get(w.id) : null;
+          const col = w.color ? resolveColor(w.color, false) : g ? resolveColor(g.color, false) : null;
+          const first = g ? gName(g) : (w.name || '');
+          const extra = unBr.map(M => M.of.get(w.id)).filter(Boolean).map(gName).join('·');
+          const v = [first, extra].filter(Boolean).join(' / ') + (w.excluded ? L(' [excluded]') : '');
+          return col ? { v, fill: col, color: inkOn(col) } : (v ? { v } : null);
+        }
+      }));
+    }
+    ds.sets.forEach((s, si) => {
+      const la = plateLayerAnnot(ds, si), M = la.M;
+      appendBlock(buildBracketPlateSheet(ds, multi ? L('Groups · ') + s.name : L('Group'), {
+        tracks: la.tracks, blockLayers: la.blockLayers, frameSi: si, legendLayers: [],
+        cellFn: w => {
+          const g = M.of.get(w.id);
+          if (!g) return null;
+          const col = resolveColor(g.color, false);
+          return { v: gName(g), fill: col, color: inkOn(col) };
+        }
+      }));
+    });
+  }
   grid('Sample names (fill = well colour; [excluded] = left out of the analysis)', w => {
     const col = wellColorHex(ds, w, false);
     const cell = { v: (w.name || '') + (w.excluded ? L(' [excluded]') : ''), align: 'center', nt: 1 };
     if (col) { cell.fill = col; cell.color = inkOn(col); }
     return cell;
   });
-  ds.sets.forEach((s, si) => {
-    const V = setView(ds, si);
-    grid(ds.sets.length > 1 ? L('Groups · ') + s.name : 'Group', w => {
-      const gid = V.gid(w), g = gid ? V.groups.find(x => x.id === gid) : null;
-      if (!g) return null;
-      const col = resolveColor(g.color, false);
-      return { v: g.name, fill: col, color: inkOn(col), align: 'center', nt: 1 };
-    }, si);
-  });
+  if (refOnly || typeof buildBracketPlateSheet !== 'function' || !hasAssignedGroups(ds)) {
+    ds.sets.forEach((s, si) => {
+      const V = setView(ds, si);
+      grid(ds.sets.length > 1 ? L('Groups · ') + s.name : 'Group', w => {
+        const gid = V.gid(w), g = gid ? V.groups.find(x => x.id === gid) : null;
+        if (!g) return null;
+        const col = resolveColor(g.color, false);
+        return { v: g.name, fill: col, color: inkOn(col), align: 'center', nt: 1 };
+      }, si);
+    });
+  }
   grid('Call (+ positive, − negative)', w => {
     const r = res[w.id];
     if (!r || !w.y) return null;
@@ -14692,8 +15016,788 @@ function layoutRows(ds) {
     return r.positive ? { v: '+', bold: true, color: '#d03b3b', align: 'center' } : { v: '−', align: 'center' };
   });
   grid(L('Lag time ({~0})', TU()), w => { const v = pval(res[w.id], 'lag'); return isFinite(v) ? { v: +v.toFixed(3), align: 'center' } : null; });
-  return { rows: out, widths: [5].concat(Array(Cn).fill(Cn > 12 ? 9 : 14)) };
+  return { rows: out, widths: maxWidths, merges };
 }
+/* ---------- standalone plate layout export (SVG / PNG / PDF / Excel with merged bracket lines / CSV) ---------- */
+const PLATE_EXP = { marks: true, legend: true };
+/** Compute outer tracks + block layers for exporting a single layer (mode 'expand') or stacked layers ('stack'). */
+function plateExportAnnot(ds, mode) {
+  const maps = layerMaps(ds), gs = ds.gs, lv = lvOf(ds);
+  const stack = mode === 'stack' && ds.sets.length > 1;
+  const hidSet = new Set(lv.pHid || []);
+  const visMaps = stack ? maps.filter(M => !hidSet.has(M.s.id)) : [maps[gs]];
+  const tracks = { left: [], right: [], top: [], bot: [] }, blockLayers = [], margPlace = new Map();
+  const MAX_TR = 3;
+  const ordered = stack ? visMaps.filter(M => M.si !== gs).concat(visMaps.filter(M => M.si === gs)) : visMaps;
+  for (const M of ordered) {
+    if (!M.of.size) continue;
+    const geo = classifyLayerGeo(ds, M);
+    let placed = false;
+    if (lv.pMarg !== false) {
+      if (geo.kind === 'row' && tracks.left.length < MAX_TR) {
+        tracks.left.push(Object.assign({}, geo.track, { M, scope: geo.scope }));
+        margPlace.set(M.si, { kind: 'row', full: geo.track.allFull });
+        placed = true;
+      } else if (geo.kind === 'col' && tracks.top.length < MAX_TR) {
+        tracks.top.push(Object.assign({}, geo.track, { M, scope: geo.scope }));
+        margPlace.set(M.si, { kind: 'col', full: geo.track.allFull });
+        placed = true;
+      } else if (geo.kind === 'row-split' && tracks.left.length < MAX_TR && tracks.right.length < MAX_TR) {
+        tracks.left.push(Object.assign({}, geo.left, { M, scope: geo.left.rangeText }));
+        tracks.right.push(Object.assign({}, geo.right, { M, scope: geo.right.rangeText }));
+        margPlace.set(M.si, { kind: 'row-split', full: geo.left.allFull && geo.right.allFull });
+        placed = true;
+      } else if (geo.kind === 'col-split' && tracks.top.length < MAX_TR && tracks.bot.length < MAX_TR) {
+        tracks.top.push(Object.assign({}, geo.top, { M, scope: geo.top.rangeText }));
+        tracks.bot.push(Object.assign({}, geo.bot, { M, scope: geo.bot.rangeText }));
+        margPlace.set(M.si, { kind: 'col-split', full: geo.top.allFull && geo.bot.allFull });
+        placed = true;
+      }
+    }
+    if (!placed && lv.pBlock !== false && geo.kind === 'blocks') {
+      blockLayers.push({ M, comps: geo.comps, secondary: stack && M.si !== gs });
+      margPlace.set(M.si, { kind: 'blocks', full: true });
+    }
+  }
+  const oth = visMaps.filter(M => M.si !== gs);
+  const sqL = stack ? oth.filter(M => layerValues(ds, M).length) : [];
+  const rank = M => { const p = margPlace.get(M.si); return !p ? 0 : p.full ? 2 : 1; };
+  const turn = sqL.map((M, k) => [M, k]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(x => x[0]);
+  const activeShown = !stack || !hidSet.has(maps[gs].s.id);
+  return { stack, maps, visMaps, activeShown, oth, sqL, turn, tracks, blockLayers, margPlace };
+}
+/** Compute outer tracks + block layers for one specific layer si (used by Split mode & per-layer Excel sheets). */
+function plateLayerAnnot(ds, si) {
+  const M = layerMaps(ds)[si], lv = lvOf(ds);
+  const tracks = { left: [], right: [], top: [], bot: [] }, blockLayers = [];
+  if (M && M.of.size) {
+    const geo = classifyLayerGeo(ds, M);
+    let placed = false;
+    if (lv.pMarg !== false) {
+      if (geo.kind === 'row') { tracks.left.push(Object.assign({}, geo.track, { M, scope: geo.scope })); placed = true; }
+      else if (geo.kind === 'col') { tracks.top.push(Object.assign({}, geo.track, { M, scope: geo.scope })); placed = true; }
+      else if (geo.kind === 'row-split') {
+        tracks.left.push(Object.assign({}, geo.left, { M, scope: geo.left.rangeText }));
+        tracks.right.push(Object.assign({}, geo.right, { M, scope: geo.right.rangeText }));
+        placed = true;
+      } else if (geo.kind === 'col-split') {
+        tracks.top.push(Object.assign({}, geo.top, { M, scope: geo.top.rangeText }));
+        tracks.bot.push(Object.assign({}, geo.bot, { M, scope: geo.bot.rangeText }));
+        placed = true;
+      }
+    }
+    if (!placed && lv.pBlock !== false && geo.kind === 'blocks') blockLayers.push({ M, comps: geo.comps, secondary: false });
+  }
+  return { M, tracks, blockLayers };
+}
+/** Small SVG colour/mark swatch at (x, y) with size sz. */
+function svgSwatch(spec, x, y, sz) {
+  const col = resolveColor(spec, false) || '#868d8e', mk = markOf(spec), r = Math.max(1.2, sz * 0.2).toFixed(1);
+  if (mk === 'h') return `<rect x="${(x + 0.8).toFixed(1)}" y="${(y + 0.8).toFixed(1)}" width="${(sz - 1.6).toFixed(1)}" height="${(sz - 1.6).toFixed(1)}" rx="${r}" fill="#ffffff" stroke="${col}" stroke-width="1.6"/>`;
+  if (mk === 'half') return `<rect x="${(x + 0.6).toFixed(1)}" y="${(y + 0.6).toFixed(1)}" width="${(sz - 1.2).toFixed(1)}" height="${(sz - 1.2).toFixed(1)}" rx="${r}" fill="#ffffff" stroke="${col}" stroke-width="1.3"/><polygon points="${(x + 0.6).toFixed(1)},${(y + 0.6).toFixed(1)} ${(x + sz - 0.6).toFixed(1)},${(y + 0.6).toFixed(1)} ${(x + 0.6).toFixed(1)},${(y + sz - 0.6).toFixed(1)}" fill="${col}"/>`;
+  if (mk === 'dot') return `<rect x="${(x + 0.6).toFixed(1)}" y="${(y + 0.6).toFixed(1)}" width="${(sz - 1.2).toFixed(1)}" height="${(sz - 1.2).toFixed(1)}" rx="${r}" fill="#ffffff" stroke="${col}" stroke-width="1.3"/><circle cx="${(x + sz / 2).toFixed(1)}" cy="${(y + sz / 2).toFixed(1)}" r="${(sz * 0.25).toFixed(1)}" fill="${col}"/>`;
+  return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${sz.toFixed(1)}" height="${sz.toFixed(1)}" rx="${r}" fill="${col}" stroke="rgba(0,0,0,0.16)" stroke-width="0.6"/>`;
+}
+/** Truncate text to fit roughly within maxPx at fontSize fs (CJK = 1.0em, Latin = 0.6em). */
+function fitSvgText(text, maxPx, fs) {
+  const s = String(text || '');
+  if (!s || maxPx <= 0) return '';
+  let w = 0, out = '';
+  for (const ch of s) {
+    const cw = (/[\u2e80-\u9fff\uff00-\uffef]/.test(ch) ? 1.0 : 0.6) * fs;
+    if (w + cw > maxPx) return out.length > 1 ? out.slice(0, -1) + '…' : out;
+    out += ch; w += cw;
+  }
+  return out;
+}
+/** Render one plate block into an inner SVG snippet ({ body, W, H }) for Single, Stack, or one Split panel. */
+function renderPlateSvgBlock(ds, cfg) {
+  const { rows, cols } = ds.plate, big = cols > 12, res = ds.res || {};
+  const mini = !!cfg.mini, showMarks = cfg.showMarks !== false;
+  const cw = mini ? (big ? 16 : 30) : (big ? 30 : 62);
+  const ch = mini ? (big ? 13 : 22) : (big ? 21 : 42);
+  const gap = mini ? (big ? 1.5 : 2.5) : (big ? 2.5 : 4.5);
+  const rhW = mini ? 18 : (big ? 22 : 26), chH = mini ? 16 : (big ? 18 : 22);
+  const trRowW = mini ? 68 : (big ? 86 : 104), trColH = mini ? 20 : 26;
+  const tracks = cfg.tracks || { left: [], right: [], top: [], bot: [] };
+  const nL = tracks.left.length, nR = tracks.right.length, nT = tracks.top.length, nB = tracks.bot.length;
+  const pad = mini ? 10 : 16;
+  const headH = cfg.heading ? (mini ? 22 : 26) : 0;
+  const leftCapW = nL === 0 && (nT > 0 || nB > 0) ? (mini ? 64 : 88) : 0;
+  const x0 = pad + leftCapW + nL * trRowW + rhW;
+  const y0 = pad + headH + nT * trColH + chH;
+  const gridW = cols * cw + (cols - 1) * gap;
+  const gridH = rows * ch + (rows - 1) * gap;
+  const W = Math.ceil(x0 + gridW + nR * trRowW + pad);
+  const legItems = cfg.legendLayers || [];
+  const legFs = mini ? 9.5 : 11, legRowH = mini ? 16 : 19;
+  const legLines = [];
+  if (cfg.showLegend !== false && legItems.length) {
+    const availW = W - pad * 2;
+    for (const M of legItems) {
+      const vs = layerValues(ds, M);
+      if (!vs.length) continue;
+      const prefix = ds.sets.length > 1 ? M.name + ': ' : '';
+      let line = { prefix, items: [] }, usedW = prefix ? textUnits(prefix) * legFs * 0.65 + 10 : 0;
+      for (const g of vs) {
+        const cnt = ds.order.filter(id => ds.wells[id].y && M.of.get(id) === g).length;
+        const txt = `${gName(g)} (${cnt})`;
+        const iw = (mini ? 10 : 12) + textUnits(txt) * legFs * 0.64 + 14;
+        if (line.items.length && usedW + iw > availW) {
+          legLines.push(line);
+          line = { prefix: '', items: [] }; usedW = 0;
+        }
+        line.items.push({ g, txt, iw }); usedW += iw;
+      }
+      if (line.items.length) legLines.push(line);
+    }
+  }
+  const legH = legLines.length ? (mini ? 8 : 12) + legLines.length * legRowH : 0;
+  const H = Math.ceil(y0 + gridH + nB * trColH + legH + pad);
+  const wx = c => x0 + c * (cw + gap), wy = r => y0 + r * (ch + gap);
+  const xb = c => (c <= 0 ? x0 - gap / 2 : c >= cols ? x0 + gridW + gap / 2 : wx(c) - gap / 2);
+  const yb = r => (r <= 0 ? y0 - gap / 2 : r >= rows ? y0 + gridH + gap / 2 : wy(r) - gap / 2);
+  const n1 = v => v.toFixed(1), p = [];
+
+  if (cfg.cardBg) p.push(`<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="#ffffff" stroke="#d9dfe0" stroke-width="1"/>`);
+  if (cfg.heading) {
+    p.push(`<text x="${pad}" y="${pad + (mini ? 14 : 17)}" font-size="${mini ? 12 : 14}" font-weight="700" fill="#13191b">${esc(cfg.heading)}</text>`);
+    if (cfg.subHeading) p.push(`<text x="${W - pad}" y="${pad + (mini ? 14 : 17)}" text-anchor="end" font-size="${mini ? 10 : 11}" fill="#646d70">${esc(cfg.subHeading)}</text>`);
+  }
+
+  // Outer column tracks (top & bottom) with crisp bracket lines
+  const brFs = mini ? 8.5 : 10, hdFs = mini ? 8.5 : 10;
+  const drawColTrack = (tr, yTop, isBot) => {
+    const M = tr.M, scope = tr.scope ? ` (${tr.scope})` : '';
+    const lab = fitSvgText(M.name + scope, x0 - pad - 6, hdFs);
+    p.push(`<text x="${(x0 - 6).toFixed(1)}" y="${(yTop + trColH * (isBot ? 0.68 : 0.56)).toFixed(1)}" text-anchor="end" font-size="${hdFs}" font-weight="600" fill="#50585b">${esc(lab)}</text>`);
+    for (const [a, b, g] of lineRuns(tr.v)) {
+      if (!g) continue;
+      const lx = wx(a) + 2, rx = wx(b) + cw - 2, mid = (lx + rx) / 2, col = resolveColor(g.color, false) || '#5f6566';
+      const yLine = isBot ? yTop + 4 : yTop + trColH - 4;
+      const yTip = isBot ? yTop + 1 : yTop + trColH - 1;
+      p.push(`<path d="M${n1(lx)} ${n1(yTip)}V${n1(yLine)}H${n1(rx)}V${n1(yTip)}" fill="none" stroke="${col}" stroke-width="1.35" stroke-opacity="0.85"/>`);
+      const swSz = mini ? 6.5 : 8, txt = fitSvgText(gName(g), Math.max(12, rx - lx - swSz - 6), brFs);
+      const tw = textUnits(txt) * brFs * 0.62, total = swSz + 4 + tw, sx0 = mid - total / 2;
+      const ty = isBot ? yTop + trColH - 4 : yTop + trColH - 9;
+      p.push(svgSwatch(g.color, sx0, ty - swSz + 1, swSz));
+      p.push(`<text x="${(sx0 + swSz + 3.5).toFixed(1)}" y="${ty.toFixed(1)}" font-size="${brFs}" font-weight="600" fill="#1d2426">${esc(txt)}</text>`);
+    }
+  };
+  tracks.top.forEach((tr, ti) => drawColTrack(tr, pad + headH + ti * trColH, false));
+  tracks.bot.forEach((tr, bi) => drawColTrack(tr, y0 + gridH + bi * trColH + 2, true));
+
+  // Outer row tracks (left & right) with vertical bracket lines
+  const drawRowTrack = (tr, xLeft, isRight) => {
+    const M = tr.M, scope = tr.scope ? ` (${tr.scope})` : '';
+    const lab = fitSvgText(M.name + scope, trRowW - 6, hdFs);
+    p.push(`<text x="${(isRight ? xLeft + 6 : xLeft + trRowW - 6).toFixed(1)}" y="${(y0 - 6).toFixed(1)}" text-anchor="${isRight ? 'start' : 'end'}" font-size="${hdFs}" font-weight="600" fill="#50585b">${esc(lab)}</text>`);
+    for (const [a, b, g] of lineRuns(tr.v)) {
+      if (!g) continue;
+      const ty = wy(a) + 2, by = wy(b) + ch - 2, mid = (ty + by) / 2, col = resolveColor(g.color, false) || '#5f6566';
+      const xLine = isRight ? xLeft + 4 : xLeft + trRowW - 4;
+      const xTip = isRight ? xLeft + 1 : xLeft + trRowW - 1;
+      if (b > a || true) p.push(`<path d="M${n1(xTip)} ${n1(ty)}H${n1(xLine)}V${n1(by)}H${n1(xTip)}" fill="none" stroke="${col}" stroke-width="1.35" stroke-opacity="0.85"/>`);
+      const swSz = mini ? 6.5 : 8, txt = fitSvgText(gName(g), Math.max(12, trRowW - swSz - 14), brFs);
+      if (isRight) {
+        p.push(svgSwatch(g.color, xLine + 5, mid - swSz / 2, swSz));
+        p.push(`<text x="${(xLine + 5 + swSz + 3.5).toFixed(1)}" y="${(mid + brFs * 0.35).toFixed(1)}" font-size="${brFs}" font-weight="600" fill="#1d2426">${esc(txt)}</text>`);
+      } else {
+        const tw = textUnits(txt) * brFs * 0.62;
+        p.push(svgSwatch(g.color, xLine - 5 - tw - swSz - 3.5, mid - swSz / 2, swSz));
+        p.push(`<text x="${(xLine - 5).toFixed(1)}" y="${(mid + brFs * 0.35).toFixed(1)}" text-anchor="end" font-size="${brFs}" font-weight="600" fill="#1d2426">${esc(txt)}</text>`);
+      }
+    }
+  };
+  tracks.left.forEach((tr, li) => drawRowTrack(tr, pad + leftCapW + li * trRowW, false));
+  tracks.right.forEach((tr, ri) => drawRowTrack(tr, x0 + gridW + 4 + ri * trRowW, true));
+
+  // Row & column headers
+  const hdrFs = mini ? (big ? 7 : 8.5) : (big ? 9 : 10.5);
+  for (let c = 0; c < cols; c++) p.push(`<text x="${(wx(c) + cw / 2).toFixed(1)}" y="${(y0 - 6).toFixed(1)}" text-anchor="middle" font-size="${hdrFs}" font-weight="600" fill="#6d7678">${c + 1}</text>`);
+  for (let r = 0; r < rows; r++) p.push(`<text x="${(x0 - 7).toFixed(1)}" y="${(wy(r) + ch / 2 + hdrFs * 0.35).toFixed(1)}" text-anchor="end" font-size="${hdrFs}" font-weight="600" fill="#6d7678">${C.LETTERS[r]}</text>`);
+
+  // Wells
+  const primaryM = cfg.primaryMap, stackSq = cfg.sqL || [], turn = cfg.turn || [], activeShown = cfg.activeShown !== false;
+  const barH = mini ? (big ? 2.2 : 3) : (big ? 3 : 4.5);
+  const rad = mini ? (big ? 1.5 : 3) : (big ? 2.5 : 4.5);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const id = C.wellId(r, c), w = ds.wells[id], x = wx(c), y = wy(r);
+    const g = primaryM && activeShown ? primaryM.of.get(id) : null;
+    const col = w.color ? resolveColor(w.color, false) : g ? resolveColor(g.color, false) : null;
+    const mk = !w.color && g ? markOf(g.color) : null;
+    const fill = !w.y ? '#fafbfc' : col ? (mk ? '#ffffff' : rgba(col, 0.16)) : '#ffffff';
+    const stroke = !w.y ? '#d4dadc' : col ? rgba(col, 0.45) : '#d5dbdd';
+    const dash = !w.y ? ' stroke-dasharray="2.5 2"' : '';
+    p.push(`<rect x="${n1(x)}" y="${n1(y)}" width="${cw}" height="${ch}" rx="${rad}" fill="${fill}" stroke="${stroke}" stroke-width="0.9"${dash}/>`);
+    if (col && (w.y || !cfg.isStack)) {
+      if (mk === 'h') p.push(`<rect x="${n1(x + 1)}" y="${n1(y + 1)}" width="${(cw - 2).toFixed(1)}" height="${(barH + 0.5).toFixed(1)}" rx="1" fill="#ffffff" stroke="${col}" stroke-width="1.2"/>`);
+      else if (mk === 'half') p.push(`<line x1="${n1(x + 1)}" y1="${n1(y + barH / 2 + 0.5)}" x2="${n1(x + cw - 1)}" y2="${n1(y + barH / 2 + 0.5)}" stroke="${col}" stroke-width="${barH}" stroke-dasharray="4 3"/>`);
+      else if (mk === 'dot') p.push(`<line x1="${n1(x + 2)}" y1="${n1(y + barH / 2 + 0.5)}" x2="${n1(x + cw - 2)}" y2="${n1(y + barH / 2 + 0.5)}" stroke="${col}" stroke-width="${barH}" stroke-dasharray="1.8 2.6" stroke-linecap="round"/>`);
+      else p.push(`<rect x="${n1(x + 0.4)}" y="${n1(y + 0.4)}" width="${(cw - 0.8).toFixed(1)}" height="${barH}" rx="1.5" fill="${col}"/>`);
+    }
+    if (w.excluded && showMarks) {
+      p.push(`<rect x="${n1(x)}" y="${n1(y)}" width="${cw}" height="${ch}" rx="${rad}" fill="url(#pkExclHatch)"/>`);
+    }
+    // Secondary-layer corner squares (Stack mode)
+    const sqSize = big ? 4.2 : 6.2, sqGap = big ? 1.2 : 1.8;
+    let sqUsedW = 0;
+    if (stackSq.length && w.y) {
+      const hasAny = stackSq.some(M => M.of.has(id));
+      if (hasAny) {
+        const orderedSq = turn.length ? turn : stackSq;
+        const maxDraw = Math.min(orderedSq.length, big ? 3 : 4);
+        sqUsedW = maxDraw * sqSize + (maxDraw - 1) * sqGap + 4;
+        for (let k = 0; k < maxDraw; k++) {
+          const M2 = orderedSq[k], g2 = M2.of.get(id);
+          const sx = x + cw - 2.5 - (maxDraw - k) * sqSize - (maxDraw - 1 - k) * sqGap;
+          const sy = y + barH + 2.5;
+          if (g2) p.push(svgSwatch(g2.color, sx, sy, sqSize));
+          else p.push(`<rect x="${n1(sx)}" y="${n1(sy)}" width="${sqSize}" height="${sqSize}" rx="1" fill="#ffffff" stroke="#c3cbcd" stroke-width="0.7"/>`);
+        }
+      }
+    }
+    // Positive mark "+"
+    const rr = res[id], isPos = showMarks && rr && !rr.excluded && rr.n && rr.positive;
+    if (isPos && !mini) {
+      const px = sqUsedW ? x + cw - sqUsedW - 3 : x + cw - 4.5;
+      p.push(`<text x="${n1(px)}" y="${n1(y + barH + (big ? 9 : 11))}" text-anchor="end" font-size="${big ? 8.5 : 10.5}" font-weight="700" fill="#d03b3b">+</text>`);
+    }
+    // Text inside well (skip for mini 384 or mini-plates where colour + brackets do the talking)
+    if (!mini) {
+      if (!big) {
+        p.push(`<text x="${n1(x + 3.5)}" y="${n1(y + barH + 10.5)}" font-size="8" fill="#889295">${id}</text>`);
+        const first = g ? gName(g) : (w.name || '');
+        const rest = cfg.isStack && cfg.oth ? cfg.oth.map(M => M.of.get(id)).filter(Boolean).map(gName).filter(t => g || t !== first).join('·') : '';
+        if (first) {
+          const l1 = fitSvgText(first, cw - 7, 9.5);
+          p.push(`<text x="${n1(x + 3.5)}" y="${n1(y + ch - (rest ? 13 : 5.5))}" font-size="9.5" font-weight="${g ? '600' : '400'}" fill="${w.excluded ? '#8a9295' : g ? '#13191b' : '#555f62'}"${w.excluded ? ' text-decoration="line-through"' : ''}>${esc(l1)}</text>`);
+        }
+        if (rest) {
+          const l2 = fitSvgText(rest, cw - 7, 8.2);
+          p.push(`<text x="${n1(x + 3.5)}" y="${n1(y + ch - 3.5)}" font-size="8.2" fill="#636d70">${esc(l2)}</text>`);
+        }
+      } else {
+        const lbl = g ? gName(g) : (w.name || '');
+        if (lbl && !sqUsedW) {
+          const l1 = fitSvgText(lbl, cw - 4, 7.2);
+          p.push(`<text x="${n1(x + cw / 2)}" y="${n1(y + ch - 3.5)}" text-anchor="middle" font-size="7.2" fill="${w.excluded ? '#8a9295' : '#1d2426'}">${esc(l1)}</text>`);
+        }
+      }
+    } else if (!big && g) {
+      const l1 = fitSvgText(gName(g), cw - 4, 7.2);
+      p.push(`<text x="${n1(x + cw / 2)}" y="${n1(y + ch - 4)}" text-anchor="middle" font-size="7.2" fill="#1d2426">${esc(l1)}</text>`);
+    }
+  }
+
+  // Block outlines & capsule badges (non-row/col contiguous blocks)
+  const bls = cfg.blockLayers || [];
+  if (bls.length) {
+    const usedA = new Map();
+    bls.forEach(bl => {
+      const sw = big ? 1.3 : 1.8, dash = bl.secondary ? ' stroke-dasharray="4 2.5"' : '';
+      for (const comp of bl.comps) {
+        const col = resolveColor(comp.g.color, false) || '#4b5254';
+        let d = '';
+        for (const [m, k] of outlineEdges(ds, new Set(comp.ids))) {
+          const [rr, cc] = k.split(':').map(Number);
+          d += m === 'h' ? `M${n1(xb(cc))} ${n1(yb(rr))}H${n1(xb(cc + 1))}` : `M${n1(xb(cc))} ${n1(yb(rr))}V${n1(yb(rr + 1))}`;
+        }
+        if (d) p.push(`<path d="${d}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-opacity="0.85"${dash} stroke-linecap="round"/>`);
+        if (!mini) {
+          const akey = comp.anchorR + ':' + comp.anchorC, slot = usedA.get(akey) || 0;
+          usedA.set(akey, slot + 1);
+          const bx = wx(comp.anchorC) + 2, by = wy(comp.anchorR) - 6 + slot * 15;
+          const btxt = fitSvgText(gName(comp.g), Math.max(40, wx(comp.c1) + cw - bx - 16), 8.5);
+          const bw = Math.min(130, 18 + textUnits(btxt) * 5.6);
+          p.push(`<rect x="${n1(bx)}" y="${n1(by)}" width="${n1(bw)}" height="14" rx="4" fill="#ffffff" fill-opacity="0.94" stroke="${col}" stroke-width="1"/>`);
+          p.push(svgSwatch(comp.g.color, bx + 3.5, by + 3.5, 7));
+          p.push(`<text x="${n1(bx + 13)}" y="${n1(by + 10)}" font-size="8.5" font-weight="600" fill="#13191b">${esc(btxt)}</text>`);
+        }
+      }
+    });
+  }
+
+  // User frames (active layer, or every framed layer in Stack when allFr is on)
+  const fLayers = cfg.frameLayers || [cfg.frameSi != null ? cfg.frameSi : ds.gs];
+  fLayers.forEach((si, idx) => {
+    const fl = frameLines(ds, false, si);
+    if (!fl.h.size && !fl.v.size) return;
+    if (idx === 0) {
+      const sw = fl.width === 'thick' ? (big ? 2.4 : 3.2) : (big ? 1.8 : 2.4);
+      p.push(centreFramePaths(ds.plate, fl, xb, yb, sw));
+    } else {
+      p.push(insetFramePaths(ds.plate, fl, xb, yb, big ? 1.8 : 2.6, big ? 1.1 : 1.4, '#4b5254'));
+    }
+  });
+
+  // Legend below grid
+  if (legLines.length) {
+    let ly = y0 + gridH + nB * trColH + (mini ? 14 : 20);
+    for (const ln of legLines) {
+      let lx = pad;
+      if (ln.prefix) {
+        p.push(`<text x="${n1(lx)}" y="${n1(ly)}" font-size="${legFs}" font-weight="700" fill="#3a4346">${esc(ln.prefix)}</text>`);
+        lx += textUnits(ln.prefix) * legFs * 0.65 + 6;
+      }
+      const swSz = mini ? 8 : 10;
+      for (const it of ln.items) {
+        p.push(svgSwatch(it.g.color, lx, ly - swSz + 1.5, swSz));
+        p.push(`<text x="${n1(lx + swSz + 4)}" y="${n1(ly)}" font-size="${legFs}" fill="#262f32">${esc(it.txt)}</text>`);
+        lx += it.iw;
+      }
+      ly += legRowH;
+    }
+  }
+  return { body: p.join(''), W, H };
+}
+/** Build a complete publication-ready SVG of the plate layout in Single, Stack, or Split mode -> { svg, W, H }. */
+function plateLayoutSvg(ds, opt) {
+  opt = opt || {};
+  ensureAnalysis(ds);
+  const lv = lvOf(ds), multi = ds.sets.length > 1;
+  const mode = multi && ['expand', 'stack', 'split'].includes(opt.mode) ? opt.mode : (multi ? lv.mode : 'expand');
+  const showMarks = opt.marks != null ? !!opt.marks : PLATE_EXP.marks;
+  const showLegend = opt.legend != null ? !!opt.legend : PLATE_EXP.legend;
+  const showTitle = opt.title !== false;
+  const titleH = showTitle ? 44 : 0, footH = opt.footer !== false ? 26 : 0;
+  const modeLabel = mode === 'stack' ? L('Stack') : mode === 'split' ? L('Split') : (multi ? ds.sets[ds.gs].name : '');
+  const titleText = `${ds.name} · ${L('Plate layout')}${modeLabel ? ' (' + modeLabel + ')' : ''}`;
+  const defs = '<defs><pattern id="pkExclHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#b5bec1" stroke-width="1.3"/></pattern></defs>';
+  let content = '', W = 800, H = 400;
+
+  if (mode === 'split' && multi) {
+    const maps = layerMaps(ds);
+    const colsN = maps.length <= 2 ? maps.length : maps.length <= 4 ? 2 : 3;
+    const panels = maps.map(M => {
+      const la = plateLayerAnnot(ds, M.si);
+      const nUsed = layerValues(ds, M).length;
+      return renderPlateSvgBlock(ds, {
+        mini: true, cardBg: true, showMarks, showLegend,
+        heading: M.name + (M.si === ds.gs ? ' · ' + L('active') : ''),
+        subHeading: nUsed ? Lc('count', '{0:group}', nUsed) : L('Empty'),
+        primaryMap: M, tracks: la.tracks, blockLayers: la.blockLayers,
+        frameLayers: [M.si], legendLayers: [M]
+      });
+    });
+    const pGap = 14, pad = 16;
+    const colW = Math.max(...panels.map(x => x.W));
+    const rowHs = [];
+    for (let i = 0; i < panels.length; i += colsN) rowHs.push(Math.max(...panels.slice(i, i + colsN).map(x => x.H)));
+    W = pad * 2 + colsN * colW + (colsN - 1) * pGap;
+    H = titleH + pad + rowHs.reduce((a, b) => a + b, 0) + Math.max(0, rowHs.length - 1) * pGap + pad + footH;
+    let cy = titleH + pad;
+    for (let r = 0; r < rowHs.length; r++) {
+      for (let c = 0; c < colsN; c++) {
+        const pan = panels[r * colsN + c];
+        if (!pan) continue;
+        const cx = pad + c * (colW + pGap) + Math.floor((colW - pan.W) / 2);
+        content += `<g transform="translate(${cx},${cy})">${pan.body}</g>`;
+      }
+      cy += rowHs[r] + pGap;
+    }
+  } else {
+    const pa = plateExportAnnot(ds, mode);
+    const fl = mode === 'stack' && lv.allFr && otherFramed(ds) ? framedLayers(ds) : [ds.gs];
+    const blk = renderPlateSvgBlock(ds, {
+      mini: false, isStack: pa.stack, showMarks, showLegend,
+      primaryMap: pa.maps[ds.gs], activeShown: pa.activeShown,
+      oth: pa.oth, sqL: pa.sqL, turn: pa.turn,
+      tracks: pa.tracks, blockLayers: pa.blockLayers,
+      frameLayers: fl, legendLayers: pa.stack ? pa.visMaps : [pa.maps[ds.gs]]
+    });
+    W = blk.W; H = titleH + blk.H + footH;
+    content = `<g transform="translate(0,${titleH})">${blk.body}</g>`;
+  }
+
+  const parts = [
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family='${EXPORT_FONT}' role="img" aria-label="${esc(titleText)}">`,
+    defs,
+    `<rect width="${W}" height="${H}" fill="#ffffff"/>`
+  ];
+  if (showTitle) {
+    parts.push(`<text x="16" y="26" font-size="16" font-weight="700" fill="#13191b">${esc(titleText)}</text>`);
+    const sub = `${L('{0:well}', ds.plate.rows * ds.plate.cols)} · ${L('{0} with data', dataWells(ds).length)}` + (showMarks ? ` · ${L('+ positive · hatched = excluded')}` : '');
+    parts.push(`<text x="16" y="40" font-size="10.5" fill="#636d70">${esc(sub)}</text>`);
+  }
+  parts.push(content);
+  if (opt.footer !== false) {
+    parts.push(`<text x="16" y="${H - 9}" font-size="9.5" fill="#7c8588">${esc(provenanceText(ds))}</text>`);
+  }
+  parts.push('</svg>');
+  return { svg: parts.join(''), W, H };
+}
+/** Build one Excel grid with merged-cell outer bracket lines (left/right/top/bottom tracks) + frames + legend.
+    Returns { rows, widths, merges }. */
+function buildBracketPlateSheet(ds, title, cfg) {
+  const R = ds.plate.rows, Cn = ds.plate.cols, res = ds.res || {};
+  const tracks = cfg.tracks || { left: [], right: [], top: [], bot: [] };
+  const nL = tracks.left.length, nR = tracks.right.length, nT = tracks.top.length, nB = tracks.bot.length;
+  const rows = [], merges = [];
+  const capCol = nL === 0 && (nT > 0 || nB > 0) ? 1 : 0;
+  const cRowHdr = capCol + nL;
+  const cWell0 = cRowHdr + 1;
+  const totalCols = cWell0 + Cn + nR;
+  const blankRow = () => Array(totalCols).fill(null);
+  const ensureRow = ri => { while (rows.length <= ri) rows.push(blankRow()); return rows[ri]; };
+  const tintOf = hex => mixHex(hex, '#ffffff', 0.80);
+
+  // Title row
+  const rTitle = 0;
+  ensureRow(rTitle)[0] = { v: title, bold: true, nt: 1 };
+  // Top tracks (each track = 1 row above column headers)
+  const rTop0 = 2;
+  tracks.top.forEach((tr, ti) => {
+    const ri = rTop0 + ti, row = ensureRow(ri);
+    const M = tr.M, scope = tr.scope ? ` (${tr.scope})` : '';
+    row[Math.max(0, cRowHdr - 1)] = { v: M.name + scope, bold: true, align: 'right', color: '#455053', nt: 1 };
+    for (const [a, b, g] of lineRuns(tr.v)) {
+      if (!g) continue;
+      const col = resolveColor(g.color, false) || '#5f6566', fill = tintOf(col);
+      for (let c = a; c <= b; c++) {
+        row[cWell0 + c] = {
+          v: c === a ? gName(g) : '', bold: true, align: 'center', fill, color: '#141a1c', nt: 1,
+          border: {
+            b: { style: 'medium', color: col },
+            l: c === a ? { style: 'thin', color: col } : null,
+            r: c === b ? { style: 'thin', color: col } : null
+          }
+        };
+      }
+      if (b > a) merges.push([ri, cWell0 + a, ri, cWell0 + b]);
+    }
+  });
+
+  // Column header row
+  const rColHdr = rTop0 + nT;
+  const hdrRow = ensureRow(rColHdr);
+  tracks.left.forEach((tr, li) => {
+    const scope = tr.scope ? ` (${tr.scope})` : '';
+    hdrRow[capCol + li] = { v: tr.M.name + scope, bold: true, align: 'center', color: '#455053', nt: 1 };
+  });
+  tracks.right.forEach((tr, ri2) => {
+    const scope = tr.scope ? ` (${tr.scope})` : '';
+    hdrRow[cWell0 + Cn + ri2] = { v: tr.M.name + scope, bold: true, align: 'center', color: '#455053', nt: 1 };
+  });
+  for (let c = 0; c < Cn; c++) hdrRow[cWell0 + c] = { v: String(c + 1), bold: true, align: 'center', color: '#4f595c' };
+
+  // Well rows + frame & block outline borders
+  const rWell0 = rColHdr + 1;
+  const fl = frameLines(ds, false, cfg.frameSi);
+  const fw = fl.width === 'thick' ? 'thick' : 'medium';
+  const blockEdges = { h: new Map(), v: new Map() };
+  for (const bl of cfg.blockLayers || []) {
+    for (const comp of bl.comps) {
+      const col = resolveColor(comp.g.color, false) || '#4b5254';
+      for (const [m, k] of outlineEdges(ds, new Set(comp.ids))) blockEdges[m].set(k, col);
+    }
+  }
+  const edgeStyle = (m, k) => {
+    const fc = fl[m].get(k);
+    if (fc) return { style: fw, color: fc };
+    const bc = blockEdges[m].get(k);
+    if (bc) return { style: 'medium', color: bc };
+    return { style: 'thin', color: '#d7dddf' };
+  };
+  for (let r = 0; r < R; r++) {
+    const row = ensureRow(rWell0 + r);
+    row[cRowHdr] = { v: C.LETTERS[r], bold: true, align: 'center', color: '#4f595c' };
+    for (let c = 0; c < Cn; c++) {
+      const w = ds.wells[C.wellId(r, c)];
+      const baseCell = cfg.cellFn(w, res[w.id]);
+      const cell = Object.assign({ v: '', align: 'center', nt: 1 }, baseCell && typeof baseCell === 'object' ? baseCell : { v: baseCell == null ? '' : baseCell });
+      cell.border = {
+        t: edgeStyle('h', r + ':' + c),
+        b: edgeStyle('h', (r + 1) + ':' + c),
+        l: edgeStyle('v', r + ':' + c),
+        r: edgeStyle('v', r + ':' + (c + 1))
+      };
+      row[cWell0 + c] = cell;
+    }
+  }
+
+  // Left row tracks (vertical merged cells + right bracket border pointing to plate)
+  tracks.left.forEach((tr, li) => {
+    const ci = capCol + li;
+    for (const [a, b, g] of lineRuns(tr.v)) {
+      if (!g) continue;
+      const col = resolveColor(g.color, false) || '#5f6566', fill = tintOf(col);
+      for (let r = a; r <= b; r++) {
+        ensureRow(rWell0 + r)[ci] = {
+          v: r === a ? gName(g) : '', bold: true, align: 'center', fill, color: '#141a1c', nt: 1,
+          border: {
+            r: { style: 'medium', color: col },
+            t: r === a ? { style: 'thin', color: col } : null,
+            b: r === b ? { style: 'thin', color: col } : null
+          }
+        };
+      }
+      if (b > a) merges.push([rWell0 + a, ci, rWell0 + b, ci]);
+    }
+  });
+
+  // Right row tracks (vertical merged cells + left bracket border pointing to plate)
+  tracks.right.forEach((tr, ri2) => {
+    const ci = cWell0 + Cn + ri2;
+    for (const [a, b, g] of lineRuns(tr.v)) {
+      if (!g) continue;
+      const col = resolveColor(g.color, false) || '#5f6566', fill = tintOf(col);
+      for (let r = a; r <= b; r++) {
+        ensureRow(rWell0 + r)[ci] = {
+          v: r === a ? gName(g) : '', bold: true, align: 'center', fill, color: '#141a1c', nt: 1,
+          border: {
+            l: { style: 'medium', color: col },
+            t: r === a ? { style: 'thin', color: col } : null,
+            b: r === b ? { style: 'thin', color: col } : null
+          }
+        };
+      }
+      if (b > a) merges.push([rWell0 + a, ci, rWell0 + b, ci]);
+    }
+  });
+
+  // Bottom column tracks (horizontal merged cells + top bracket border pointing up to plate)
+  const rBot0 = rWell0 + R;
+  tracks.bot.forEach((tr, bi) => {
+    const ri = rBot0 + bi, row = ensureRow(ri);
+    const M = tr.M, scope = tr.scope ? ` (${tr.scope})` : '';
+    row[Math.max(0, cRowHdr - 1)] = { v: M.name + scope, bold: true, align: 'right', color: '#455053', nt: 1 };
+    for (const [a, b, g] of lineRuns(tr.v)) {
+      if (!g) continue;
+      const col = resolveColor(g.color, false) || '#5f6566', fill = tintOf(col);
+      for (let c = a; c <= b; c++) {
+        row[cWell0 + c] = {
+          v: c === a ? gName(g) : '', bold: true, align: 'center', fill, color: '#141a1c', nt: 1,
+          border: {
+            t: { style: 'medium', color: col },
+            l: c === a ? { style: 'thin', color: col } : null,
+            r: c === b ? { style: 'thin', color: col } : null
+          }
+        };
+      }
+      if (b > a) merges.push([ri, cWell0 + a, ri, cWell0 + b]);
+    }
+  });
+
+  // Legend below the plate
+  const legLayers = cfg.legendLayers || [];
+  if (legLayers.length) {
+    let lr = rBot0 + nB + 2;
+    ensureRow(lr++)[cRowHdr] = { v: L('Legend'), bold: true, color: '#455053' };
+    for (const M of legLayers) {
+      const vs = layerValues(ds, M);
+      if (!vs.length) continue;
+      const lrow = ensureRow(lr++);
+      lrow[cRowHdr] = { v: M.name, bold: true, color: '#455053', nt: 1 };
+      let lc = cWell0;
+      for (const g of vs) {
+        if (lc >= cWell0 + Cn) { lr++; lc = cWell0; }
+        const rNow = ensureRow(lr - 1), col = resolveColor(g.color, false) || '#868d8e';
+        const cnt = ds.order.filter(id => ds.wells[id].y && M.of.get(id) === g).length;
+        rNow[lc++] = { v: `${gName(g)} (${cnt})`, fill: col, color: inkOn(col), align: 'center', nt: 1 };
+      }
+    }
+  }
+
+  const widths = [];
+  for (let i = 0; i < capCol; i++) widths.push(14);
+  for (let i = 0; i < nL; i++) widths.push(14);
+  widths.push(5);
+  for (let c = 0; c < Cn; c++) widths.push(Cn > 12 ? 9 : 14);
+  for (let i = 0; i < nR; i++) widths.push(14);
+  return { rows, widths, merges };
+}
+/** Build standalone Excel workbook sheets for plate layout export in Single, Stack, or Split mode. */
+function plateLayoutSheets(ds, mode, opt) {
+  opt = opt || {};
+  ensureAnalysis(ds);
+  const multi = ds.sets.length > 1, res = ds.res || {};
+  const m = multi && ['expand', 'stack', 'split'].includes(mode) ? mode : (multi ? lvOf(ds).mode : 'expand');
+  const showMarks = opt.marks != null ? !!opt.marks : PLATE_EXP.marks;
+  const markSuffix = (w, rr) => {
+    if (!showMarks) return '';
+    if (w.excluded) return ' [' + L('excl.') + ']';
+    if (rr && rr.n && rr.positive) return ' +';
+    return '';
+  };
+  const sheets = [];
+  const makeLayerSheet = (si, nameOverride) => {
+    const la = plateLayerAnnot(ds, si), M = la.M;
+    const sh = buildBracketPlateSheet(ds, `${ds.name} · ${M.name}`, {
+      tracks: la.tracks, blockLayers: la.blockLayers, frameSi: si, legendLayers: [M],
+      cellFn: (w, rr) => {
+        const g = M.of.get(w.id);
+        const col = g ? resolveColor(g.color, false) : (si === ds.gs && w.color ? resolveColor(w.color, false) : null);
+        const label = (g ? gName(g) : (w.name || '')) + markSuffix(w, rr);
+        if (!col) return label ? { v: label, color: w.excluded ? '#888888' : '' } : null;
+        return { v: label, fill: col, color: inkOn(col) };
+      }
+    });
+    sh.name = nameOverride || (multi ? M.name : L('Plate layout'));
+    sh.ntName = 1;
+    return sh;
+  };
+
+  if (m === 'stack' && multi) {
+    const pa = plateExportAnnot(ds, 'stack'), A = pa.maps[ds.gs];
+    const unBracketedOth = pa.oth.filter(M => !pa.margPlace.has(M.si));
+    const sh = buildBracketPlateSheet(ds, `${ds.name} · ${L('Plate layout')} (${L('Stack')})`, {
+      tracks: pa.tracks, blockLayers: pa.blockLayers, frameSi: ds.gs, legendLayers: pa.visMaps,
+      cellFn: (w, rr) => {
+        const g = pa.activeShown ? A.of.get(w.id) : null;
+        const col = w.color ? resolveColor(w.color, false) : g ? resolveColor(g.color, false) : null;
+        const first = g ? gName(g) : (w.name || '');
+        const extra = unBracketedOth.map(M => M.of.get(w.id)).filter(Boolean).map(gName).join('·');
+        const label = [first, extra].filter(Boolean).join(' / ') + markSuffix(w, rr);
+        if (!col) return label ? { v: label, color: w.excluded ? '#888888' : '' } : null;
+        return { v: label, fill: col, color: inkOn(col) };
+      }
+    });
+    sh.name = L('Plate layout');
+    sh.ntName = 1;
+    sheets.push(sh);
+    ds.sets.forEach((_, si) => sheets.push(makeLayerSheet(si)));
+  } else if (m === 'split' && multi) {
+    ds.sets.forEach((_, si) => sheets.push(makeLayerSheet(si)));
+  } else {
+    sheets.push(makeLayerSheet(ds.gs, L('Plate layout')));
+  }
+
+  // Add sample names + Call & Lag time reference sheet
+  const ref = layoutRows(ds, true);
+  sheets.push(Object.assign({ name: L('Names & Calls'), ntName: 1 }, ref));
+  const src = provenanceText(ds);
+  sheets.forEach(sh => sh.rows.push([], [{ v: src, nt: 1 }]));
+  return sheets;
+}
+/** Open a hidden print iframe to trigger Print / Save as PDF directly without popup blockers. */
+function printHtmlDoc(htmlStr, fallbackFilename) {
+  try {
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    frame.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(frame);
+    let cleaned = false;
+    const cleanup = () => { if (cleaned) return; cleaned = true; setTimeout(() => frame.remove(), 400); };
+    frame.onload = () => {
+      try {
+        const win = frame.contentWindow;
+        if (!win || typeof win.print !== 'function') throw new Error('print unavailable');
+        win.addEventListener('afterprint', cleanup, { once: true });
+        win.focus();
+        win.print();
+        setTimeout(cleanup, 60000);
+      } catch (e) {
+        cleanup();
+        saveFile(fallbackFilename, htmlStr);
+        toast(L('Opened as printable HTML file: open it in a browser and print to PDF'), 5000);
+      }
+    };
+    frame.srcdoc = htmlStr;
+    return true;
+  } catch (e) {
+    saveFile(fallbackFilename, htmlStr);
+    return false;
+  }
+}
+/** Standalone single-page A4 landscape PDF document for the plate layout SVG. */
+function plateLayoutPdfHtml(ds, fig) {
+  const title = `${ds.name} · ${L('Plate layout')}`;
+  return `<!DOCTYPE html><html lang="${C.locale() ? C.locale().lang : 'en'}"><head><meta charset="utf-8"><title>${esc(title)}</title>
+<style>
+@page{size:A4 landscape;margin:10mm}
+*{box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
+html,body{margin:0;padding:0;background:#fff;height:100%}
+body{display:flex;align-items:center;justify-content:center;padding:8px}
+svg{display:block;max-width:100%;max-height:100%;width:auto;height:auto}
+@media print{body{padding:0}}
+</style></head><body>${fig.svg}</body></html>`;
+}
+async function exportPlate(fmtType, mode) {
+  const ds = curDS();
+  if (!ds) return;
+  const multi = ds.sets.length > 1;
+  const m = multi && ['expand', 'stack', 'split'].includes(mode) ? mode : (multi ? lvOf(ds).mode : 'expand');
+  const tag = m === 'stack' ? '_stack' : m === 'split' ? '_split' : '';
+  const base = safeName(`${ds.name}_${L('plate_layout')}${tag}_${dateTag()}`);
+  if (fmtType === 'xlsx') {
+    try {
+      const bytes = await C.buildXlsxAsync(trSheets(plateLayoutSheets(ds, m)));
+      await saveFile(base + '.xlsx', new Blob([bytes], { type: MIME.xlsx }));
+    } catch (e) { toast(L('Export failed: ') + (e && e.message ? e.message : e), 5000); }
+    return;
+  }
+  if (fmtType === 'csv') {
+    const V = setView(ds, ds.gs), { rows: R, cols: Cn } = ds.plate;
+    const out = [[''].concat(Array.from({ length: Cn }, (_, c) => String(c + 1)))];
+    for (let r = 0; r < R; r++) {
+      const line = [C.LETTERS[r]];
+      for (let c = 0; c < Cn; c++) {
+        const w = ds.wells[C.wellId(r, c)], g = gById(ds, V.gid(w));
+        line.push(g ? gName(g) : (w.name || ''));
+      }
+      out.push(line);
+    }
+    out.push([], [provenanceText(ds)]);
+    await saveFile(base + '.csv', C.toCSV(out));
+    return;
+  }
+  const fig = plateLayoutSvg(ds, { mode: m });
+  if (fmtType === 'copy') return copyFigure(fig);
+  if (fmtType === 'svg') return saveFile(base + '.svg', new Blob([svgWithSource(fig.svg, ds)], { type: 'image/svg+xml' }));
+  if (fmtType === 'png') {
+    try { await saveFile(base + '.png', await figurePng(fig, ds)); }
+    catch (e) { toast(L('PNG export failed: {~0}', e.message)); }
+    return;
+  }
+  if (fmtType === 'pdf') {
+    printHtmlDoc(plateLayoutPdfHtml(ds, fig), base + '.html');
+  }
+}
+function openPlateExportPop(anchor) {
+  const ds = curDS();
+  if (!ds) return;
+  const multi = ds.sets.length > 1;
+  let mode = multi ? lvOf(ds).mode : 'expand';
+  const modeHtml = multi ? `<div class="pe-mode"><span class="lbl">${esc(L('Plate view'))}</span><div class="seg sm" role="group"><button type="button" data-pm="expand"${mode === 'expand' ? ' class="on"' : ''}>${esc(L('Single'))}</button><button type="button" data-pm="stack"${mode === 'stack' ? ' class="on"' : ''}>${esc(L('Stack'))}</button><button type="button" data-pm="split"${mode === 'split' ? ' class="on"' : ''}>${esc(L('Split'))}</button></div></div>` : '';
+  const html = `<h4>${esc(L('Export plate layout'))}</h4>
+    ${modeHtml}
+    <div class="pe-acts">
+      <button class="mi" type="button" data-pf="copy">${ICON.copy}${esc(L('Copy image'))}</button>
+      <button class="mi" type="button" data-pf="png">${ICON.dl}${esc(L('PNG image (2×)'))}</button>
+      <button class="mi" type="button" data-pf="svg">${ICON.dl}${esc(L('SVG vector'))}</button>
+      <button class="mi" type="button" data-pf="pdf">${ICON.dl}${esc(L('PDF (single-page landscape)'))}</button>
+      <div class="pe-sep"></div>
+      <button class="mi" type="button" data-pf="xlsx">${ICON.dl}${esc(L('Excel layout .xlsx (with bracket lines)'))}</button>
+      <button class="mi" type="button" data-pf="csv">${ICON.dl}${esc(L('CSV grid (active layer)'))}</button>
+    </div>
+    <div class="pe-opts">
+      <label class="chk"><input type="checkbox" data-po="marks"${PLATE_EXP.marks ? ' checked' : ''}> ${esc(L('Positive (+) & excluded marks'))}</label>
+      <label class="chk"><input type="checkbox" data-po="legend"${PLATE_EXP.legend ? ' checked' : ''}> ${esc(L('Legend below plate'))}</label>
+    </div>`;
+  openPop(anchor, html, p => {
+    p.classList.add('pe-pop');
+    p.addEventListener('click', e => {
+      const mBtn = e.target.closest('[data-pm]');
+      if (mBtn) {
+        mode = mBtn.dataset.pm;
+        $$('[data-pm]', p).forEach(x => x.classList.toggle('on', x === mBtn));
+        return;
+      }
+      const fBtn = e.target.closest('[data-pf]');
+      if (fBtn) {
+        const f = fBtn.dataset.pf;
+        closePop();
+        exportPlate(f, mode);
+      }
+    });
+    p.addEventListener('change', e => {
+      const o = e.target.closest('[data-po]');
+      if (o) PLATE_EXP[o.dataset.po] = o.checked;
+    });
+  });
+}
+
 function infoRows(ds, scope, noNotes) {       // noNotes: the report gives the notes their own section
   scope = scope || null;                  // exports never follow the on-screen "Selected only": they are given their range
   const s = S.set, tf = TF(), tu = TU();
@@ -14705,7 +15809,7 @@ function infoRows(ds, scope, noNotes) {       // noNotes: the report gives the n
     ['Exported', new Date().toLocaleString(dateLocale())],
     ['Program', ud(provenance(ds).program)],
     ['Dataset', ud(ds.name)],
-    ...(ds.notes && !noNotes ? [[L('Experiment notes'), ud(ds.notes)]] : []),
+    ...(ds.notes && !noNotes ? (ds.notes.length <= 30000 ? [[L('Experiment notes'), ud(ds.notes)]] : Array.from({ length: Math.ceil(ds.notes.length / 30000) }, (_, k) => [L('Experiment notes (part {0})', k + 1), ud(ds.notes.slice(k * 30000, (k + 1) * 30000))])) : []),
     ['Source file', ud(ds.file + (ds.sheet ? ' / ' + ds.sheet : ''))],
     [Lc('report', 'Channel'), ud(ds.channel || '')],
     ...(ds.sourceInfo ? [
@@ -14823,9 +15927,10 @@ function openExport() {
     body: `<div class="formgrid">
       <span class="lab">File format</span><div class="opts">
         <label class="chk"><input type="radio" name="exFmt" value="xlsx" checked> Excel workbook .xlsx</label>
+        <label class="chk" title="Print or save a formatted A4 PDF report directly (layout, curves, group statistics, cross table and per-well results)"><input type="radio" name="exFmt" value="pdf"> PDF report (direct print / save as PDF)</label>
+        <label class="chk" title="One web page with the curve charts, comparison plots and tables; open it in a browser to print it or save it as a PDF"><input type="radio" name="exFmt" value="html"> Report .html (figures and tables, printable to PDF)</label>
         <label class="chk"><input type="radio" name="exFmt" value="zip"> CSV files in a .zip</label>
-        <label class="chk"><input type="radio" name="exFmt" value="csv"> Single CSV (curves only)</label>
-        <label class="chk" title="One web page with the curve charts, comparison plots and tables; open it in a browser to print it or save it as a PDF"><input type="radio" name="exFmt" value="html"> Report .html (figures and tables, printable to PDF)</label></div>
+        <label class="chk"><input type="radio" name="exFmt" value="csv"> Single CSV (curves only)</label></div>
       ${many ? `<span class="lab">Dataset</span><div class="opts">
         <label class="chk"><input type="radio" name="exWhich" value="cur" checked> Current dataset</label>
         <label class="chk" title="One export per dataset, each with its own active grouping layer, packed together"><input type="radio" name="exWhich" value="all"> ${L('All {0} datasets (in one .zip)', S.ds.length)}</label></div>` : ''}
@@ -14859,9 +15964,15 @@ function openExport() {
   let named = false;                 // the file name follows the choices until it is edited by hand
   q('#exName').addEventListener('input', () => { named = true; });
   const sync = () => {
-    const f = val('exFmt'), csv = f === 'csv', rep = f === 'html', all = val('exWhich') === 'all';
+    const f = val('exFmt'), csv = f === 'csv', pdf = f === 'pdf', rep = f === 'html' || pdf;
+    const allRadio = q('input[name="exWhich"][value="all"]');
+    if (allRadio) {
+      allRadio.disabled = pdf;
+      if (pdf && allRadio.checked) q('input[name="exWhich"][value="cur"]').checked = true;
+    }
+    const all = val('exWhich') === 'all';
     $$('#exParts input', m.el).forEach(i => { if (i.id !== 'exCurves') i.disabled = csv; });
-    // a report has figures instead of curve tables, and follows each dataset's active grouping set
+    // a report has figures instead of curve tables, and follows each dataset's active grouping layer
     $$('input[name="exSplit"], input[name="exVal"], #exStats', m.el).forEach(i => { i.disabled = rep; });
     if (q('#exSet')) q('#exSet').disabled = rep || all;
     const sel = q('input[name="exScope"][value="sel"]');
@@ -14881,11 +15992,11 @@ function openExport() {
       stats: q('#exStats').checked, ungrouped: q('#exUng').checked, setIdx: q('#exSet') ? +q('#exSet').value : ds.gs
     };
     if (o.format === 'csv') { o.curves = true; o.well = o.group = o.layout = o.info = o.stat = false; }
-    if (o.format === 'html') o.setIdx = ds.gs;
-    const all = val('exWhich') === 'all';
+    if (o.format === 'html' || o.format === 'pdf') o.setIdx = ds.gs;
+    const all = o.format !== 'pdf' && val('exWhich') === 'all';
     const base = safeName(q('#exName').value || ds.name);
     if (![o.curves, o.well, o.group, o.layout, o.info, o.stat].some(Boolean)) { toast('Choose at least one item to export'); return; }
-    // every dataset is exported with its own active grouping set; a dataset with nothing in range is skipped
+    // every dataset is exported with its own active grouping layer; a dataset with nothing in range is skipped
     const jobs = [];
     for (const d of all ? S.ds : [ds]) {
       ensureAnalysis(d);
@@ -14896,7 +16007,7 @@ function openExport() {
     if (!jobs.length) { toast('No wells to export in this range'); return; }
     m.close();
     // a large export keeps the page busy for a moment: say so first and let the browser paint it
-    const load = jobs.reduce((n, j) => n + dataWells(j.d).length * j.d.t.length, 0) * (o.format === 'html' ? 4 : 1);
+    const load = jobs.reduce((n, j) => n + dataWells(j.d).length * j.d.t.length, 0) * (o.format === 'html' || o.format === 'pdf' ? 4 : 1);
     let working = null;
     if (load > 120000) {
       working = document.createElement('div');
@@ -14911,13 +16022,14 @@ function openExport() {
       const shown = S.set;
       let built;
       S.set = setOf(d);
-      try { built = od.format === 'html' ? buildReport(d, od) : trSheets(buildExport(d, od)); } finally { S.set = shown; }
-      if (od.format === 'html') return built;
+      try { built = (od.format === 'html' || od.format === 'pdf') ? buildReport(d, od) : trSheets(buildExport(d, od)); } finally { S.set = shown; }
+      if (od.format === 'html' || od.format === 'pdf') return built;
       return od.format === 'xlsx' ? C.buildXlsxAsync(built) : od.format === 'csv' ? C.toCSV(built[0].rows) : csvFiles(built);
     };
     try {
       if (!all) {
         const out = await make(jobs[0]);
+        if (o.format === 'pdf') { printHtmlDoc(out, base + '.html'); return; }
         if (o.format === 'xlsx') await saveFile(base + '.xlsx', new Blob([out], { type: MIME.xlsx }));
         else if (o.format === 'zip') await saveFile(base + '.zip', new Blob([await C.zipDeflate(out)], { type: MIME.zip }));
         else await saveFile(base + '.' + o.format, out);
@@ -14975,9 +16087,14 @@ table.plate td{border:1px solid #c9cfce;text-align:center;height:31px;padding:2p
 table.plate.p384{font-size:6.5px}table.plate.p384 td{height:19px;padding:0 1px}
 table.plate td.nd{background:#fafafa;color:#bbb}table.plate b{color:#c62828}table.plate s{color:#888}
 table.kv td{white-space:normal;text-align:left}table.kv td:first-child{width:200px;color:#555}table.kv tr.h td{font-weight:700;color:#111;padding-top:10px}
+.nt-meta{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 16px;margin:0 0 10px;padding:8px 10px;border:1px solid #d5dbdd;border-radius:6px;background:#f8fafa}
+.nt-meta dt{font-size:10.5px;color:#666}.nt-meta dd{margin:0;font-weight:600;color:#111;overflow-wrap:anywhere}
+.nt-body h3,.nt-body h4,.nt-body h5{margin:10px 0 4px;font-weight:700}.nt-body p{margin:0 0 7px}.nt-body ul,.nt-body ol{margin:0 0 7px;padding-left:20px}.nt-body hr{border:0;border-top:1px solid #ccc;margin:8px 0}.nt-body code{font-family:ui-monospace,Consolas,monospace;font-size:11px;background:#f1f3f3;padding:1px 4px;border-radius:3px}
+table.xt td{text-align:center;vertical-align:top;padding:4px 6px}table.xt td.rh{text-align:left;font-weight:600}.xc-m{font-weight:600}.xc-m .lag,.xc-p .xk,.xc-s,.dim{color:#555;font-weight:400}.xc-p{display:flex;justify-content:space-between;gap:8px;font-size:9.5px;margin-top:2px}.vq{display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--c);vertical-align:-1px;margin-right:3px;border:1px solid rgba(0,0,0,.15)}
+.plate-fig{margin:8px 0;break-inside:avoid}.plate-fig svg{display:block;width:100%;height:auto;max-height:175mm}
 footer{margin-top:30px;padding-top:8px;border-top:1px solid #ccc;color:#777;font-size:10.5px}
 @page{size:A4;margin:12mm}
-@media print{body{padding:0;max-width:none}.noprint{display:none}.scroll{overflow:visible}table{font-size:8.5px}th,td{padding:2px 4px}}
+@media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}body{padding:0;max-width:none}.noprint{display:none}.scroll{overflow:visible}table{font-size:8.5px}th,td{padding:2px 4px}}
 `;
 /** The plate as a table: well name (or its group), tinted with the well's colour, "+" on positive wells, excluded wells struck out. */
 function reportPlate(ds) {
@@ -15020,7 +16137,13 @@ function buildReport(ds, o) {
     fact(Lc('short', 'Positive wells'), `${valid.filter(w => res[w.id].positive).length} / ${valid.length}`) +
     (groups.length ? fact(L('Positive groups'), `${groups.filter(g => g.gpos).length} / ${groups.length}` + (ds.sets.length > 1 ? L(' (layer: {0})', ds.sets[ds.gs].name) : '')) : '') +
     '</dl>');
-  if (ds.notes) out.push(section(L('Experiment notes'), `<p translate="no" style="white-space:pre-wrap;margin:0">${esc(ds.notes)}</p>`));  if (o.layout) out.push(section(L('Plate layout'), reportPlate(ds) + `<p class="note">${esc(L('Cells are tinted with the colour of the well or its group; “+” marks positive wells; struck-out wells are excluded from the analysis.'))}</p>`));
+  if (ds.notes) out.push(section(L('Experiment notes'), typeof renderNotesHtml === 'function' ? renderNotesHtml(ds.notes) : `<p translate="no" style="white-space:pre-wrap;margin:0">${esc(ds.notes)}</p>`));
+  if (o.layout) {
+    const pHtml = typeof plateLayoutSvg === 'function'
+      ? `<figure class="plate-fig">${plateLayoutSvg(ds, { title: false, footer: false }).svg}</figure>`
+      : reportPlate(ds);
+    out.push(section(L('Plate layout'), pHtml + `<p class="note">${esc(L('Cells are tinted with the colour of the well or its group; “+” marks positive wells; struck-out wells are excluded from the analysis.'))}</p>`));
+  }
   if (o.curves) {
     const draw = (patch, title) => withView(ds, patch, sel, () => {
       const data = buildChartData(ds, false);
@@ -15034,6 +16157,9 @@ function buildReport(ds, o) {
   if (o.group && (groups.length || (scope && anyStats.length))) {
     const t = groupTableHtml(ds, keys, false, scope);
     let h = t ? `<div class="scroll">${t.table}</div><p class="note" translate="no">${scope ? L('Selected wells only ({0}). ', scopeCount(ds, scope)) : ''}${t.note}</p>` : '';
+    if (layerStack(ds) && typeof crossTableData === 'function' && crossTableData(ds)) {
+      h += `<div class="scroll" style="margin-top:14px">${crossTableHtml(ds)}</div>`;
+    }
     const wanted = [...new Set([S.view.cmpParam, 'lag', 't50', 'Fmax'])].filter(k => k === S.view.cmpParam || keys.includes(k));
     for (const k of wanted) {
       const items = compareItems(ds, k, false, scope);
@@ -16087,6 +17213,7 @@ function spliceLinesSvg(ds, sx, m, ph, col, dom, big) {
 /** A path of the chart drawn part by part for a spliced dataset - no line across a splice point (the parts are other
     runs; by actual time the pause stays empty) - and at once for any other. draw(from, to) draws the points from..to-1. */
 function spliceSegs(ds, n, draw) {
+  if (S.view.joins === false) return draw(0, n);
   const c = spliceCuts(ds, n);
   if (!c) return draw(0, n);
   let at = 0, out = '';
@@ -16302,7 +17429,7 @@ function projectDatasets(o) {
       sel: new Set(), anchor: null, cursor: null, undo: [], redo: [], ver: 1, res: null, resKey: '', ctx: null, warnings: [], loaded: true,
       timeInfo: isObj(d.timeInfo) ? d.timeInfo : {}, sourceInfo: isObj(d.sourceInfo) ? d.sourceInfo : null, isDemo: !!d.isDemo,
       sets: [], gs: 0,
-      notes: isObj(o.notes) && typeof o.notes[d.id] === 'string' ? o.notes[d.id].slice(0, 20000) : '',
+      notes: isObj(o.notes) && typeof o.notes[d.id] === 'string' ? o.notes[d.id].slice(0, 50000) : '',
       set: o.settingsPerDataset && isObj(o.datasetSettings) && isObj(o.datasetSettings[d.id]) ? cleanSettings(o.datasetSettings[d.id]) : undefined
     };
     ensureWells(ds);
@@ -16952,7 +18079,7 @@ function applyDatasetAnalysis(id, a, opt) {
   if (layerExcl.length) plateExclFromLayers(ds, layerExcl);
   // how the layers were shown (an analysis without it: as they are shown now, of the layers there are now)
   ds.lv = cleanLayerView(isObj(p.layerView) ? p.layerView : ds.lv, ds);
-  if (typeof a.notes === 'string') ds.notes = a.notes.slice(0, 20000);
+  if (typeof a.notes === 'string') ds.notes = a.notes.slice(0, 50000);
   // the settings the dataset was analysed with: its own from now on, so that the other datasets keep theirs
   let settings = false;
   if (isObj(a.settings) && !COLLAB.active) {
@@ -17529,7 +18656,7 @@ const PKCollabCore = (() => {
 })();
 
 const COLLAB = (() => {
-  const K = PKCollabCore, BUILD = 'pk-v3-16-1-12d050424b26', API = '/api/collab/rooms';
+  const K = PKCollabCore, BUILD = 'pk-v3-17-0-4089532a55e1', API = '/api/collab/rooms';
   const route = /^\/share\/([A-Za-z0-9_-]{20,128})\/?$/.exec(typeof location === 'undefined' ? '' : location.pathname);
   const c = { active: !!route, roomId: route ? route[1] : null, state: null, connected: false, closed: false,
     intents: [], conflicts: [], inFlight: null, undoStack: [], redoStack: [], seen: new Set(), deferred: [],
@@ -18220,6 +19347,7 @@ function init() {
 
   $('#plateFmt').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setPlateFormat(+b.dataset.v); });
   $('#plateMode').addEventListener('change', e => { S.view.plateMode = e.target.value; inv('plate'); });
+  const peBtn = $('#btnPlateExport'); if (peBtn) peBtn.addEventListener('click', e => openPlateExportPop(e.currentTarget));
   $('#btnUndo').addEventListener('click', undo);
   $('#btnRedo').addEventListener('click', redo);
 
