@@ -51,6 +51,15 @@
 //   /S             silent: no window at all; exit code 0 = installed, else see Exit; one line goes into
 //                  %TEMP%\<name>-setup.log and to the standard output (when the caller captures it)
 //   /NODESKTOP     silent: no desktop shortcut where there is none (an existing one is kept)
+//   /ANALYSISONLY  a Live program as the analysis window only: no service, no tray (the file analysis-only.mode in its
+//                  folder says so from then on). Where the recorder's service is registered this removes it: refused
+//                  while an instrument measures; the window asks first, /S takes it as an administrator's command.
+//                  The marker file alone never removes a registered recorder (nor does /ANALYSISONLY with /RELAUNCH,
+//                  which the program's updater gives because of that file): such a folder is installed in full
+//   /FULL          the full installation whatever the folder's analysis-only.mode says (the instrument PCs' deploy
+//                  script gives it: a stray marker file never turns a recorder into an analysis-only installation)
+//   /RELAUNCH      silent: afterwards the program is started again as the signed-in user (the program's own updater
+//                  gives it); after a failure the program that is in the folder, with --update-failed=<exit code>
 //   --move-to [<folder>]   move the installed program into this folder (default: the standard one under Program Files)
 //   /D=<folder>    install into this folder; the rest of the command line, quotes optional (the rule of NSIS installers)
 using System;
@@ -124,7 +133,9 @@ namespace SAAControl.Setup
                     return Exit.Missing;
                 }
                 Payload payload = Payload.Load(settings);
-                if (silent) return move ? SilentMove(settings, payload, moveArgument, noDesktop, relaunch) : Silent(settings, payload, folderArgument, noDesktop, analysisOnlyArg, fullArg, relaunch);
+                if (silent)
+                    return move ? SilentMove(settings, payload, moveArgument, noDesktop, analysisOnlyArg, fullArg, relaunch)
+                                : Silent(settings, payload, folderArgument, noDesktop, analysisOnlyArg, fullArg, relaunch);
 
                 string start = move ? moveArgument ?? Installer.StandardFolder(settings) : folderArgument ?? Installer.DefaultFolder(settings);
                 using (var form = new SetupForm(settings, payload, start, analysisOnlyArg, fullArg))
@@ -148,6 +159,16 @@ namespace SAAControl.Setup
         {
             string folder = folderArgument ?? Installer.DefaultFolder(settings);
             bool analysisOnly = settings.IsStandaloneAnalysis || (!fullArg && (analysisOnlyArg || File.Exists(Path.Combine(folder, InstallShared.AnalysisOnlyMarker))));
+            // The marker file alone says "analysis only" while the recorder's service is registered: such a folder is a
+            // recorder's with a stray marker, and it is installed in full (the full installation removes the marker).
+            // Only /ANALYSISONLY typed by an administrator removes a recorder silently - with /RELAUNCH it comes from the
+            // program's own updater, whose window read the same marker file.
+            if (Installer.RecorderWins(settings, analysisOnly, analysisOnlyArg && !relaunch))
+            {
+                analysisOnly = false;
+                InstallShared.Log(settings.Name, "the folder " + folder + " is marked analysis-only (" + InstallShared.AnalysisOnlyMarker + ") but the service " +
+                                                 settings.Name + " is registered: installed in full, the recorder stays");
+            }
             try
             {
                 InstallResult result = Installer.Install(settings, payload, folder, noDesktop ? DesktopChoice.KeepOnly : DesktopChoice.Default, analysisOnly);
@@ -160,18 +181,19 @@ namespace SAAControl.Setup
             catch (Exception error)
             {
                 int code = error is SetupException known ? known.Code : Exit.Failed;
-                Report(settings.Name, "install FAILED (exit " + code + "): " + error.Message + Installer.ServiceNote(error, false) + " [folder " + folder + "]", true);
+                string again = relaunch ? RelaunchAfterFailure(settings, folder, code) : "";
+                Report(settings.Name, "install FAILED (exit " + code + "): " + error.Message + Installer.ServiceNote(error, false) + " [folder " + folder + "]" + again, true);
                 return code;
             }
         }
 
         /// <summary>--move-to: the installed program into another folder (the standard one when none is given); into the
         /// folder it is in already: an ordinary update.</summary>
-        static int SilentMove(SetupSettings settings, Payload payload, string target, bool noDesktop, bool relaunch)
+        static int SilentMove(SetupSettings settings, Payload payload, string target, bool noDesktop, bool analysisOnlyArg, bool fullArg, bool relaunch)
         {
             string folder = target ?? Installer.StandardFolder(settings);
             string installed = Installer.InstalledFolder(settings);
-            if (installed == null || InstallShared.SameFolder(installed, folder)) return Silent(settings, payload, folder, noDesktop, false, false, relaunch);
+            if (installed == null || InstallShared.SameFolder(installed, folder)) return Silent(settings, payload, folder, noDesktop, analysisOnlyArg, fullArg, relaunch);
             try
             {
                 InstallResult result = Mover.Move(settings, payload, folder, noDesktop ? DesktopChoice.KeepOnly : DesktopChoice.Default,
@@ -185,7 +207,9 @@ namespace SAAControl.Setup
             catch (Exception error)
             {
                 int code = error is SetupException known ? known.Code : Exit.Failed;
-                Report(settings.Name, "move FAILED (exit " + code + "): " + error.Message + " [from " + installed + " to " + folder + "]", true);
+                // (after a move that failed the program is where it was)
+                string again = relaunch ? RelaunchAfterFailure(settings, installed, code) : "";
+                Report(settings.Name, "move FAILED (exit " + code + "): " + error.Message + " [from " + installed + " to " + folder + "]" + again, true);
                 return code;
             }
         }
@@ -199,6 +223,31 @@ namespace SAAControl.Setup
                 InstallShared.StartAsShellUser(result.ExePath, "", result.Folder);
             }
             catch (Exception) { }
+        }
+
+        // what the program is told when it is started again after an update that failed (the programs read it:
+        // Updater.UpdateFailedOption), followed by "=" and the installer's exit code
+        const string UpdateFailedOption = "--update-failed";
+
+        /// <summary>/RELAUNCH after an update that failed: the window that started the update has closed, so the
+        /// program that is in the folder (the version from before; none in a new folder) is started again as the
+        /// signed-in user and told the installer's exit code - its window says that the update failed. An argument
+        /// without blanks: it needs no quotes on the command line the shell makes. Best effort, never throws; returns
+        /// what was done, for the end of the log line.</summary>
+        static string RelaunchAfterFailure(SetupSettings settings, string folderText, int code)
+        {
+            try
+            {
+                string folder = Installer.FullFolder(folderText);
+                string exe = Path.Combine(folder, settings.Exe);
+                // (the old one-file program of the same name does not know the argument)
+                if (!File.Exists(exe) || !InstallShared.IsManagedExe(exe)) return "; no program in the folder to start again";
+                string argument = UpdateFailedOption + "=" + code;
+                return InstallShared.StartAsShellUser(exe, argument, folder)
+                    ? "; the program was started again (" + argument + ")"
+                    : "; the program was not started again (no desktop to start it on in this session)";
+            }
+            catch (Exception error) { return "; the program was not started again (" + error.Message + ")"; }
         }
 
         /// <summary>The tray, in the session of the user who installs (as that user, never as administrator); over SSH
@@ -1202,6 +1251,20 @@ namespace SAAControl.Setup
             }
         }
 
+        /// <summary>True when "analysis only" comes from the folder's marker file alone (asked: /ANALYSISONLY was given
+        /// by an administrator) although the program's service is registered: a recorder with a stray marker file, which
+        /// stays a recorder.</summary>
+        public static bool RecorderWins(SetupSettings settings, bool analysisOnly, bool asked) =>
+            analysisOnly && !settings.IsStandaloneAnalysis && !asked && InstallShared.ServiceRegistered(settings.Name);
+
+        /// <summary>"Analysis only" where the recorder's service is registered removes that service - which would end a
+        /// run in progress for good (nothing reads the instrument any more). The refusal while these instruments measure.</summary>
+        public static SetupException MeasuringKeepsRecorder(List<string> measuring)
+        {
+            string names = string.Join(", ", measuring);
+            return new SetupException(Exit.Running, string.Format(T.MeasuringNoSwitchZh, names), string.Format(T.MeasuringNoSwitchEn, names));
+        }
+
         public static InstallResult Install(SetupSettings settings, Payload payload, string folderText, DesktopChoice desktop, bool analysisOnly = false)
         {
             if (settings.IsStandaloneAnalysis) analysisOnly = true;
@@ -1211,7 +1274,12 @@ namespace SAAControl.Setup
                 throw new SetupException(Exit.BadFolder, string.Format(T.OtherProgramZh, info.OtherProgram), string.Format(T.OtherProgramEn, info.OtherProgram));
             string elsewhere = InstalledElsewhere(settings, folder);
             if (elsewhere != null)
+            {
+                // (an analysis-only installation is never moved: it is not sent to --move-to)
+                Tuple<string, string> never = Mover.NeverMoved(settings, new SystemMoveHost(settings));
+                if (never != null) throw new SetupException(Exit.BadFolder, never.Item1, never.Item2);
                 throw new SetupException(Exit.BadFolder, string.Format(T.ElsewhereZh, settings.DisplayName, elsewhere), string.Format(T.ElsewhereEn, settings.DisplayName, elsewhere));
+            }
             Tuple<string, string> running = Running(settings);
             if (running != null)
                 throw new SetupException(Exit.Running, string.Format(T.RunningZh, settings.DisplayName, running.Item1), string.Format(T.RunningEn, settings.DisplayName, running.Item2));
@@ -1224,6 +1292,12 @@ namespace SAAControl.Setup
 
             // what measures now: the recording pauses for the moment of the update (the window asked first; noted here)
             List<string> measuring = settings.IsStandaloneAnalysis ? new List<string>() : MeasuringNow(settings, folder);
+
+            // "Analysis only" for a Live program whose service is registered removes the recorder: not while an
+            // instrument measures (that run would never be recorded to its end). Refused here, before anything is
+            // stopped, so that it holds for the window and for /S alike.
+            if (analysisOnly && !settings.IsStandaloneAnalysis && measuring.Count > 0 && InstallShared.ServiceRegistered(settings.Name))
+                throw MeasuringKeepsRecorder(measuring);
 
             // The services are stopped for the copying (each catches up on what happened meanwhile when it starts
             // again): the former program's first, then the program's own. One that does not stop in time is started
@@ -1289,6 +1363,15 @@ namespace SAAControl.Setup
                         {
                             try { StopService(settings.Name); } catch (Exception) { }
                             ScDelete(settings.Name);
+                            // a service that could not be removed stays the recorder: no marker beside it (the catch
+                            // below starts it again when it ran)
+                            for (int i = 0; i < 20 && InstallShared.ServiceRegistered(settings.Name); i++) Thread.Sleep(500);
+                            if (InstallShared.ServiceRegistered(settings.Name))
+                            {
+                                InstallShared.TryDelete(modeMarker);
+                                throw new SetupException(Exit.Failed, string.Format(T.ServiceStaysZh, settings.DisplayName), string.Format(T.ServiceStaysEn, settings.DisplayName));
+                            }
+                            result.Details.Add("the service " + settings.Name + " was registered here and is removed: analysis-only was asked for (this PC no longer records)");
                         }
                         InstallShared.RemoveRunEntry(settings.Name, result.ExePath);
                         InstallShared.StopTrays(settings.Name, processName, 10);
@@ -1297,7 +1380,9 @@ namespace SAAControl.Setup
                 }
                 else
                 {
-                    if (File.Exists(modeMarker)) InstallShared.TryDelete(modeMarker);
+                    // (a marker that stays would make the recorder's window open as the analysis program: an error)
+                    if (File.Exists(modeMarker) && !InstallShared.TryDelete(modeMarker))
+                        throw new SetupException(Exit.Failed, string.Format(T.MarkerStaysZh, InstallShared.AnalysisOnlyMarker), string.Format(T.MarkerStaysEn, InstallShared.AnalysisOnlyMarker));
                     // the program's service: registered for the installed program file, started, its watcher going
                     string serviceError = RegisterService(settings, result.ExePath);
                     if (serviceError != null)
@@ -1307,9 +1392,15 @@ namespace SAAControl.Setup
                     if (serviceWasRunning || formerWasRunning) result.PausedSeconds = paused.Elapsed.TotalSeconds;
                 }
             }
-            catch (Exception error) when (!analysisOnly && (serviceWasRunning || formerRegistered))
+            catch (Exception error) when (serviceWasRunning || (!analysisOnly && formerRegistered))
             {
-                if (serviceWasRunning) WithNote(error, RestoreService(settings, Path.Combine(folder, settings.Exe), result?.PreviousExe));
+                if (serviceWasRunning)
+                {
+                    // "analysis only" that did not get through leaves the recorder as it was: its marker file goes first
+                    // (the service is registered again when it was removed already), then as after any failed update
+                    if (analysisOnly) InstallShared.TryDelete(Path.Combine(folder, InstallShared.AnalysisOnlyMarker));
+                    WithNote(error, RestoreService(settings, Path.Combine(folder, settings.Exe), result?.PreviousExe));
+                }
                 else WithNote(error, BackToFormer(settings, former, folder, Path.Combine(folder, settings.Exe), dataUnderFormerName));
                 throw;
             }
@@ -1345,6 +1436,7 @@ namespace SAAControl.Setup
         {
             string exe = result.ExePath;
             if (!result.AnalysisOnly) result.DataFolder = PrepareDataFolder(folder, result);
+            else ProgramFolderRights(folder, result);
             try
             {
                 InstallShared.CreateShortcut(InstallShared.AllUsersStartMenuShortcut(settings.DisplayName), exe, folder, settings.DisplayName);
@@ -1459,6 +1551,15 @@ namespace SAAControl.Setup
                 result.Problems.Add("the rights on the program's folders could not be set (" + error.Message + ")");
                 return null;
             }
+        }
+
+        /// <summary>An analysis-only or standalone installation has no data folder beside the program, but its program
+        /// folder gets the rights the full installation gives it: outside Program Files a new folder lets every signed-in
+        /// user change it - and replace the program that the other users (and an elevated uninstall) run.</summary>
+        static void ProgramFolderRights(string folder, InstallResult result)
+        {
+            try { result.Details.Add(Permissions.ApplyProgramFolder(folder)); }
+            catch (Exception error) { result.Problems.Add("the rights on the program's folder could not be set (" + error.Message + ")"); }
         }
 
         /// <summary>The program does not rename a data folder of the former name while the former program's service is
@@ -1953,12 +2054,7 @@ namespace SAAControl.Setup
         {
             var lines = new List<string>();
             // the program folder
-            if (IsUnderProgramFiles(programFolder)) Set(programFolder, false, new FileSystemAccessRule[0], null);
-            else
-                Set(programFolder, true,
-                    new[] { Rule(Users, Read, Below), Rule(AppPackages, Read, Below), Rule(RestrictedAppPackages, Read, Below) },
-                    new[] { Rule(SystemAccount, FileSystemRights.FullControl, Below), Rule(Administrators, FileSystemRights.FullControl, Below) });
-            lines.Add("rights " + Describe(programFolder));
+            lines.Add(ApplyProgramFolder(programFolder));
 
             // the data folder: what it inherits
             Directory.CreateDirectory(dataFolder);
@@ -1995,6 +2091,18 @@ namespace SAAControl.Setup
                 });
             lines.Add("rights " + Describe(users));
             return lines;
+        }
+
+        /// <summary>The program folder's rights alone (all an analysis-only or standalone installation has); returns its
+        /// line for the log.</summary>
+        public static string ApplyProgramFolder(string programFolder)
+        {
+            if (IsUnderProgramFiles(programFolder)) Set(programFolder, false, new FileSystemAccessRule[0], null);
+            else
+                Set(programFolder, true,
+                    new[] { Rule(Users, Read, Below), Rule(AppPackages, Read, Below), Rule(RestrictedAppPackages, Read, Below) },
+                    new[] { Rule(SystemAccount, FileSystemRights.FullControl, Below), Rule(Administrators, FileSystemRights.FullControl, Below) });
+            return "rights " + Describe(programFolder);
         }
 
         /// <summary>True for a folder under Program Files (64-bit or 32-bit): it inherits their rights.</summary>
@@ -2112,11 +2220,29 @@ namespace SAAControl.Setup
             return former != null && File.Exists(former) && !InstallShared.SameFolder(Path.GetDirectoryName(former), folder);
         }
 
+        /// <summary>Why the installed program is never moved (Chinese, English), or null. A move carries a recorder
+        /// over: it registers the program's service for the new folder. The standalone Analysis program and a Live
+        /// program installed "analysis only" have none and must not get one. (The marker file beside a program that a
+        /// service runs is a stray one: that is a recorder, and it is moved as one - without the marker.)</summary>
+        public static Tuple<string, string> NeverMoved(SetupSettings settings, IMoveHost host)
+        {
+            Source source = FindSource(settings, host);
+            return source == null ? null : NeverMoved(settings, source);
+        }
+
+        static Tuple<string, string> NeverMoved(SetupSettings settings, Source source)
+        {
+            if (!settings.IsStandaloneAnalysis && (source.Service != null || !File.Exists(Path.Combine(source.Folder, InstallShared.AnalysisOnlyMarker)))) return null;
+            return Tuple.Create(string.Format(T.AnalysisNotMovedZh, settings.DisplayName, source.Folder), string.Format(T.AnalysisNotMovedEn, settings.DisplayName, source.Folder));
+        }
+
         /// <summary>Why the program cannot be moved into this folder (Chinese, English), or null. Nothing is changed.</summary>
         public static Tuple<string, string> TargetProblem(SetupSettings settings, string target, IMoveHost host)
         {
             Source source = FindSource(settings, host);
             if (source == null) return Tuple.Create(string.Format(T.NothingToMoveZh, settings.DisplayName), string.Format(T.NothingToMoveEn, settings.DisplayName));
+            Tuple<string, string> never = NeverMoved(settings, source);
+            if (never != null) return never;
             if (InstallShared.IsInFolder(target, source.Folder) || InstallShared.IsInFolder(source.Folder, target) ||
                 InstallShared.IsInFolder(target, source.Data) || InstallShared.SameFolder(target, source.Data))
                 return Tuple.Create(T.NestedZh, T.NestedEn);
@@ -2187,6 +2313,8 @@ namespace SAAControl.Setup
             Source source = FindSource(settings, host);
             if (source == null)
                 throw new SetupException(Exit.BadFolder, string.Format(T.NothingToMoveZh, settings.DisplayName), string.Format(T.NothingToMoveEn, settings.DisplayName));
+            Tuple<string, string> never = NeverMoved(settings, source);
+            if (never != null) throw new SetupException(Exit.BadFolder, never.Item1, never.Item2);
             if (InstallShared.SameFolder(source.Folder, target))
                 throw new SetupException(Exit.BadFolder, string.Format(T.AlreadyThereZh, settings.DisplayName, target), string.Format(T.AlreadyThereEn, settings.DisplayName, target));
             // a move into this folder that did not hold (the PC restarted, the installer was ended): what it left running
@@ -2940,6 +3068,8 @@ namespace SAAControl.Setup
                 modeAnalysisRadio.Text = T.ModeAnalysis;
                 modeAnalysisRadio.Margin = new Padding(u / 2, 0, 0, 0);
                 bool startAnalysis = !fullArg && (analysisOnlyArg || File.Exists(Path.Combine(folder, InstallShared.AnalysisOnlyMarker)));
+                // (a marker file beside a registered recorder is a stray one: the full installation is offered)
+                if (Installer.RecorderWins(settings, startAnalysis, analysisOnlyArg)) startAnalysis = false;
                 modeAnalysisRadio.Checked = startAnalysis;
                 modeFullRadio.Checked = !startAnalysis;
                 modePanel.Controls.Add(modeLabel);
@@ -3134,11 +3264,23 @@ namespace SAAControl.Setup
                 SetBusy(false);
                 ShowStatus("", SystemColors.ControlText);
             }
+            // "analysis only" where the recorder's service is registered removes the recorder: never while an instrument
+            // measures, and else only after a question of its own (not the one about a pause of 10 seconds)
+            bool removesRecorder = from == null && analysisOnly && !settings.IsStandaloneAnalysis && InstallShared.ServiceRegistered(settings.Name);
             string question = null;
             string names = string.Join(", ", measuring);
             if (from != null)
                 question = string.Format(T.MoveAskZh, settings.DisplayName, from, folderText) + (measuring.Count > 0 ? "\n" + string.Format(T.MeasuringNowZh, names) : "") +
                            "\n\n" + string.Format(T.MoveAskEn, settings.DisplayName, from, folderText) + (measuring.Count > 0 ? "\n" + string.Format(T.MeasuringNowEn, names) : "");
+            else if (removesRecorder)
+            {
+                if (measuring.Count > 0)
+                {
+                    ShowStatus(Installer.MeasuringKeepsRecorder(measuring).Text, Color.Firebrick);
+                    return;
+                }
+                question = T.RemoveRecorderAskZh + "\n\n" + T.RemoveRecorderAskEn;
+            }
             else if (measuring.Count > 0)
                 question = string.Format(T.PauseAskZh, names) + "\n\n" + string.Format(T.PauseAskEn, names);
             if (question != null && !Ask.Continue(this, settings.DisplayName, question))
@@ -3332,10 +3474,11 @@ namespace SAAControl.Setup
         public const string Installing = "\u6b63\u5728\u5b89\u88c5\u2026\nInstalling\u2026";
         public const string Moving = "\u6b63\u5728\u642c\uff0c\u8bf7\u7a0d\u5019\uff08\u7ea6 1 \u5206\u949f\uff09\u2026\nMoving, please wait (about a minute)\u2026";
         public const string Failed = "\u5b89\u88c5\u5931\u8d25\uff1a{0}\nInstallation failed: {0}";
-        public const string Usage = "{0}-Setup.exe [/S] [/NODESKTOP] [/ANALYSISONLY] [/RELAUNCH] [--move-to [<folder>]] [/D=<folder>]\n\n" +
+        public const string Usage = "{0}-Setup.exe [/S] [/NODESKTOP] [/ANALYSISONLY] [/FULL] [/RELAUNCH] [--move-to [<folder>]] [/D=<folder>]\n\n" +
                                     "/S  \u4e0d\u663e\u793a\u7a97\u53e3\uff0c\u7ed3\u679c\u89c1\u9000\u51fa\u7801\uff080 = \u6210\u529f\uff09\u548c %TEMP%\\{0}-setup.log\n    no window; the exit code (0 = installed) and %TEMP%\\{0}-setup.log tell the result\n" +
                                     "/NODESKTOP  \u4e0d\u5728\u684c\u9762\u4e0a\u65b0\u5efa\u5feb\u6377\u65b9\u5f0f\n    no new desktop shortcut\n" +
                                     "/ANALYSISONLY  \u4ec5\u5b89\u88c5\u5206\u6790\u8f6f\u4ef6\uff08\u65e0\u540e\u53f0\u670d\u52a1\u548c\u6258\u76d8\uff09\n    analysis software only (no background service or tray)\n" +
+                                    "/FULL  \u5b8c\u6574\u5b89\u88c5\uff08\u5e26\u540e\u53f0\u8bb0\u5f55\u670d\u52a1\uff09\uff0c\u5373\u4f7f\u6587\u4ef6\u5939\u88ab\u6807\u6210\u4e86\u4ec5\u5206\u6790\n    full installation (with the recording service), also where the folder is marked analysis-only\n" +
                                     "/RELAUNCH  \u9759\u9ed8\u5b89\u88c5\u5b8c\u6210\u540e\u81ea\u52a8\u91cd\u65b0\u6253\u5f00\u7a0b\u5e8f\n    relaunch the program after silent install\n" +
                                     "--move-to [<folder>]  \u628a\u88c5\u597d\u7684\u7a0b\u5e8f\u8fde\u540c\u6570\u636e\u642c\u5230\u8fd9\u4e2a\u6587\u4ef6\u5939\uff08\u4e0d\u5199\u5c31\u662f Program Files \u91cc\u7684\u6807\u51c6\u4f4d\u7f6e\uff09\uff1b\u539f\u6765\u7684\u6587\u4ef6\u5939\u539f\u6837\u4fdd\u7559\n    move the installed program with its data into this folder (none: the standard one under Program Files); the former folder is left as it is\n" +
                                     "/D=<folder>  \u5b89\u88c5\u5230\u8fd9\u4e2a\u6587\u4ef6\u5939\uff08\u653e\u5728\u6700\u540e\uff09\n    install into this folder (last on the line)\n\n" +
@@ -3380,6 +3523,17 @@ namespace SAAControl.Setup
         public const string PauseAskEn = "{0} is measuring.\nRecording pauses about 10 seconds; no data is lost: what is missed is read back from the instrument software's own files.";
         public const string NotChangedZh = "\u6ca1\u6709\u6539\u52a8\u4efb\u4f55\u4e1c\u897f\u3002";
         public const string NotChangedEn = "Nothing was changed.";
+        // the modes: "analysis only" and the recorder
+        public const string MeasuringNoSwitchZh = "{0} \u6b63\u5728\u6d4b\u91cf\uff1a\u73b0\u5728\u4e0d\u80fd\u628a\u8fd9\u4e2a\u5b89\u88c5\u6539\u6210\u4ec5\u5206\u6790\uff08\u90a3\u6837\u8bb0\u5f55\u5c31\u4e2d\u65ad\u4e86\uff09\u3002\u8bf7\u7b49\u8fd9\u6b21\u8fd0\u884c\u7ed3\u675f\u540e\u518d\u6539\u3002";
+        public const string MeasuringNoSwitchEn = "{0} is measuring: the installation is not changed to analysis-only now (that would end the recording). Finish the run first.";
+        public const string RemoveRecorderAskZh = "\u8fd9\u6837\u4f1a\u5220\u9664\u8fd9\u53f0\u7535\u8111\u4e0a\u7684\u540e\u53f0\u8bb0\u5f55\u670d\u52a1\uff1a\u4ee5\u540e\u8fd9\u53f0\u7535\u8111\u4e0d\u518d\u8bb0\u5f55\u5b9e\u9a8c\uff08\u6570\u636e\u6587\u4ef6\u5939\u4fdd\u7559\uff09\u3002\u7ee7\u7eed\u5417\uff1f";
+        public const string RemoveRecorderAskEn = "This removes the background recording service from this PC: experiments are no longer recorded on it (the data folder stays). Continue?";
+        public const string ServiceStaysZh = "{0} \u7684\u540e\u53f0\u670d\u52a1\u5220\u4e0d\u6389\uff0c\u6240\u4ee5\u6ca1\u6709\u6539\u6210\u4ec5\u5206\u6790\u5b89\u88c5\u3002";
+        public const string ServiceStaysEn = "The background service of {0} could not be removed, so the installation was not changed to analysis-only.";
+        public const string MarkerStaysZh = "\u7a0b\u5e8f\u6587\u4ef6\u5939\u91cc\u7684 {0} \u5220\u4e0d\u6389\uff1a\u6709\u5b83\u5728\uff0c\u7a0b\u5e8f\u7a97\u53e3\u4f1a\u5f53\u6210\u4ec5\u5206\u6790\u5b89\u88c5\u6253\u5f00\u3002\u8bf7\u624b\u52a8\u5220\u9664\u5b83\uff0c\u518d\u8fd0\u884c\u4e00\u6b21\u5b89\u88c5\u7a0b\u5e8f\u3002";
+        public const string MarkerStaysEn = "The file {0} in the program's folder could not be removed: with it the program's window opens as an analysis-only installation. Delete it by hand, then run the installer again.";
+        public const string AnalysisNotMovedZh = "{1} \u91cc\u7684 {0} \u662f\u4ec5\u5206\u6790\u5b89\u88c5\uff0c\u4e0d\u80fd\u642c\uff1a\u8bf7\u5148\u5378\u8f7d\u5b83\uff0c\u518d\u5b89\u88c5\u5230\u65b0\u7684\u6587\u4ef6\u5939\uff08\u81ea\u5df1\u4fdd\u5b58\u7684\u9879\u76ee\u6587\u4ef6\u4e0d\u53d7\u5f71\u54cd\uff0c\u7559\u5728\u539f\u5904\uff09\u3002";
+        public const string AnalysisNotMovedEn = "{0} in {1} is an analysis-only installation, which is not moved: uninstall it and install it in the new folder (your project files are yours and stay where they are).";
 
         // the move
         public const string NothingToMoveZh = "\u8fd9\u53f0\u7535\u8111\u4e0a\u6ca1\u6709\u88c5\u597d\u7684 {0}\uff0c\u6ca1\u6709\u53ef\u4ee5\u642c\u7684\u3002";

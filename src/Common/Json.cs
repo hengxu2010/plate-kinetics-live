@@ -4,7 +4,10 @@
 // Values: Dictionary<string, object> (an object; the order of its keys is the order they were added),
 // List<object> (an array), string, long (an integer), double (any other number), bool, null.
 // Parse also takes NaN, Infinity and -Infinity, as Python's json.loads does; Serialize writes them the same way
-// (Python's default allow_nan=True), so callers that answer the browser must keep them out, as the Python code does.
+// (Python's default allow_nan=True), so callers that answer the browser must keep them out, as the Python code does
+// (allowNan: false writes null for them; Finite tells whether a value has none).
+// What is parsed comes from files and requests anyone may have made: nesting deeper than MaxDepth and a number longer
+// than MaxNumber are refused as any other bad JSON (a FormatException).
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,30 +31,50 @@ namespace SAAControl
         }
 
         /// <summary>Python's json.dumps(value, ensure_ascii=ensureAscii, indent=indent, sort_keys=sortKeys) with its
-        /// default separators: ", " and ": " without indent, "," and ": " with it.</summary>
-        public static string Serialize(object value, bool ensureAscii = true, int? indent = null, bool sortKeys = false)
+        /// default separators: ", " and ": " without indent, "," and ": " with it. allowNan: false writes null where a
+        /// number is NaN or infinite (JSON has no such numbers: a browser reads none of an answer that holds one).</summary>
+        public static string Serialize(object value, bool ensureAscii = true, int? indent = null, bool sortKeys = false, bool allowNan = true)
         {
             var sb = new StringBuilder();
-            Write(sb, value, ensureAscii, indent, sortKeys, 0);
+            Write(sb, value, ensureAscii, indent, sortKeys, 0, allowNan);
             return sb.ToString();
+        }
+
+        /// <summary>Whether no number in a value is NaN or infinite (Parse takes NaN, Infinity and numbers too large for a
+        /// double, as Python does).</summary>
+        public static bool Finite(object value)
+        {
+            switch (value)
+            {
+                case double d: return !double.IsNaN(d) && !double.IsInfinity(d);
+                case float f: return !float.IsNaN(f) && !float.IsInfinity(f);
+                case string _: return true;
+                case IDictionary dict:
+                    foreach (DictionaryEntry e in dict) if (!Finite(e.Value)) return false;
+                    return true;
+                case IEnumerable list:
+                    foreach (object item in list) if (!Finite(item)) return false;
+                    return true;
+                default: return true;
+            }
         }
 
         // ---------- writing ----------
 
-        static void Write(StringBuilder sb, object value, bool ascii, int? indent, bool sort, int level)
+        static void Write(StringBuilder sb, object value, bool ascii, int? indent, bool sort, int level, bool nan)
         {
             switch (value)
             {
                 case null: sb.Append("null"); return;
                 case string s: WriteString(sb, s, ascii); return;
                 case bool b: sb.Append(b ? "true" : "false"); return;
-                case double d: sb.Append(FormatDouble(d)); return;
-                case float f: sb.Append(FormatDouble(f)); return;
+                case double d: sb.Append(nan || !(double.IsNaN(d) || double.IsInfinity(d)) ? FormatDouble(d) : "null"); return;
+                case float f: sb.Append(nan || !(float.IsNaN(f) || float.IsInfinity(f)) ? FormatDouble(f) : "null"); return;
                 case decimal m: sb.Append(FormatDouble((double)m)); return;
                 case long _: case int _: case short _: case byte _: case sbyte _: case ushort _: case uint _: case ulong _:
                     sb.Append(Convert.ToString(value, CultureInfo.InvariantCulture)); return;
-                case IDictionary dict: WriteObject(sb, dict, ascii, indent, sort, level); return;
-                case IEnumerable list: WriteArray(sb, list, ascii, indent, sort, level); return;
+                case IDictionary dict: WriteObject(sb, dict, ascii, indent, sort, level, nan); return;
+                case IEnumerable list: WriteArray(sb, list, ascii, indent, sort, level, nan); return;
                 default: throw new ArgumentException("not a JSON value: " + value.GetType().FullName);
             }
         }
@@ -62,7 +85,7 @@ namespace SAAControl
             sb.Append(' ', indent.Value * level);
         }
 
-        static void WriteObject(StringBuilder sb, IDictionary dict, bool ascii, int? indent, bool sort, int level)
+        static void WriteObject(StringBuilder sb, IDictionary dict, bool ascii, int? indent, bool sort, int level, bool nan)
         {
             if (dict.Count == 0) { sb.Append("{}"); return; }
             var keys = new List<object>();
@@ -77,7 +100,7 @@ namespace SAAControl
                 if (indent.HasValue) NewLine(sb, indent, level + 1);
                 WriteString(sb, KeyText(key), ascii);
                 sb.Append(": ");
-                Write(sb, dict[key], ascii, indent, sort, level + 1);
+                Write(sb, dict[key], ascii, indent, sort, level + 1, nan);
             }
             if (indent.HasValue) NewLine(sb, indent, level);
             sb.Append('}');
@@ -95,7 +118,7 @@ namespace SAAControl
             }
         }
 
-        static void WriteArray(StringBuilder sb, IEnumerable list, bool ascii, int? indent, bool sort, int level)
+        static void WriteArray(StringBuilder sb, IEnumerable list, bool ascii, int? indent, bool sort, int level, bool nan)
         {
             bool first = true;
             sb.Append('[');
@@ -104,7 +127,7 @@ namespace SAAControl
                 if (!first) sb.Append(indent.HasValue ? "," : ", ");
                 first = false;
                 if (indent.HasValue) NewLine(sb, indent, level + 1);
-                Write(sb, item, ascii, indent, sort, level + 1);
+                Write(sb, item, ascii, indent, sort, level + 1, nan);
             }
             if (first) { sb.Append(']'); return; }
             if (indent.HasValue) NewLine(sb, indent, level);
@@ -326,10 +349,15 @@ namespace SAAControl
 
         // ---------- reading ----------
 
+        /// <summary>How deep arrays and objects may lie in one another (real records: about a dozen levels), and how many
+        /// characters a number may have.</summary>
+        public const int MaxDepth = 200, MaxNumber = 1024;
+
         sealed class Parser
         {
             readonly string t;
             public int Pos;
+            int depth;                       // the arrays and objects open around the value being read
             public Parser(string text) { t = text; }
 
             public FormatException Fail(string what) => new FormatException("JSON: " + what + " at " + Pos);
@@ -345,8 +373,17 @@ namespace SAAControl
                 char c = t[Pos];
                 switch (c)
                 {
-                    case '{': return ObjectValue();
-                    case '[': return ArrayValue();
+                    case '{':
+                    case '[':
+                    {
+                        // every level is a call inside a call: a text of nothing but "[" would use up the stack, and that
+                        // ends the whole program (no catch holds it)
+                        if (depth >= MaxDepth) throw Fail("too deeply nested");
+                        depth++;
+                        object nested = c == '{' ? (object)ObjectValue() : ArrayValue();
+                        depth--;
+                        return nested;
+                    }
                     case '"': return StringValue();
                     case 't': Word("true"); return true;
                     case 'f': Word("false"); return false;
@@ -378,6 +415,8 @@ namespace SAAControl
                     if (c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-') { real = true; Pos++; continue; }
                     break;
                 }
+                // (the exact reading works with whole numbers of as many digits: minutes for a number of megabytes)
+                if (Pos - start > MaxNumber) { Pos = start; throw Fail("a number of more than " + MaxNumber + " characters"); }
                 string s = t.Substring(start, Pos - start);
                 if (!real && long.TryParse(s, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out long l)) return l;
                 if (TryParseDouble(s, out double d)) return d;

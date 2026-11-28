@@ -168,7 +168,14 @@ namespace SAAControl
                         string name = Plain(plan.TryGetValue("name", out object nm) ? nm as string : null, 120);
                         string layout = (plan.TryGetValue("layoutId", out object l) ? l as string : null) ?? "";
                         if (layout.Length > 0 && !LayoutStore.IsId(layout)) { Refuse("not a layout id: " + layout); layout = ""; }
-                        if (layout.Length > 0 && strict && LayoutExists != null && !LayoutExists(layout)) Refuse("there is no layout " + layout);
+                        if (layout.Length > 0 && strict && LayoutExists != null && !LayoutExists(layout))
+                        {
+                            // a plan that asks for a layout that is not there is refused; the plan that is kept, whose layout
+                            // was deleted since, goes on without the layout (else every later change of any setting would
+                            // be refused for it)
+                            if (KeptLayout(entry.Key) == layout) layout = "";
+                            else Refuse("there is no layout " + layout);
+                        }
                         if (name.Length == 0 && layout.Length == 0) continue;
                         next[entry.Key] = new Dictionary<string, object> { ["name"] = name, ["layoutId"] = layout };
                     }
@@ -181,6 +188,12 @@ namespace SAAControl
             }
             return result;
         }
+
+        /// <summary>The layout of the plan that is kept for an instrument's next experiment; "" when there is none.</summary>
+        string KeptLayout(string key) =>
+            current != null && current.TryGetValue("nextExperiment", out object kept) && kept is Dictionary<string, object> plans
+            && plans.TryGetValue(key, out object value) && value is Dictionary<string, object> plan
+            && plan.TryGetValue("layoutId", out object layout) ? layout as string ?? "" : "";
 
         /// <summary>Text without control characters, trimmed, at most `length` characters.</summary>
         public static string Plain(string text, int length)
@@ -622,6 +635,7 @@ namespace SAAControl
         const string Main = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
         const string Rel = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
         const long MaxPart = 64L << 20;
+        const int MaxDepth = 64;                 // elements in one another (a real sheet: about seven)
 
         /// <summary>The sheets in the workbook's order: (name, (row, column) -> text), rows and columns from 0.</summary>
         public static List<(string Name, Dictionary<(int, int), string> Cells)> Sheets(byte[] bytes)
@@ -657,10 +671,16 @@ namespace SAAControl
         {
             ZipArchiveEntry entry = zip.GetEntry(part);
             if (entry == null) return null;
-            if (entry.Length > MaxPart) throw new InvalidDataException(part + " is too large");
+            // (never more bytes than the entry says it holds: PkFile.EntryBytes)
+            byte[] bytes = PkFile.EntryBytes(entry, MaxPart, part);
+            var settings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
+            // The text of an element is put together by a call for every level inside it (InnerText): elements nested
+            // without end would use up the stack, and that ends the whole program. So the part is read through once first.
+            using (XmlReader reader = XmlReader.Create(new MemoryStream(bytes, false), settings))
+                while (reader.Read())
+                    if (reader.Depth > MaxDepth) throw new InvalidDataException(part + " is nested too deeply");
             var doc = new XmlDocument { XmlResolver = null };
-            using (Stream stream = entry.Open())
-            using (XmlReader reader = XmlReader.Create(stream, new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }))
+            using (XmlReader reader = XmlReader.Create(new MemoryStream(bytes, false), settings))
                 doc.Load(reader);
             return doc;
         }

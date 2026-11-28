@@ -191,6 +191,83 @@ namespace SAAControl
             return restored;
         }
 
+        /// <summary>The files named like `pattern` in a folder and in the folders in it, however deep - gone through folder
+        /// by folder, not by one listing of the whole tree. A junction or symbolic link in it gives the files that are in
+        /// it itself (a month folder that is a link to another disk is a month folder like any other: the program writes
+        /// into it, so it must find there what it wrote), but the folders in it are not gone into (one to C:\ would have
+        /// the whole disk looked through). A folder that cannot be listed (its target is gone, no rights, deleted
+        /// meanwhile) is left out without the others being lost. skipped is told each folder left out, with the error, and
+        /// each link (error null: the folders in it were not gone into). Returns false - and no file - when the folder
+        /// itself cannot be listed.</summary>
+        public static bool ListFiles(string folder, string pattern, List<string> files, Action<string, Exception> skipped = null)
+        {
+            var waiting = new Stack<string>();
+            var links = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            waiting.Push(folder);
+            bool top = true;
+            while (waiting.Count > 0)
+            {
+                string dir = waiting.Pop();
+                bool link = links.Contains(dir);
+                try
+                {
+                    string[] here = Directory.GetFiles(dir, pattern);
+                    var inside = new List<string>();
+                    if (!link)
+                        foreach (DirectoryInfo sub in new DirectoryInfo(dir).GetDirectories())
+                        {
+                            string path = Path.Combine(dir, sub.Name);
+                            if ((sub.Attributes & FileAttributes.ReparsePoint) != 0 && IsLink(path)) links.Add(path);
+                            inside.Add(path);
+                        }
+                    files.AddRange(here);                                  // (all of a folder, or nothing of it)
+                    if (link) skipped?.Invoke(dir, null);
+                    for (int i = inside.Count - 1; i >= 0; i--) waiting.Push(inside[i]);
+                }
+                catch (Exception error) when (error is IOException || error is UnauthorizedAccessException || error is System.Security.SecurityException)
+                {
+                    skipped?.Invoke(dir, error);
+                    if (top) return false;
+                }
+                top = false;
+            }
+            return true;
+        }
+
+        /// <summary>Whether a folder is a junction or a symbolic link: a name for another place. Told by its reparse tag, not
+        /// by the attribute "reparse point" alone - the folders that OneDrive and other cloud storage keep on the disk have
+        /// that attribute too, and are folders like any other.</summary>
+        public static bool IsLink(string path)
+        {
+            IntPtr handle = FindFirstFileW(path, out FindData data);
+            if (handle == new IntPtr(-1)) return false;        // (not to be told: listing it says what is wrong with it)
+            FindClose(handle);
+            return (data.Attributes & (uint)FileAttributes.ReparsePoint) != 0 && IsLinkTag(data.Reserved0);
+        }
+
+        /// <summary>Windows' IsReparseTagNameSurrogate: true for the tags of junctions (0xA0000003) and symbolic links
+        /// (0xA000000C), false for those of cloud files (0x9000?01A) and the rest.</summary>
+        public static bool IsLinkTag(uint tag) => (tag & 0x20000000) != 0;
+
+        // WIN32_FIND_DATAW
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        struct FindData
+        {
+            public uint Attributes;
+            public uint Created1, Created2, Accessed1, Accessed2, Written1, Written2;
+            public uint SizeHigh, SizeLow;
+            public uint Reserved0, Reserved1;                  // Reserved0: the reparse tag of a reparse point
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string Name;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 14)] public string ShortName;
+        }
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern IntPtr FindFirstFileW(string name, out FindData data);
+
+        [DllImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool FindClose(IntPtr handle);
+
         /// <summary>Temporary files of writes that were cut short (a power cut, the program killed): the file they were
         /// for still holds its old content, and what they held is made again. Removed when written before
         /// writtenBeforeUtc (the start of this run of the program: none of its own), else when older than ten minutes.
@@ -202,8 +279,12 @@ namespace SAAControl
             {
                 if (!Directory.Exists(folder)) return 0;
                 DateTime before = writtenBeforeUtc ?? DateTime.UtcNow - TimeSpan.FromMinutes(10);
-                var option = subfolders ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                foreach (string file in Directory.EnumerateFiles(folder, "*" + TempSuffix, option).ToList())
+                var files = new List<string>();
+                // (with the folders in it - not those of a junction, a name for another place - and a folder that cannot be
+                // listed costs only its own files)
+                if (subfolders) ListFiles(folder, "*" + TempSuffix, files);
+                else files.AddRange(Directory.GetFiles(folder, "*" + TempSuffix));
+                foreach (string file in files)
                 {
                     try
                     {

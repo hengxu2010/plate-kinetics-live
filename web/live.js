@@ -250,6 +250,31 @@ const ZH = {
     'The annotation could not be loaded: {0}': '标注没能载入：{0}',
     'The last save could not be undone: {0}': '没能退回上一版：{0}',
     '{0} saved a newer annotation: it is shown now': '{0} 保存了新的标注，已自动载入',
+    '{0} saved a newer annotation: it is shown now (your earlier steps cannot be undone over it)': '{0} 保存了新的标注，已自动载入（之前的操作已无法撤销）',
+    'Save over it': '覆盖保存',
+    '{0} saved a newer annotation at {1}.': '{0} 在 {1} 保存了新的标注。',
+    '{0} saved a newer annotation.': '{0} 保存了新的标注。',
+    'A newer annotation was saved at {0}.': '实验里在 {0} 保存了新的标注。',
+    'A newer annotation was saved.': '实验里保存了新的标注。',
+    '{0} saved a different annotation at {1}.': '{0} 在 {1} 保存了另一个标注。',
+    '{0} saved a different annotation.': '{0} 保存了另一个标注。',
+    'A different annotation was saved at {0}.': '实验里在 {0} 保存了另一个标注。',
+    'A different annotation was saved.': '实验里保存了另一个标注。',
+    'Saved over the newer version.': '已覆盖较新的版本。',
+    'Save puts yours over it.': '保存会用您的标注覆盖它。',
+    'Save puts yours over it: this cannot be undone.': '保存会用您的标注覆盖它，覆盖后不能撤销。',
+    'Saved over the version of {0}.': '已覆盖 {0} 的版本。',
+    'Undo last save brings theirs back.': '点“退回上一版”可以换回对方的版本。',
+    'Your changes to {0} are replaced by the version saved in the experiment ({1}).': '您对 {0} 的改动会被实验里保存的版本（{1}）替换。',
+    'Your changes to {0} are replaced by what it showed when it was opened.': '您对 {0} 的改动会被替换成打开时的样子。',
+    '{0:channel}': '{0} 个通道',
+    'Close dataset': '关闭数据集',
+    '{0} has changes that are not saved to the experiment ({1}): they are lost when it is closed. Close it anyway?': '{0} 有改动没有保存到实验里（{1}），关闭后这些改动就没了。仍然关闭吗？',
+    '{0} has changes that are not saved to the experiment yet ({1}); they are still sent when it answers again, while this window stays open. Close it anyway?':
+      '{0} 有改动还没有保存到实验里（{1}）；只要这个窗口开着，连上后仍会发过去。仍然关闭吗？',
+    'Ctrl+Z brings yours back': '按 Ctrl+Z 可以找回您的改动',
+    'Someone saved this experiment meanwhile. Your changes are still here: choose Save to overwrite, or Restore to take theirs.':
+      '这期间有人保存了这个实验。您的改动还在：点“保存”用您的改动覆盖它，或点“恢复到仪器端”换成对方的版本。',
     // the Experiments view: search, filters, actions
     'Search by name, sample, operator, instrument or date': '按名称、样品、操作人、仪器或日期搜索',
     'Search by name, date or instrument': '按名称、日期或仪器搜索',
@@ -327,6 +352,12 @@ const ZH = {
     'Layout saved: {0}': '布局已保存：{0}',
     'The layout could not be saved: {0}': '布局没能保存：{0}',
     'Delete the layout': '删除布局',
+    'It is set for the next experiment of {0}: that choice is dropped.': '它已被设为 {0} 的下一个实验所用的布局：这个选择会作废。',
+    'Undo': '撤销',
+    'Undo the last change of the wells (Ctrl+Z)': '撤销对孔的上一次改动（Ctrl+Z）',
+    'Cleared {0:well}': '已清空 {0} 孔',
+    '{0} of the selected wells are in group {1}: take them out of it first (empty the Group box, then “Group the wells”).':
+      '选中的孔里有 {0} 个已在 {1} 组：请先把它们移出（清空“分组”框，再点“设为这个分组”）。',
     'The layout “{0}” is deleted. Experiments that were named with it keep their names.': '布局“{0}”会被删除。已经用它命名的实验，名字不变。',
     'Deleted: {0}': '已删除：{0}',
     'The layout could not be deleted: {0}': '布局没能删除：{0}',
@@ -353,6 +384,7 @@ const ZH = {
     'Settings saved': '设置已保存',
     'The settings have unsaved changes': '设置有未保存的改动',
     'Discard changes': '放弃改动',
+    'The changes to the settings are not saved: they go back to how they were.': '对设置的改动还没有保存，会恢复成原来的样子。',
     'Save settings': '保存设置',
     'The name on screen is shown on the tiles, in the lists and in the notifications; file names keep the model and serial number. The next experiment of an instrument gets the name and the plate layout chosen here (once).':
       '显示名称用在卡片、列表和通知里；文件名仍用型号和序列号。仪器的下一个实验会用这里设好的名称和孔板布局（只用一次）。',
@@ -408,8 +440,8 @@ const ZH = {
     'This program reads the files of the instrument software; it does not control the instruments. It is not made, endorsed or supported by BMG LABTECH or RocGene. Omega and MARS are trademarks of BMG LABTECH; Archimed is a trademark of RocGene.':
       '本程序只读取仪器软件的文件，不控制仪器。它不是 BMG LABTECH 或 RocGene 公司制作的，也未经它们认可或支持。Omega 和 MARS 是 BMG LABTECH 的商标；Archimed 是 RocGene 的商标。',
     'Privacy': '隐私',
-    'The program works on this PC only. It sends nothing anywhere: no data, no usage figures, no updates are fetched. Its page is served on this PC and opens only in its own window.':
-      '本程序只在这台电脑上工作，不向任何地方发送任何东西：不发数据，不发使用统计，也不联网检查更新。它的页面只在这台电脑上提供，只在程序自己的窗口里打开。',
+    'The program works on this PC only. By default it connects nowhere: it sends no data and no usage figures. Only “Check for updates” (and the automatic check, when you turn it on) asks GitHub for the latest version number; no data are sent. Its page is served on this PC and opens only in its own window.':
+      '本程序只在这台电脑上工作，默认不主动连接任何地方：不发数据，不发使用统计。只有点“检查更新”（或者您打开了自动检查）时，才向 GitHub 查询最新版本号，不发送任何数据。它的页面只在这台电脑上提供，只在程序自己的窗口里打开。',
     'Third-party software': '第三方软件',
     'reads the workbooks in the analysis page': '分析页面用它读取表格文件',
     'the window of the installed and portable editions (Microsoft)': '安装版和便携版的窗口（Microsoft）',
@@ -417,6 +449,21 @@ const ZH = {
     'The analysis page on the web': '网页版分析页面',
     'The same analysis, without the instruments, for files from anywhere:': '同样的分析功能，不接仪器，可以分析任何地方来的文件：',
     'Check for updates': '检查更新',
+    'Check automatically when the window opens': '打开窗口时自动检查更新',
+    'Checking for updates…': '正在检查更新…',
+    'Already up to date (v{0})': '已是最新版本 (v{0})',
+    'Update check failed: {0}': '检查更新失败：{0}',
+    'New version v{0} is available': '发现新版本 v{0}',
+    'Downloading update v{0}… {1}%': '正在下载更新 v{0}… {1}%',
+    'Installing update v{0}…': '正在安装更新 v{0}…',
+    'Update failed: {0}': '更新失败：{0}',
+    'Retry': '重试',
+    'Release notes': '更新内容',
+    'Update now': '立即更新',
+    'Download page': '打开下载页',
+    'Later': '稍后',
+    'An instrument is measuring. The recording pauses for about 10 seconds during the update and loses nothing (missed readings are read back from the instrument software\'s files). Update now?':
+      '有仪器正在测量。更新时记录会暂停约 10 秒，不丢数据（漏掉的读数会从仪器软件的文件里补回）。现在更新吗？',
     // messages of the program without variable parts (Runs.cs, Archimed.cs)
     'The run has started; waiting for the data of cycle 1.': '实验已开始，等待第 1 轮数据。',
     'Omega is not running: this is the data the last measurement left behind.': 'Omega 没有在运行，这是上次测量留下的数据。',
@@ -1429,6 +1476,12 @@ function xlsxText(xlsx) {
    - A save that does not get through (the instrument PC cannot be reached) is tried again every 30 s.
    - A newer version of the instrument goes into a dataset without changes by itself. With changes it waits for the
      user ("Newer on the instrument"): Restore from instrument takes it, Save puts this device's over it (the last save wins).
+   - Every save says the version it was made on ("baseRev": the program's rev this device knows, 0 = nothing saved), so
+     that it does not silently go over a save it has not seen: the program (2.6 and later) then refuses it (409, with
+     its newest version), which is taken in as that newer version, with this device's changes waiting for the user.
+     Save / Ctrl+S in that state names the newer version: it goes over exactly that one. A refusal whose version is this
+     very save (a try of it got through, its answer was lost) counts as saved; one whose version says the same as the
+     version the dataset is based on (a view saved elsewhere) is saved on it at once.
    - The workbook (.xlsx) is made again on Save / Ctrl+S ("now"), when the experiment is left or closed ("leave"), and by
      the program itself at most 10 minutes after an automatic save, which does not make it (program's window only). The
      program says what became of it with every save ("xlsx": written, saved-as:, current, pending = it makes it later
@@ -1455,6 +1508,24 @@ function versionOf(answer) {
   return r || (a ? 't' + String(answer.savedAt || a.savedAt || '') : '');
 }
 const revNumber = key => (/^r\d+$/.test(String(key || '')) ? +String(key).slice(1) : NaN);
+/** The version a save is made on as the program counts it ("baseRev" of POST /api/analysis: 0 = nothing was saved);
+    undefined where this device does not know it (a program without revs, which goes by the last save as before). */
+const baseRevOf = key => (key === '' ? 0 : fin(revNumber(key)) ? revNumber(key) : undefined);
+/** A save refused because the experiment was saved meanwhile (409 with the version saved now: "conflict" of the
+    program, "changed" of the online server; { rev, analysis, savedAt, savedBy }); null for any other failure. */
+const conflictOf = e => (e && e.status === 409 && isObj(e.data) && (e.data.error === 'conflict' || e.data.error === 'changed') ? e.data : null);
+/** The most a request that outlives the page (fetch keepalive: the save as the page is closed) may carry: Chromium does
+    not send one whose body is over 64 KiB (all of them together) at all, and the annotation of a 384-well run with its
+    results is larger. Such a body goes as a normal request, which mostly still reaches the program while the window
+    closes the page; when it does not, the page's own session keeps the change, saved the next time it is opened. */
+const KEEPALIVE_BYTES = 60000;
+/** Whether a body (a text, bytes, or none) may go with keepalive. */
+function keepaliveFits(body) {
+  if (body == null) return true;
+  if (typeof body !== 'string') { const n = body.byteLength != null ? body.byteLength : body.size; return fin(n) && n <= KEEPALIVE_BYTES; }
+  if (body.length * 3 <= KEEPALIVE_BYTES) return true;              // (UTF-8: at most 3 bytes for a UTF-16 unit)
+  return body.length <= KEEPALIVE_BYTES && typeof TextEncoder === 'function' && new TextEncoder().encode(body).length <= KEEPALIVE_BYTES;
+}
 /** Whether two annotations say the same (names, groups and their wells, exclusions, notes, settings). */
 const sameAnnotation = (a, b) => (!isObj(a) && !isObj(b)) || (isObj(a) && isObj(b) && analysisSig(a, '', true) === analysisSig(b, '', true));
 
@@ -1467,14 +1538,18 @@ const sameAnnotation = (a, b) => (!isObj(a) && !isObj(b)) || (isObj(a) && isObj(
  *   fileOnly(x) -> bool: a .pk outside the Experiments folder, saved by the program's window (no revs),
  *   canBook(x) -> bool: its workbook can be made (the experiment's file is known),
  *   extra(x, dsId) -> { savedBy, operator, channel }: what goes with a save (analysisToSave),
- *   save(x, analysis, { xlsx: 'now' | 'leave' | '' (the workbook follows), keepalive }) -> Promise<{ rev, savedAt,
- *   savedBy, xlsx, previous }> (rejects with .status; 409: no second try would change it), savedText(x) -> what Save says
- *   when it is done ('' = "Saved to the experiment"),
+ *   save(x, analysis, { xlsx: 'now' | 'leave' | '' (the workbook follows), keepalive, baseRev (the version it is made
+ *   on; undefined: not said) }) -> Promise<{ rev, savedAt, savedBy, xlsx, previous }> (rejects with .status; 409: no
+ *   second try would change it - unless .data says the version saved meanwhile: conflictOf), savedText(x) -> what Save
+ *   says when it is done ('' = "Saved to the experiment"),
  *   load(x) -> Promise<{ analysis, rev, savedAt, savedBy, file, previous }>, revert(x) -> Promise<answer>,
  *   workbook(x, { how: 'now' | 'leave', keepalive }) -> Promise<{ xlsx }>, file(x, file): the experiment's file,
  *   store: { get(dsId), set(dsId, { r, h, v } | null) }: what the browser keeps over a reload (v: SIG_VERSION),
  *   busy() -> bool: not now (a half-typed name, a drag), toast(text, ms), changed(): draw again,
- *   signIn(): online, ask the user to sign in; signedOut(): a save was refused for want of a sign-in }
+ *   signIn(): online, ask the user to sign in; signedOut(): a save was refused for want of a sign-in,
+ *   forget(dsId) -> bool: the page's undo steps of a dataset dropped (true: it had some),
+ *   ask(title, lines, okLabel) -> Promise<bool>: a question before something that cannot be taken back (title and
+ *   okLabel fixed labels, en()) }
  */
 function createSync(env) {
   const records = new Map();
@@ -1493,7 +1568,7 @@ function createSync(env) {
     if (!records.has(runId)) records.set(runId, Object.assign({ runId, rev: null, saved: null, savedAt: '', savedBy: '', loaded: false, loading: null,
       epoch: 0, remote: '', checkedAt: -Infinity, bases: {}, seen: {}, starts: {}, pending: {}, inflight: null, offline: false, denied: false, error: '',
       refused: null, retryAt: 0, retryDs: '', bookDue: 0, bookMode: '', prev: undefined, unreachable: false, blocked: false, operator: null, news: '',
-      touched: {} }, extra || {}));
+      touched: {}, asking: false, mine: '' }, extra || {}));
     return records.get(runId);
   }
   /** What a dataset shows now (kept: the last look of a dataset that is no longer on the page); `at`: when it last
@@ -1503,6 +1578,10 @@ function createSync(env) {
     if (!got) return s || null;
     if (!s || s.sig !== got.sig || s.op !== x.operator) x.seen[dsId] = { sig: got.sig, at: now(), analysis: got.analysis, op: x.operator };
     else s.analysis = got.analysis;                // the newest results of a run that is measured
+    // Restore from instrument undone in the page (Ctrl+Z: the names, groups, exclusions and colours of before are
+    // back): this device's changes are as they were before it - never saved over the instrument's version by themselves
+    const r = x.restored && x.restored[dsId], b = x.bases[dsId];
+    if (r && b && got.sig !== b.sig && undoSig(got.analysis) === r.mine) { delete x.restored[dsId]; based(x, dsId, r.rev, r.sig); }
     return x.seen[dsId];
   }
   /** The state or the list of runs says the instrument has a version this device has not seen yet. */
@@ -1511,6 +1590,11 @@ function createSync(env) {
     x.bases[dsId] = { rev, sig };
     if (env.store) env.store.set(dsId, sig == null ? { r: rev, v: SIG_VERSION } : { r: rev, h: textHash(sig), v: SIG_VERSION });
   }
+  /** What the page's own undo puts back of an annotation (the names, groups, exclusions, colours and frames: not the
+      notes, not the settings): Restore from instrument undone is known by it. */
+  const undoSig = a => analysisSig(Object.assign({}, a, { notes: '' }), '', false);
+  /** The words for the version of the instrument as known now ("14:32 · zhang (online)"). */
+  const versionWords = x => { const at = stampMs(x.savedAt); return [fin(at) ? clockText(at, now()) : '', x.savedBy].filter(Boolean).join(' · ') || '—'; };
   /** Changes made on this device: the dataset differs from the version it is based on, or an operator was typed. */
   const changedHere = (x, dsId) => { const b = x.bases[dsId], s = x.seen[dsId]; return !!(b && s) && (s.sig !== b.sig || x.operator != null); };
   /** The instrument has a version this dataset is not based on. */
@@ -1565,6 +1649,7 @@ function createSync(env) {
   }
   /** Puts an annotation into a dataset, which is then based on the version of the instrument. */
   function put(x, dsId, a, undo) {
+    if (x.restored) delete x.restored[dsId];
     try { env.apply(dsId, a, undo); } catch (e) {
       x.blocked = /newer version/i.test(message(e));
       x.error = message(e);
@@ -1582,25 +1667,34 @@ function createSync(env) {
       const b = x.bases[dsId];
       if (!b || b.rev === x.rev || x.pending[dsId]) continue;
       const s = observe(x, dsId);
+      // it shows the instrument's version (Restore undone and done again, a dataset edited before the version came in
+      // and now the same): based on it, nothing to decide
+      if (s && x.operator == null && isObj(x.saved) && sameAnnotation(x.saved, s.analysis)) { based(x, dsId, x.rev, s.sig); continue; }
       if (!s || changedHere(x, dsId)) continue;              // changes of this device: the user decides
       if (!x.saved || sameAnnotation(x.saved, s.analysis)) { based(x, dsId, x.rev, s.sig); continue; }
       if (env.busy && env.busy()) continue;                  // not under a half-typed name or a drag: at the next tick
-      if (put(x, dsId, x.saved, false) && dsId === inView && x.news === x.rev) {
+      if (!put(x, dsId, x.saved, false)) continue;
+      // the page's steps from before someone else's version cannot be undone over it: Ctrl+Z would bring this device's
+      // older annotation back, which would then be saved over theirs by itself (this device's own save, put into the
+      // other channels of the experiment, leaves them)
+      const dropped = x.rev !== x.mine && !!(env.forget && env.forget(dsId));
+      if (dsId === inView && x.news === x.rev) {
         x.news = '';
-        if (x.savedBy) env.toast(say('{0} saved a newer annotation: it is shown now', x.savedBy), 6000);
+        if (x.savedBy) env.toast(say(dropped ? '{0} saved a newer annotation: it is shown now (your earlier steps cannot be undone over it)' : '{0} saved a newer annotation: it is shown now', x.savedBy), 6000);
       }
     }
   }
   /** Saves what a dataset shows. o = { workbook: 'now' | 'leave' (the .xlsx follows), explicit (Save, Ctrl+S: say so),
-      keepalive }. */
+      keepalive }. It is made on the version of the instrument this device knows (baseRev): a dataset is saved by
+      itself only when it is based on that version (not behind), and Save / Ctrl+S puts it over that version. */
   function save(x, dsId, o) {
     const opt = o || {};
     const got = env.look(dsId) || (x.seen[dsId] ? { sig: x.seen[dsId].sig, analysis: x.seen[dsId].analysis } : null);
     if (!got || !isObj(got.analysis)) return Promise.resolve(false);
     const posted = analysisToSave(got.analysis, env.extra ? env.extra(x, dsId) : {});
-    const sig = got.sig, typed = x.operator, how = opt.workbook && canBook(x) ? opt.workbook : '';
+    const sig = got.sig, typed = x.operator, how = opt.workbook && canBook(x) ? opt.workbook : '', baseRev = baseRevOf(x.rev);
     x.epoch++;
-    const run = Promise.resolve().then(() => env.save(x, posted, { xlsx: how, keepalive: !!opt.keepalive })).then(answer => {
+    const run = Promise.resolve().then(() => env.save(x, posted, { xlsx: how, keepalive: !!opt.keepalive, baseRev })).then(answer => {
       const a = isObj(answer) ? answer : {};
       Object.assign(x, { inflight: null, offline: false, denied: false, error: '', refused: null, loaded: true, news: '' });
       if (x.retryDs === dsId) { x.retryAt = 0; x.retryDs = ''; }
@@ -1608,18 +1702,47 @@ function createSync(env) {
       if (a.savedBy) posted.savedBy = String(a.savedBy);
       x.saved = posted; x.savedAt = String(posted.savedAt || ''); x.savedBy = String(posted.savedBy || '');
       x.rev = revKey(a.rev) || 't' + x.savedAt;
+      x.mine = x.rev;
       x.epoch++;                                    // what was asked before this answer is older
       based(x, dsId, x.rev, sig);
+      if (x.restored) delete x.restored[dsId];
       if (x.operator === typed) x.operator = null;
       known(x, a);
+      // put over the newer version of someone else (Save, after the question): said, and how theirs comes back
+      const over = opt.over == null ? '' : [opt.over ? say('Saved over the version of {0}.', opt.over) : say('Saved over the newer version.'),
+        revertible(x) && isObj(x.prev) ? say('Undo last save brings theirs back.') : ''].filter(Boolean).join(' ');
       booked(x, a, excel => {
-        if (opt.explicit) env.toast([savedWord(x), excel].filter(Boolean).join(' '), excel ? 9000 : 4000);
+        if (opt.explicit) env.toast([over || savedWord(x), excel].filter(Boolean).join(' '), excel || over ? 9000 : 4000);
         else if (excel) env.toast(excel, 9000);
       });
       return true;
     }, e => {
       x.inflight = null;
-      const status = e && e.status;
+      const status = e && e.status, newer = conflictOf(e);
+      if (newer) {
+        // someone saved the experiment meanwhile: their version is the newer one of the instrument (what the next
+        // question would have found), and this device's changes wait for the user, who is told once
+        Object.assign(x, { offline: false, denied: false, error: '' });
+        if (x.retryDs === dsId) { x.retryAt = 0; x.retryDs = ''; }
+        if (take(x, newer, x.epoch, { theirs: true })) {
+          x.epoch++;                                // what was asked before this answer is older
+          // the version saved meanwhile is this very save (a try of it got through, but its answer was lost): saved
+          const mine = v => analysisSig(v, null, true) + analysisView(v);
+          if (mine(newer.analysis) === mine(posted)) {
+            Object.assign(x, { refused: null, news: '', mine: x.rev });
+            based(x, dsId, x.rev, sig);
+            if (x.operator === typed) x.operator = null;
+            if (opt.explicit || how) workbook(x, { how: how || 'now', explicit: opt.explicit, keepalive: opt.keepalive });
+            return true;
+          }
+          // the same annotation under another version (the dataset was put on it): nothing to decide, saved on it now
+          const b = x.bases[dsId];
+          if (b && b.rev === x.rev) return save(x, dsId, opt);
+          if (behind(x, dsId)) env.toast(say('Someone saved this experiment meanwhile. Your changes are still here: choose Save to overwrite, or Restore to take theirs.'), 12000);
+          return false;
+        }
+        // (no newer version in it: a refusal as any other that a second try would not change)
+      }
       if (status === 403 && env.online()) { x.denied = true; if (env.signedOut) env.signedOut(); }
       else if (!status || status === 403 || status === 408 || status === 429 || status >= 500) {
         x.offline = !status || status === 408 || status === 502 || status === 503 || status === 504;
@@ -1654,6 +1777,8 @@ function createSync(env) {
     const opt = o || {};
     if (!x || !ready(x) || x.pending[dsId]) return;
     const s = observe(x, dsId);
+    // the user is being asked about this experiment (Save over a version, Restore): nothing goes now; after the answer
+    if (x.asking) { if (s && changedHere(x, dsId)) { x.retryDs = dsId; x.retryAt = now(); } return; }
     if (s && changedHere(x, dsId) && !behind(x, dsId) && mayWrite(x) && x.refused !== s.sig) {
       if (x.inflight) { x.retryDs = dsId; x.retryAt = now(); return; }      // once the save under way has its answer
       save(x, dsId, { workbook: opt.workbook ? 'leave' : '', keepalive: opt.keepalive });
@@ -1664,7 +1789,9 @@ function createSync(env) {
   /** A dataset found on the page without a version (the page has put its session back after a reload): what the
       browser kept tells whether it shows that version or has changes of this device; without it, a dataset that
       shows what the instrument has is based on that, else the user decides. A record kept by a version of before (no
-      "v": its signature made by analysisSigV1) is read with that signature, and kept again with the one of now. */
+      "v": its signature made by analysisSigV1) is read with that signature, and kept again with the one of now.
+      Changes this device kept that the instrument has now (the save made as the page was closed got through, but its
+      answer never came) are no changes: the dataset is based on the instrument's version. */
   function adopt(x, dsId) {
     const got = env.look(dsId);
     if (!got) return;
@@ -1672,7 +1799,7 @@ function createSync(env) {
     const kept = env.store ? env.store.get(dsId) : null, rev = isObj(kept) && kept.r != null ? String(kept.r) : null;
     if (isObj(kept) && kept.h && kept.h === textHash(got.sig)) x.bases[dsId] = { rev, sig: got.sig };
     else if (isObj(kept) && kept.h && kept.v == null && kept.h === textHash(analysisSigV1(got.analysis, '', true))) based(x, dsId, rev, got.sig);
-    else if (isObj(kept)) x.bases[dsId] = { rev, sig: null };
+    else if (isObj(kept) && !(isObj(x.saved) && sameAnnotation(x.saved, got.analysis))) x.bases[dsId] = { rev, sig: null };
     else if (!x.saved || sameAnnotation(x.saved, got.analysis)) based(x, dsId, x.rev, got.sig);
     else based(x, dsId, null, null);
   }
@@ -1690,7 +1817,7 @@ function createSync(env) {
         const s = observe(x, dsId);
         follow(x, dsId);
         // (a little early rather than a second late: the ticks of a browser come a few ms apart from a second)
-        if (s && changedHere(x, dsId) && !behind(x, dsId) && mayWrite(x) && !x.inflight && t - s.at >= SYNC.saveAfterMs - 250
+        if (s && changedHere(x, dsId) && !behind(x, dsId) && mayWrite(x) && !x.inflight && !x.asking && t - s.at >= SYNC.saveAfterMs - 250
           && (!x.retryAt || t >= x.retryAt) && x.refused !== s.sig) {
           // the instrument has a version this device has not seen: that first (with changes here, the user decides)
           if (remoteNewer(x) && !fileOnly(x)) { if (!x.loading) load(x); } else save(x, dsId, {});
@@ -1702,7 +1829,7 @@ function createSync(env) {
       // saved as the one in view would be (in view now: the usual way)
       for (const dsId of Object.keys(x.touched || {})) {
         if (view && view.x === x && view.dsId === dsId) { delete x.touched[dsId]; continue; }
-        if (t - x.touched[dsId] < SYNC.saveAfterMs - 250 || x.inflight || !ready(x) || x.pending[dsId] || (env.busy && env.busy())) continue;
+        if (t - x.touched[dsId] < SYNC.saveAfterMs - 250 || x.inflight || x.asking || !ready(x) || x.pending[dsId] || (env.busy && env.busy())) continue;
         if (remoteNewer(x) && !fileOnly(x)) continue;          // the instrument's newer version first (asked for below)
         if (!x.bases[dsId]) adopt(x, dsId);
         const s = observe(x, dsId);
@@ -1711,7 +1838,7 @@ function createSync(env) {
           save(x, dsId, { workbook: !last || last.x !== x ? 'leave' : '' });
       }
       // a save that did not get through, or a dataset that was left while another save was under way
-      if (x.retryDs && x.retryAt && t >= x.retryAt && !x.inflight && ready(x) && !x.pending[x.retryDs]) {
+      if (x.retryDs && x.retryAt && t >= x.retryAt && !x.inflight && !x.asking && ready(x) && !x.pending[x.retryDs]) {
         const dsId = x.retryDs, s = observe(x, dsId);
         if (s && changedHere(x, dsId) && !behind(x, dsId) && mayWrite(x) && x.refused !== s.sig && !(remoteNewer(x) && !fileOnly(x)))
           save(x, dsId, { workbook: !last || last.x !== x ? 'leave' : '' });
@@ -1724,29 +1851,88 @@ function createSync(env) {
   /** The dataset shows its grouping layers in another way (another active layer, Expand / Stack, …) than the version
       of the instrument it is based on: no change to save by itself, but Save writes it (analysisView). */
   const viewMoved = (x, dsId, s) => { const b = x.bases[dsId]; return !!(b && s && isObj(x.saved) && b.rev === x.rev && analysisView(x.saved) !== analysisView(s.analysis)); };
-  /** Save or Ctrl+S: what is changed is saved at once (also over a newer version: the last save wins), and so is the
-      view of the grouping layers when only that differs; with nothing changed the workbook is made again. Online and
-      not signed in: the user is asked to sign in. */
+  /** A save of this device that Undo last save can take back (the program's window, an experiment of its own). */
+  const revertible = x => !env.online() && !fileOnly(x) && !!env.revert && /^r/.test(String(x.rev || ''));
+  /** Save or Ctrl+S: what is changed is saved at once, and so is the view of the grouping layers when only that differs;
+      with nothing changed the workbook is made again. Over a newer version of the instrument (someone else's) only
+      after the user said yes to it (the last save wins: theirs is gone then, but for Undo last save in the program's
+      window). Online and not signed in: the user is asked to sign in. */
   function saveNow(x, dsId) {
     if (!env.canSave(x)) { if (env.online() && env.signIn) env.signIn(); else env.toast(say('This version of the analysis page cannot save into the experiment'), 6000); return Promise.resolve(false); }
     if (x.unreachable || x.blocked) { env.toast(say('Not saved: {0}', x.blocked ? x.error : say('this experiment was not recorded by this program')), 8000); return Promise.resolve(false); }
-    if (x.inflight) return x.inflight.run.then(() => saveNow(x, dsId));
+    if (x.asking) return Promise.resolve(false);            // (a question about this experiment is open: its answer first)
+    // after the save under way; one refused because someone saved meanwhile leaves this dataset behind their version:
+    // then this Save, pressed on the version before, waits for the user's choice (the notice) and goes over nothing
+    if (x.inflight) { const knew = x.rev; return x.inflight.run.then(done => (done === false && x.rev !== knew && behind(x, dsId) ? false : saveNow(x, dsId))); }
     const s = observe(x, dsId);
     x.denied = false;
     if (!s) return Promise.resolve(false);
+    if (behind(x, dsId) && changedHere(x, dsId) && env.ask) {
+      // (a dataset based on no known version - edited before the instrument's came in - is not said to be older than it)
+      const rev = x.rev, who = x.savedBy, at = stampMs(x.savedAt), when = fin(at) ? clockText(at, now()) : '', other = x.bases[dsId].rev == null;
+      const first = other ? (who ? (when ? say('{0} saved a different annotation at {1}.', who, when) : say('{0} saved a different annotation.', who))
+        : when ? say('A different annotation was saved at {0}.', when) : say('A different annotation was saved.'))
+        : who ? (when ? say('{0} saved a newer annotation at {1}.', who, when) : say('{0} saved a newer annotation.', who))
+          : when ? say('A newer annotation was saved at {0}.', when) : say('A newer annotation was saved.');
+      const lines = [first, say(revertible(x) ? 'Save puts yours over it.' : 'Save puts yours over it: this cannot be undone.')];
+      x.asking = true;
+      return Promise.resolve(env.ask(en('Save over it'), lines, en('Save over it'))).then(yes => {
+        x.asking = false;
+        if (!yes) return false;
+        // another version came while the question was open: the question is about that one now
+        if (x.rev !== rev || x.inflight) return saveNow(x, dsId);
+        return behind(x, dsId) && changedHere(x, dsId) ? save(x, dsId, { workbook: 'now', explicit: true, over: who }) : saveNow(x, dsId);
+      }, () => { x.asking = false; return false; });
+    }
     if (changedHere(x, dsId) || !x.bases[dsId] || viewMoved(x, dsId, s)) return save(x, dsId, { workbook: 'now', explicit: true });
     return workbook(x, { explicit: true, how: 'now' });
   }
   /** Restore from instrument: the changes of this device go, the instrument's version comes (its newest; when the
-      instrument PC cannot be reached, the newest known). Nothing saved: what the dataset showed when it was opened. */
-  function restore(x) {
+      instrument PC cannot be reached, the newest known). Nothing saved: what the dataset showed when it was opened.
+      Where a dataset has changes of this device the user is asked first (o.name: the experiment, as the question names
+      it). Each is put in as a step the page can undo: Ctrl+Z brings this device's names, groups and exclusions back
+      (not its notes or settings: the hint is given only where those are the same), and they are then as they were
+      before, not saved over the instrument's version by themselves (observe). */
+  function restore(x, o) {
+    if (x.inflight || x.asking) return Promise.resolve(false);
+    const mine = env.datasets(x.runId).filter(dsId => { const s = observe(x, dsId); return !!s && changedHere(x, dsId) && !x.pending[dsId]; });
+    if (mine.length && env.ask) {
+      const name = String((o && o.name) || say('Experiment')), what = mine.length > 1 ? name + ' (' + say('{0:channel}', mine.length) + ')' : name;
+      const line = x.saved ? say('Your changes to {0} are replaced by the version saved in the experiment ({1}).', what, versionWords(x))
+        : say('Your changes to {0} are replaced by what it showed when it was opened.', what);
+      // while the question is open nothing of this experiment is saved (tick, leave): a yes drops exactly the changes
+      // it named; another version that came meanwhile is asked about again
+      const rev = x.rev;
+      x.asking = true;
+      return Promise.resolve(env.ask(en('Restore from instrument'), [line], en('Restore from instrument'))).then(yes => {
+        x.asking = false;
+        if (!yes) return false;
+        if (x.inflight) return x.inflight.run.then(() => restore(x, o));
+        return x.rev !== rev ? restore(x, o) : restoreNow(x);
+      }, () => { x.asking = false; return false; });
+    }
+    return restoreNow(x);
+  }
+  function restoreNow(x) {
     if (x.inflight) return Promise.resolve(false);
     const epoch = ++x.epoch;
     const back = () => {
-      let done = 0;
-      for (const dsId of env.datasets(x.runId)) { const a = x.saved || x.starts[dsId]; if (a && !x.pending[dsId] && put(x, dsId, a, true)) done++; }
+      let done = 0, undoable = 0, partly = false;
+      for (const dsId of env.datasets(x.runId)) {
+        const a = x.saved || x.starts[dsId], s = x.seen[dsId], b = x.bases[dsId];
+        if (!a || x.pending[dsId]) continue;
+        const was = s && changedHere(x, dsId) ? { analysis: s.analysis, rev: b.rev, sig: b.sig } : null;
+        if (!put(x, dsId, a, true)) continue;
+        done++;
+        const got = was && env.look(dsId);
+        if (!got || undoSig(was.analysis) === undoSig(got.analysis)) { if (got) partly = true; continue; }
+        // what Ctrl+Z brings back is known again by observe(); notes or settings it does not bring back: no hint
+        (x.restored || (x.restored = {}))[dsId] = { rev: was.rev, sig: was.sig, mine: undoSig(was.analysis) };
+        undoable++;
+        if (String(was.analysis.notes || '').trim() !== String(got.analysis.notes || '').trim() || stableJson(was.analysis.settings || {}) !== stableJson(got.analysis.settings || {})) partly = true;
+      }
       Object.assign(x, { operator: null, error: '', refused: null, denied: false, retryAt: 0, retryDs: '', news: '' });
-      if (done) env.toast(say('The annotation saved in the experiment is shown again'));
+      if (done) env.toast([say('The annotation saved in the experiment is shown again'), undoable && !partly ? say('Ctrl+Z brings yours back') : ''].filter(Boolean).join(' · '), undoable && !partly ? 8000 : 4000);
       return done > 0;
     };
     const asked = fileOnly(x) ? Promise.resolve(back()) : Promise.resolve().then(() => env.load(x)).then(answer => { take(x, answer, epoch, { force: true }); return back(); },
@@ -1795,7 +1981,10 @@ function createSync(env) {
       if (!got) return;
       x.seen[dsId] = { sig: got.sig, at: now(), analysis: got.analysis, op: x.operator };
       if (!edited) x.starts[dsId] = got.analysis;
-      based(x, dsId, x.rev, edited ? null : got.sig);
+      // edited before the instrument's version came in, which says something else: the user decides (Save puts this
+      // device's over it, Restore takes it), it is never saved over by itself
+      if (edited && isObj(x.saved) && !sameAnnotation(x.saved, got.analysis)) based(x, dsId, null, null);
+      else based(x, dsId, x.rev, edited && !isObj(x.saved) ? null : got.sig);
     },
     /** analysisRev of /api/state or /api/runs for a run. */
     remote(runId, rev) { const x = records.get(runId); if (x) x.remote = revKey(rev); },
@@ -1886,6 +2075,20 @@ function editLayout(layout, ids, patch) {
   }
   return Object.assign({}, layout, { wells });
 }
+/** The wells of `ids` that are in a group other than `group` (none when no group is given): { wells: how many, groups:
+    their groups, in the order of the plate }. */
+function layoutTaken(layout, ids, group) {
+  const g = String(group == null ? '' : group).trim(), groups = [], wells = isObj(layout && layout.wells) ? layout.wells : {};
+  let n = 0;
+  if (!g) return { wells: 0, groups };
+  for (const id of ids) {
+    const w = wells[id], was = isObj(w) ? String(w.group || '').trim() : '';
+    if (!was || was === g) continue;
+    n++;
+    if (!groups.includes(was)) groups.push(was);
+  }
+  return { wells: n, groups };
+}
 /** The groups of a layout, in the order of the plate: [{ name, wells }]. */
 function layoutGroups(layout) {
   const out = new Map(), plate = layout && layout.plate ? layout.plate : { rows: 8, cols: 12 };
@@ -1918,6 +2121,24 @@ function settingsOf(raw) {
   }
   return { instruments, notify: { sound: notify.sound !== false, kinds: Array.isArray(notify.kinds) ? EVENT_KINDS.filter(k => notify.kinds.includes(k)) : EVENT_KINDS.slice() },
     keepAwake: s.keepAwake !== false, nextExperiment: next, operatorDefault: typeof s.operatorDefault === 'string' ? s.operatorDefault.trim() : '' };
+}
+/** What Save settings sends (POST /api/settings replaces only the items it is given, each as a whole): the items the
+    user changed in the view (draft, against `loaded`: the settings the view was opened with); of the next experiments
+    only the instruments changed there, put into the newest ones (fresh: read again just before; else loaded's), so that
+    a next experiment a run took meanwhile does not come back, nor does one chosen elsewhere go. */
+function settingsChanges(draft, loaded, fresh) {
+  const out = {}, d = isObj(draft) ? draft : {}, l = isObj(loaded) ? loaded : {};
+  for (const k of Object.keys(d)) if (stableJson(d[k]) !== stableJson(l[k])) out[k] = d[k];
+  if (out.nextExperiment) {
+    const dn = isObj(d.nextExperiment) ? d.nextExperiment : {}, ln = isObj(l.nextExperiment) ? l.nextExperiment : {};
+    const next = Object.assign({}, isObj(fresh) && isObj(fresh.nextExperiment) ? fresh.nextExperiment : ln);
+    for (const key of new Set(Object.keys(dn).concat(Object.keys(ln)))) {
+      if (stableJson(dn[key] || null) === stableJson(ln[key] || null)) continue;
+      if (dn[key]) next[key] = dn[key]; else delete next[key];
+    }
+    out.nextExperiment = next;
+  }
+  return out;
 }
 /** The next experiment of an instrument in words: "Batch 12 · layout RT-QuIC 24 x 4" ('' for none). */
 function nextText(next, layouts) {
@@ -1979,6 +2200,47 @@ function checkLines(health, zh) {
 }
 const EDITIONS = { installed: en('Installed, with the background service'), portable: en('Portable') };
 const editionText = edition => (has(EDITIONS, edition) ? say(EDITIONS[edition]) : String(edition || ''));
+
+/* ---------- updates of the program (its window only): the notice at the top and the line in About ----------
+   The window checks GitHub (when the user asks in About, or at its start when the automatic check is on) and says
+   { cmd: 'updateInfo', available, manual, version, notes, url, canInstall, auto, error, errorZh, state: none |
+   'downloading' | 'installing' | 'error', progress, code }, which the page hands to the shell (SAAShell.updateInfo). */
+/** An updateInfo as the shell keeps it: what the messages of a download under way leave out (the version, its page,
+    whether it can be installed) is kept from the one before. Only an https address is a page to open. */
+function updateTaken(prev, m) {
+  const p = isObj(prev) ? prev : {}, o = isObj(m) ? m : {};
+  const state = o.state === 'downloading' || o.state === 'installing' || o.state === 'error' ? o.state : '';
+  return { available: o.available === true || !!state, manual: o.manual === true, state,
+    version: String(o.version || p.version || ''), url: typeof o.url === 'string' && /^https:\/\//i.test(o.url) ? o.url : p.url || '',
+    canInstall: typeof o.canInstall === 'boolean' ? o.canInstall : !!p.canInstall,
+    progress: fin(+o.progress) ? Math.max(0, Math.min(100, Math.round(+o.progress))) : 0,
+    error: typeof o.error === 'string' ? o.error : '', errorZh: typeof o.errorZh === 'string' ? o.errorZh : '' };
+}
+/** The buttons of the notice. */
+const UPDATE_ACTIONS = { retry: en('Retry'), notes: en('Release notes'), install: en('Update now'), page: en('Download page'), later: en('Later') };
+/** The notice of an update (u: updateTaken; zh: the shell is in Chinese, the window's own Chinese of an error is
+    shown): { sev, text, actions } or null. "Update now" only where the window can install it, else its download page;
+    a failed one can be tried again; no "Later" while it is downloaded or installed. */
+function updateBanner(u, zh) {
+  if (!isObj(u) || (!u.state && !(u.available && u.version))) return null;
+  const busy = u.state === 'downloading' || u.state === 'installing', failed = u.state === 'error';
+  const text = u.state === 'downloading' ? say('Downloading update v{0}… {1}%', u.version, u.progress)
+    : u.state === 'installing' ? say('Installing update v{0}…', u.version)
+      : failed ? say('Update failed: {0}', (zh && u.errorZh) || u.error) : say('New version v{0} is available', u.version);
+  const actions = [failed ? 'retry' : '', u.url ? 'notes' : '', !busy && !failed ? (u.canInstall ? 'install' : u.url ? 'page' : '') : '', busy ? '' : 'later'];
+  return { sev: failed ? 'error' : 'info', text, actions: actions.filter(Boolean) };
+}
+/** The line beside "Check for updates" in About: what the last check (or the update under way) came to. o = { checking,
+    current: the version of this program, zh }. A check of the window's own start says only what it found. */
+function updateLine(u, o) {
+  if (o.checking) return say('Checking for updates…');
+  if (!isObj(u)) return '';
+  if (u.state) return updateBanner(u, o.zh).text;
+  const error = (o.zh && u.errorZh) || u.error;
+  if (error) return u.manual ? say('Update check failed: {0}', error) : '';
+  if (u.available && u.version) return say('New version v{0} is available', u.version);
+  return u.manual ? say('Already up to date (v{0})', o.current || '') : '';
+}
 /** The name of a file in a Content-Disposition header (filename*=UTF-8''... first). */
 function fileNameOf(header) {
   const h = String(header || '');
@@ -1998,9 +2260,10 @@ const logic = { ZH, PROGRAM, PROGRAMS, ME, say: (fmt, ...args) => say(fmt, ...ar
   searchWords, instrumentText, statusText, experimentList, experimentRows, experimentMeta, experimentStatus, experimentProblem, instrumentsOf, removedRows,
   omegaRows, omegaTitle, omegaMeta, omegaName, runOf, safeId, bytesText, storageProblem, placeOf, inFolder,
   problemLines, instrumentProblems, eventKey, newEvents, eventTitle, eventText, wanted, runOfDataset, isRunId, stableJson, analysisSig, analysisSigV1, SIG_VERSION, analysisView, hasSettings, analysisToSave,
-  layoutNames, namesAnalysis, xlsxText, SYNC, textHash, revKey, versionOf, sameAnnotation, createSync, syncTexts, FOLD_MS, runStartMs, datasetEndMs, foldable,
-  wellId, wellPos, plateWells, wellRange, newLayout, editLayout, layoutGroups, layoutMeta, settingsOf, nextText, checkLines, editionText, fileNameOf,
-  protocolView };
+  layoutNames, namesAnalysis, xlsxText, SYNC, textHash, revKey, versionOf, baseRevOf, conflictOf, KEEPALIVE_BYTES, keepaliveFits, sameAnnotation, createSync, syncTexts,
+  FOLD_MS, runStartMs, datasetEndMs, foldable,
+  wellId, wellPos, plateWells, wellRange, newLayout, editLayout, layoutTaken, layoutGroups, layoutMeta, settingsOf, settingsChanges, nextText, checkLines, editionText, fileNameOf,
+  updateTaken, UPDATE_ACTIONS, updateBanner, updateLine, protocolView };
 if (typeof module === 'object' && module.exports) module.exports = logic;      // loaded by the tests
 else window.SAALogic = logic;                                                 // in the page: for web/shell.js
 })();

@@ -135,10 +135,8 @@ namespace SAAControl
             Runtime.AppName = appName;
             Runtime.ProgramName = InstallShared.DisplayName(appName);
             if (args.Has("--uninstall")) return Uninstaller.Run(appName);
-            if (args.Has("--analysis-only") || AnalysisRunner.IsAnalysisOnlyInstall(Files.ProgramDir))
-                return AnalysisRunner.Run(appName, argv);
-            // the tray of the installed program (one per signed-in user): notifications of the runs' events
-            if (args.Has("--tray")) return TrayMode.Run(appName, int.TryParse(args.Value("--port"), out int trayPort) ? trayPort : defaultPort, args.Value("--data-dir"));
+            // the service's own starts come before everything else: a registered service is always the recorder, also
+            // in a folder that (by a stray marker file) looks like an analysis-only installation
             if (args.Has("--install-service")) return ServiceMode.Install(appName, serviceDescription);
             if (args.Has("--uninstall-service")) return ServiceMode.Uninstall(appName);
             if (args.Has("--start-service")) return ServiceMode.Start(appName, 60) ? 0 : 1;
@@ -147,6 +145,16 @@ namespace SAAControl
                 ServiceBase.Run(new HostService(appName, stop => RunCore(appName, defaultPort, args, makeWatcher, stop, null, rebuildRecord)));
                 return 0;
             }
+            // the installer started the program again after a silent update that failed (--update-failed=<its exit
+            // code>; never a file to open): the window tells the page once it is there
+            Updater.FailedUpdate = Updater.UpdateFailedCode(argv);
+            if (args.Has("--analysis-only") || AnalysisRunner.IsAnalysisOnlyInstall(Files.ProgramDir))
+            {
+                if (args.Has("--tray")) return 0;      // (an analysis-only installation has no tray)
+                return AnalysisRunner.Run(appName, argv);
+            }
+            // the tray of the installed program (one per signed-in user): notifications of the runs' events
+            if (args.Has("--tray")) return TrayMode.Run(appName, int.TryParse(args.Value("--port"), out int trayPort) ? trayPort : defaultPort, args.Value("--data-dir"));
             // (an installed program - its list of files is beside it - is never a temporary copy, wherever it is)
             if (!args.Has("--no-window") && !Installed(appName) && InsideZip(Files.ProgramDir))
             {
@@ -306,6 +314,8 @@ namespace SAAControl
             var waited = Stopwatch.StartNew();
             SocketException refused = null;
             bool named = false, earlyLog = false;
+            Stopwatch saidWaiting = null;              // since the service last said that it waits for another instance
+            string saidIn = null;                      // (the log that says it)
             while (true)
             {
                 string other = WebServer.OtherInstance(port, appName);
@@ -313,6 +323,19 @@ namespace SAAControl
                 {
                     if (!noWindow) AskToShow(appName, url, dataDir, open, port, args);
                     return 0;
+                }
+                // the service waits while another instance of the program has the port (a copy started by hand, a window
+                // that records because the service did not run when it was opened): the service records nothing
+                // meanwhile, so its log says whom it waits for - after 30 s, then every 10 minutes
+                if (other == "running" && asService && waited.Elapsed.TotalSeconds >= 30 && (saidWaiting == null || saidWaiting.Elapsed.TotalMinutes >= 10))
+                {
+                    saidWaiting = Stopwatch.StartNew();
+                    try
+                    {
+                        earlyLog |= SayServiceWaits(appName, port, LayoutOf(dataDir, args, appName).Logs, waited.Elapsed);
+                        saidIn = Log.CurrentFile;
+                    }
+                    catch (Exception) { }
                 }
                 if (other == "")
                 {
@@ -378,6 +401,10 @@ namespace SAAControl
             if (note.Length > 0) Log.Info(note);
             foreach (string line in notes) Log.Info(line);
             if (reason != null) Log.Info(reason);
+            if (saidWaiting != null)
+                Log.Warning("before this start the service waited " + Lasted(waited.Elapsed) + " for another instance of the program, which held port " +
+                            port + " and recorded in its place" +
+                            (saidIn != null && !saidIn.Equals(Log.CurrentFile, StringComparison.OrdinalIgnoreCase) ? " (see " + saidIn + ")" : ""));
             if (asService)
             {
                 // the instrument software comes first: the recorder only reads, and catches up on what it missed
@@ -470,6 +497,39 @@ namespace SAAControl
             return 0;
         }
 
+        /// <summary>The log the service writes to while it waits for another instance of the program: a file of its own
+        /// beside the program's log. The program's log may be that instance's (when it records into the same data
+        /// folder), and two processes appending to one file overwrite each other's lines.</summary>
+        static string ServiceWaitsLog(string logs, string appName) => Path.Combine(logs, appName + "-service-waits.log");
+
+        /// <summary>The service cannot record: another instance of this program answers on the port and records in its
+        /// place. One Error line names that process (in ServiceWaitsLog, unless a log is open already). True when the
+        /// log was opened for it (it is closed again once the service has the port).</summary>
+        static bool SayServiceWaits(string appName, int port, string logs, TimeSpan waited)
+        {
+            var owner = PortOwner.Find(port);
+            string who = "a process that was not found";
+            if (owner != null)
+            {
+                string path = null;
+                try { using (Process process = Process.GetProcessById(owner.Value.Pid)) path = process.MainModule.FileName; }
+                catch (Exception) { }
+                who = owner.Value.Program + " (process " + owner.Value.Pid + (path != null ? ", " + path : "") + ")";
+            }
+            bool opened = false;
+            if (Log.CurrentFile == null)
+            {
+                Log.Open(ServiceWaitsLog(logs, appName));
+                opened = true;
+            }
+            Log.Error("The Windows service " + appName + " records nothing: another instance of the program, " + who + ", holds port " + port +
+                      " and records in its place. The service has waited " + Lasted(waited) +
+                      " and goes on waiting until that instance ends: close it (its window, or end that process), and the service records again.");
+            return opened;
+        }
+
+        static string Lasted(TimeSpan time) => time.TotalMinutes < 2 ? (int)time.TotalSeconds + " seconds" : (int)time.TotalMinutes + " minutes";
+
         /// <summary>Whether a program file name is this program's (or its former name's): an instance that is starting or
         /// ending, not another program.</summary>
         static bool IsThisProgram(string program, string appName)
@@ -494,6 +554,10 @@ namespace SAAControl
             int port = int.TryParse(args.Value("--port"), out int p) ? p : defaultPort;
             string url = "http://127.0.0.1:" + port + "/";
             string open = args.OpenFile();             // an experiment file to show in the page
+            // after a failed update the window that started it may still be closing (its event is there until its
+            // process ends): this start waits until it is gone and shows the window (and the notice) itself, instead of
+            // calling a window that is about to go
+            if (Updater.FailedUpdate != null) Updater.GoneWithin(ShowEventName(appName), TimeSpan.FromSeconds(Updater.ClosingWindowSeconds));
             try
             {
                 if (EventWaitHandle.TryOpenExisting(ShowEventName(appName), out var existing))

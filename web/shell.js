@@ -111,11 +111,22 @@ const host = () => (window.chrome && window.chrome.webview && typeof window.chro
 /** What the program's window says about itself before the page runs: { window, user, pc, edition, recordsHere }. */
 const hostInfo = () => (window.PKHost && typeof window.PKHost === 'object' ? window.PKHost : {});
 
+/** A signal that ends a request after ms: AbortSignal.timeout, or where a browser does not have it (older iOS Safari,
+    older Android WebViews: the online view) a controller of its own. (Its timer is left to run: aborting a request that
+    has ended does nothing, and while the answer is still being read it ends that too, as AbortSignal.timeout does.) */
+function timeoutSignal(ms) {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') return AbortSignal.timeout(ms);
+  if (typeof AbortController !== 'function') return undefined;
+  const ctl = new AbortController();
+  setTimeout(() => ctl.abort(), ms);
+  return ctl.signal;
+}
 /** Every request to the program goes through here. opt = { method ('GET', 'POST' with a body), body (an object is
     sent as JSON, bytes as they are), seconds (15): how long to wait, as: 'blob' for a file, keepalive: the request
-    outlives the page (it is being closed) }. An answer that is not OK throws an Error that carries its status and the
-    server's own words. A POST names this site as its origin (under the page's no-referrer policy it would say "null";
-    the online view checks the origin of every POST). */
+    outlives the page (it is being closed; only a body small enough for it: X.keepaliveFits) }. An answer that is not
+    OK throws an Error that carries its status, the server's own words and its answer (data). A POST names this site as
+    its origin (under the page's no-referrer policy it would say "null"; the online view checks the origin of every
+    POST). */
 async function api(path, opt) {
   const o = opt || {};
   const headers = { 'X-SAA-Token': token() };
@@ -126,9 +137,9 @@ async function api(path, opt) {
     headers['Content-Type'] = raw ? 'application/octet-stream' : 'application/json';
   }
   const method = o.method || (body !== undefined ? 'POST' : 'GET');
-  const init = { method, cache: 'no-store', headers, body, signal: AbortSignal.timeout((o.seconds || 15) * 1000) };
+  const init = { method, cache: 'no-store', headers, body, signal: timeoutSignal((o.seconds || 15) * 1000) };
   if (method === 'POST') init.referrerPolicy = 'same-origin';
-  if (o.keepalive) init.keepalive = true;
+  if (o.keepalive && X.keepaliveFits(body)) init.keepalive = true;
   let res;
   try {
     res = await fetch(path, init);
@@ -150,6 +161,7 @@ async function api(path, opt) {
       : own ? tr(String(own)) : res.status === 404 ? say('The background program does not have this data') : say('The request failed ({0})', res.status));
     error.status = res.status;
     error.signIn = signIn;
+    error.data = data;               // (a save refused as made on another version says the version saved now: 409)
     throw error;
   }
   return data;
@@ -551,6 +563,8 @@ function relang() {
   renderLayouts();
   if (view === 'settings') renderSettings();
   if (view === 'about') renderAbout(false);
+  upd.sig = '';
+  renderUpdate();
   stripSig = '';
   render();
 }
@@ -623,7 +637,8 @@ function renderBanners() {
   bannerBox.replaceChildren(...lines.map(p => h('div', { cls: 'saa-banner', 'data-sev': p.severity, role: p.severity === 'error' ? 'alert' : 'status', translate: 'no' },
     icon(p.severity === 'info' ? 'info' : 'alert'), h('span', null, p.text),
     p.dismissible ? h('button', { cls: 'saa-banner-x', type: 'button', title: say('Close this message'), 'aria-label': say('Close this message'),
-      onclick: () => { prefs.dismissed[p.key] = p.since; savePrefs(); bannerSig = ''; renderBanners(); } }, icon('close')) : null)));
+      onclick: () => { prefs.dismissed[p.key] = p.since; savePrefs(); bannerSig = ''; renderBanners(); } }, icon('close')) : null)),
+    ...(upd.el ? [upd.el] : []));        // (the notice of an update stays, after them: renderUpdate)
 }
 
 /* ---------- events: a notification in the window for each, once (the installed program's tray also tells Windows) ---------- */
@@ -1108,8 +1123,19 @@ const sync = X.createSync({
   toast,
   changed: () => { stripSig = ''; renderStrip(); },
   signIn: () => { if (window.SAAOnline && typeof window.SAAOnline.signIn === 'function') window.SAAOnline.signIn(); },
-  signedOut: () => { if (window.SAAOnline && typeof window.SAAOnline.refresh === 'function') window.SAAOnline.refresh(); }
+  signedOut: () => { if (window.SAAOnline && typeof window.SAAOnline.refresh === 'function') window.SAAOnline.refresh(); },
+  forget: dsId => dropSteps(app, dsById(dsId)),
+  ask: (title, lines, okLabel) => confirmDialog(title, lines, okLabel)
 });
+/** The page's undo and redo steps of a dataset dropped (someone else's version was put in by itself: Ctrl+Z must not
+    bring an older annotation of this device back over it); true when it had some. */
+function dropSteps(pk, ds) {
+  if (!ds || !Array.isArray(ds.undo) || !Array.isArray(ds.redo) || !(ds.undo.length || ds.redo.length)) return false;
+  ds.undo.length = 0;
+  ds.redo.length = 0;
+  if (pk && typeof pk.inv === 'function') pk.inv('tabs');      // (the page sets its undo buttons with every drawing)
+  return true;
+}
 const expFor = runId => sync.exp(runId, { file: null, path: prefs.paths[runId] || null, info: {} });
 /** The run id of a dataset id ("Omega2-20260120-093000-ch2" -> "Omega2-20260120-093000"; a dataset made safe from an
     odd run id has it in prefs.runIds). */
@@ -1335,10 +1361,38 @@ function saveExperiment() {
   if (strip && !strip.opInput.hidden) commitOperator();
   sync.saveNow(x, ds.id);
 }
-/** Restore from instrument: the changes of this device go, the annotation saved in the experiment comes. */
+/** A dataset tab's close button (the page's #dsTabs [data-close]): an experiment with changes that are not in the
+    experiment (changed only on this device, or with a newer version on the instrument: they would be lost) is closed
+    only after a question that says why; anything else goes to the page as it was (the page closes an experiment saved
+    elsewhere without a question of its own). The close of a "yes" is the page's own, clicked again. */
+let closing = false;
+function guardClose(e) {
+  const b = !closing && mode === 'shell' && app && e.target && e.target.closest ? e.target.closest('#dsTabs [data-close]') : null;
+  const ds = b ? app.S.ds[+b.dataset.close] : null, x = ds ? expOf(ds) : null;
+  if (!x) return;
+  // (a newer version without changes here goes into the dataset by itself: nothing to lose)
+  const st = sync.status(x, ds.id);
+  if (st.state !== 'local' && !(st.state === 'newer' && sync.changedHere(x, ds.id))) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  const words = X.syncTexts(st, { online, now: Date.now() }), why = st.state === 'newer' ? words.chip : words.note || words.chip;
+  // what the instrument PC (online) or the program did not answer is tried again every 30 s, also once the dataset is
+  // closed, while this window stays open; anything else goes with it
+  const later = st.state === 'local' && st.reason === 'offline';
+  confirmDialog(en('Close dataset'), [later ? say('{0} has changes that are not saved to the experiment yet ({1}); they are still sent when it answers again, while this window stays open. Close it anyway?', ds.name, why)
+    : say('{0} has changes that are not saved to the experiment ({1}): they are lost when it is closed. Close it anyway?', ds.name, why)], en('Close')).then(yes => {
+    const i = app.S.ds.indexOf(ds), again = yes && i >= 0 ? document.querySelector('#dsTabs [data-close="' + i + '"]') : null;
+    if (!again) return;
+    if (later) sync.touch(x, ds.id);                // (its last look goes with the next tries: web/live.js tick)
+    closing = true;
+    try { again.click(); } finally { closing = false; }
+  });
+}
+/** Restore from instrument: the changes of this device go (after a question), the annotation saved in the experiment
+    comes. */
 function restoreExperiment() {
-  const x = expOf(app.curDS());
-  if (x) sync.restore(x);
+  const ds = app.curDS(), x = expOf(ds);
+  if (x) sync.restore(x, { name: (x.info && x.info.name) || (ds && ds.name) || '' });
 }
 /** Undo last save (the program's window): POST /api/analysis/revert, after a question. */
 async function undoLastSave() {
@@ -1350,7 +1404,8 @@ async function undoLastSave() {
 /** An annotation saved: into the program's file of the experiment (POST /api/analysis; xlsx=now or xlsx=leave asks for
     its workbook too, an automatic save says nothing: the program makes it later), or, for a .pk opened from outside the
     Experiments folder, by the program's window into that file. A refusal that no second try would change carries the
-    status 409. */
+    status 409. The save says the version it was made on ("baseRev", when known): the program (and the online server)
+    refuse one made on another version with 409 and the version saved now; a program of before ignores it. */
 async function saveAnnotation(x, analysis, o) {
   const refused = text => Object.assign(new Error(text), { status: 409 });
   if (fileOnly(x)) {
@@ -1360,7 +1415,8 @@ async function saveAnnotation(x, analysis, o) {
   }
   if (!online && x.path && !x.file && !X.inFolder(x.path, experimentsFolder()))
     throw refused(say('This file lies outside the Experiments folder and was not recorded on this PC: it can only be saved into in the program\'s window'));
-  try { return await api('/api/analysis?runId=' + enc(x.runId) + (o.xlsx ? '&xlsx=' + o.xlsx : ''), { method: 'POST', body: { analysis }, seconds: 120, keepalive: o.keepalive }); }
+  // (baseRev undefined: left out of the JSON)
+  try { return await api('/api/analysis?runId=' + enc(x.runId) + (o.xlsx ? '&xlsx=' + o.xlsx : ''), { method: 'POST', body: { analysis, baseRev: o.baseRev }, seconds: 120, keepalive: o.keepalive }); }
   catch (e) { if (e.status === 404) e.message = say('this experiment was not recorded by this program'); throw e; }
 }
 /** The annotation of the experiment in view looked at now (and every second): web/live.js's createSync().tick(). */
@@ -1775,6 +1831,7 @@ function editLayoutDraft(l) {
   lay.saved = l.id ? JSON.stringify(l) : '';
   lay.sel = new Set(); lay.anchor = null;
   lay.built = null;
+  lay.undo = null;
   renderLayouts();
 }
 const layDirty = () => !!lay.draft && JSON.stringify(lay.draft) !== lay.saved;
@@ -1813,7 +1870,8 @@ function renderEditor() {
   setText(e.meta, X.layoutMeta(d));
   e.save.disabled = !layDirty() && !!d.id;
   show(e.del, !!d.id);
-  setText(e.state, layDirty() ? say('Unsaved changes') : d.id ? say('Saved') : '');
+  setText(e.state, lay.undo && lay.undo.cleared ? say('Cleared {0:well}', lay.undo.cleared) : layDirty() ? say('Unsaved changes') : d.id ? say('Saved') : '');
+  show(e.undo, !!lay.undo);
 }
 function buildEditor() {
   const d = lay.draft, rowsN = d.plate.rows, cols = d.plate.cols, e = lay.built = { rows: rowsN, cols, cells: new Map() };
@@ -1855,9 +1913,11 @@ function buildEditor() {
     else if (ev.key === 'Escape') { ev.stopPropagation(); pick([]); }
   });
   e.name = h('input', { type: 'text', cls: 'saa-wide-input', maxlength: '200', placeholder: en('Name of the layout'), 'aria-label': en('Name of the layout'),
-    oninput: () => { lay.draft.name = e.name.value; renderEditor(); } });
+    oninput: () => { lay.draft.name = e.name.value; lay.undo = null; renderEditor(); } });
   e.size = h('span', { cls: 'hint', translate: 'no' });
   e.state = h('span', { cls: 'hint saa-lay-state', translate: 'no' });
+  e.undo = button(en('Undo'), () => undoLayoutEdit(), 'sm ghost');
+  setAttr(e.undo, 'title', en('Undo the last change of the wells (Ctrl+Z)'));
   e.list = h('datalist', { id: 'saaLayoutGroups' });
   e.sample = h('input', { type: 'text', maxlength: '200', 'aria-label': en('Sample name'), placeholder: en('Sample name'),
     onkeydown: ev => { if (ev.key === 'Enter') { ev.preventDefault(); applyToSelection({ name: e.sample.value }); } } });
@@ -1875,7 +1935,7 @@ function buildEditor() {
     h('div', { cls: 'saa-list-card' },
       h('div', { cls: 'saa-list-head' },
         h('button', { cls: 'btn sm ghost', type: 'button', onclick: () => leaveEditor() }, icon('back'), en('All layouts')),
-        e.name, e.size, h('span', { cls: 'spacer' }), e.state, e.del, e.save),
+        e.name, e.size, h('span', { cls: 'spacer' }), e.state, e.undo, e.del, e.save),
       h('div', { cls: 'saa-lay-body' },
         h('div', { cls: 'saa-lay-plate' }, e.grid),
         h('div', { cls: 'saa-lay-side' },
@@ -1886,9 +1946,29 @@ function buildEditor() {
           h('h4', null, en('Groups of this layout')), e.legend, e.meta,
           h('p', { cls: 'hint' }, en('Tip: drag over the plate to select a block of wells, hold Shift to extend it, Ctrl to add single wells. Delete clears the selected wells.'))))));
 }
+/** A name and/or a group for the selected wells (patch: { name, group }; '' clears it). As the analysis page does it,
+    wells of one group go into another only once they are out of it (a block dragged a little too far would move them
+    silently): how many are in which group is said, and nothing changes. The change before can be undone once (Undo,
+    Ctrl+Z); a clear (Delete, Backspace, "Clear the selected wells") says how many wells it cleared. */
 function applyToSelection(patch) {
   if (!lay.draft || !lay.sel.size) return;
-  lay.draft = X.editLayout(lay.draft, [...lay.sel], patch);
+  const ids = [...lay.sel], before = lay.draft;
+  const taken = X.layoutTaken(before, ids, patch.group);
+  if (taken.wells) {
+    toast(say('{0} of the selected wells are in group {1}: take them out of it first (empty the Group box, then “Group the wells”).', taken.wells, taken.groups.map(g => '“' + g + '”').join(', ')), 9000);
+    return;
+  }
+  const after = X.editLayout(before, ids, patch);
+  if (JSON.stringify(after.wells) === JSON.stringify(before.wells)) return;
+  lay.draft = after;
+  lay.undo = { draft: before, cleared: patch.name === '' && patch.group === '' ? ids.filter(id => before.wells[id]).length : 0 };
+  renderEditor();
+}
+/** Undo, Ctrl+Z in the editor: the wells as they were before the last change (one step). */
+function undoLayoutEdit() {
+  if (!lay.draft || !lay.undo) return;
+  lay.draft = Object.assign({}, lay.undo.draft, { name: lay.draft.name });
+  lay.undo = null;
   renderEditor();
 }
 async function saveLayout() {
@@ -1899,6 +1979,7 @@ async function saveLayout() {
     const answer = await api('/api/layouts', { method: 'POST', body: { layout: d }, seconds: 30 });
     if (answer && answer.id) d.id = String(answer.id);
     lay.saved = JSON.stringify(d);
+    lay.undo = null;
     toast(say('Layout saved: {0}', d.name));
   } catch (e) { toast(say('The layout could not be saved: {0}', e.message), 8000); }
   renderEditor();
@@ -1906,7 +1987,11 @@ async function saveLayout() {
 }
 async function deleteLayout(l) {
   if (!l || !l.id) return;
-  const yes = await confirmDialog(en('Delete the layout'), [say('The layout “{0}” is deleted. Experiments that were named with it keep their names.', l.name || '')], en('Delete'));
+  // (the settings as they are now: a run may have taken its next experiment since they were read)
+  try { settings = X.settingsOf(await api('/api/settings')); } catch (e) { /* as known */ }
+  const next = settings ? settings.nextExperiment : {}, users = Object.keys(next).filter(k => next[k].layoutId === l.id).map(k => X.reader(k).name);
+  const yes = await confirmDialog(en('Delete the layout'), [say('The layout “{0}” is deleted. Experiments that were named with it keep their names.', l.name || ''),
+    users.length ? say('It is set for the next experiment of {0}: that choice is dropped.', users.join(', ')) : ''].filter(Boolean), en('Delete'));
   if (!yes) return;
   try {
     await api('/api/layouts/delete?id=' + enc(l.id), { method: 'POST' });
@@ -1961,7 +2046,7 @@ const set = { loaded: null, draft: null, error: '', body: null, bar: null };
 function buildSettingsView() {
   set.body = h('div', { cls: 'saa-settings' });
   set.bar = h('div', { cls: 'saa-savebar', hidden: true }, h('span', { translate: 'no' }, ''), h('span', { cls: 'spacer' }),
-    button(en('Discard changes'), () => { set.draft = JSON.parse(JSON.stringify(set.loaded)); renderSettings(); }, 'sm ghost'),
+    button(en('Discard changes'), () => discardSettings(), 'sm ghost'),
     button(en('Save settings'), () => saveSettings(), 'sm primary'));
   settingsView = h('section', { cls: 'saa-view saa-list', 'data-saa': true, 'aria-label': en('Settings'), hidden: true }, set.body, set.bar);
 }
@@ -2053,10 +2138,22 @@ function versionsList() {
     h('span', null, say('Edition')), h('span', null, X.editionText(edition()) || '—'),
     h('span', null, say('Analysis page')), h('span', null, [hl.pageVersion || meta('application-version'), meta('application-build')].filter(Boolean).join(' · ') || '—'));
 }
+/** Discard changes: the settings as they were opened, after a question. */
+async function discardSettings() {
+  if (setDirty() && !(await confirmDialog(en('Discard changes'), [say('The changes to the settings are not saved: they go back to how they were.')], en('Discard changes')))) return;
+  if (set.loaded) set.draft = JSON.parse(JSON.stringify(set.loaded));
+  renderSettings();
+}
+/** Save settings: only what was changed in this view (POST /api/settings keeps what it is not given), so that what
+    changed meanwhile elsewhere - the next experiment of an instrument taken by its run, or chosen under Plate layouts -
+    is not put back as it was when the view was opened; the next experiments of the instruments changed here go into
+    the newest ones, read again just before. */
 async function saveSettings() {
   if (!set.draft) return;
   try {
-    const saved = X.settingsOf(await api('/api/settings', { method: 'POST', body: set.draft, seconds: 30 }));
+    let body = X.settingsChanges(set.draft, set.loaded || {});
+    if (body.nextExperiment) body = X.settingsChanges(set.draft, set.loaded || {}, X.settingsOf(await api('/api/settings')));
+    const saved = X.settingsOf(Object.keys(body).length ? await api('/api/settings', { method: 'POST', body, seconds: 30 }) : await api('/api/settings'));
     settings = set.loaded = saved;
     set.draft = JSON.parse(JSON.stringify(saved));
     useScreenNames();
@@ -2087,7 +2184,7 @@ async function renderAbout(fetch) {
   const research = en('For research use only, not for diagnostic use.');
   about.body.replaceChildren(...[
     card(h('span', { translate: 'no' }, (health && health.program) || X.ME.name), versionsList(),
-      host() && !online ? h('div', { cls: 'saa-card-actions' }, button(en('Check for updates'), () => { const b = host(); if (b) b.postMessage({ cmd: 'checkUpdate', manual: true }); }, 'sm')) : null,
+      host() && !online ? updateCheck() : null,
       h('p', { cls: 'saa-notice', translate: 'no' }, h('b', null, X.chineseOf(research)), h('br'), h('span', null, research))),
     online && editor() ? card(en('Checks of this PC'),
       health ? h('ul', { cls: 'saa-checklist', translate: 'no' }, X.checkLines(health, inChinese()).map(c => h('li', { 'data-ok': c.ok ? '1' : '0' }, icon(c.ok ? 'check' : 'alert'), h('span', null, c.text))))
@@ -2099,7 +2196,7 @@ async function renderAbout(fetch) {
     card(en('Instrument makers'),
       h('p', null, en('This program reads the files of the instrument software; it does not control the instruments. It is not made, endorsed or supported by BMG LABTECH or RocGene. Omega and MARS are trademarks of BMG LABTECH; Archimed is a trademark of RocGene.'))),
     card(en('Privacy'),
-      h('p', null, en('The program works on this PC only. It sends nothing anywhere: no data, no usage figures, no updates are fetched. Its page is served on this PC and opens only in its own window.'))),
+      h('p', null, en('The program works on this PC only. By default it connects nowhere: it sends no data and no usage figures. Only “Check for updates” (and the automatic check, when you turn it on) asks GitHub for the latest version number; no data are sent. Its page is served on this PC and opens only in its own window.'))),
     card(en('Third-party software'),
       h('ul', { cls: 'saa-plain', translate: 'no' },
         h('li', null, 'SheetJS Community Edition 0.20.3 (Apache License 2.0)', ' - ', say('reads the workbooks in the analysis page')),
@@ -2108,6 +2205,103 @@ async function renderAbout(fetch) {
     card(en('The analysis page on the web'),
       h('p', null, en('The same analysis, without the instruments, for files from anywhere:')),
       h('p', null, h('a', { href: 'https://tools.fow.mobi/kinetics/', target: '_blank', rel: 'noopener noreferrer', translate: 'no' }, 'https://tools.fow.mobi/kinetics/')))].filter(Boolean));
+}
+
+/* ===================== updates of the program: its window only, never online ===================== */
+/* The window checks GitHub for a newer version (when the user asks in About, or at its start when the automatic check
+   is on) and says how it went with { cmd: 'updateInfo', ... } (web/live.js updateTaken), which the page hands to
+   updateInfo() here, showing nothing itself. A notice at the top of the main column, in every view, offers the version
+   ("Update now" where the window can install it, else its download page); About says what the last check came to,
+   beside the choice of the check at the window's start. The window is asked only { cmd: 'checkUpdate', manual: true },
+   { cmd: 'installUpdate', version }, { cmd: 'dismissUpdate', version }, { cmd: 'setAutoUpdate', on }: what it installs
+   is what its own check found. */
+const upd = { info: null, hidden: false, checking: false, timer: 0, auto: null, asking: false, sig: '', el: null, line: null, box: null, autoLabel: null };
+const updating = () => !online && !!host();
+/** Whether the window checks at its start, as it said last (PKHost.autoUpdate, then the "auto" of its messages); null:
+    a window that does not say. */
+const autoUpdate = () => (typeof upd.auto === 'boolean' ? upd.auto : typeof hostInfo().autoUpdate === 'boolean' ? hostInfo().autoUpdate : null);
+/** An "updateInfo" of the window, handed over by the page. Every message shows the notice again (a check the user
+    asked for, the steps of an update). */
+function updateInfo(m) {
+  if (!updating() || !m || typeof m !== 'object') return;
+  if (typeof m.auto === 'boolean') upd.auto = m.auto;
+  upd.info = X.updateTaken(upd.info, m);
+  upd.hidden = false;
+  upd.checking = false;
+  clearTimeout(upd.timer);
+  renderUpdate();
+  // a check the user asked for that found nothing new (or failed): said where About is not in view (About says it
+  // beside its button)
+  if (upd.info.manual && !X.updateBanner(upd.info, inChinese()) && !(mode === 'shell' && view === 'about')) toast(updateLineText(), 4500);
+}
+/** What the last check for updates came to (About). */
+const updateLineText = () => X.updateLine(upd.info, { checking: upd.checking, current: String(hostInfo().version || (health && health.version) || ''), zh: inChinese() });
+/** "Check for updates" (About; Retry of the notice). The window answers every check the user asks for. */
+function checkUpdates() {
+  upd.checking = true;
+  clearTimeout(upd.timer);
+  // (within its own deadlines; a window that does not answer leaves no "Checking…" for ever)
+  upd.timer = setTimeout(() => { upd.checking = false; renderUpdate(); }, 60000);
+  tellHost({ cmd: 'checkUpdate', manual: true });
+  renderUpdate();
+}
+/** "Update now": the window downloads the installer, checks it, runs it and closes. While an instrument is measuring the
+    user is told first what that means for the recording. */
+async function installUpdate(version) {
+  if (upd.asking || !version) return;
+  if (readers().some(i => i.state === 'measuring')) {
+    upd.asking = true;
+    let yes = false;
+    try {
+      yes = await confirmDialog(en('Update now'), [say('An instrument is measuring. The recording pauses for about 10 seconds during the update and loses nothing (missed readings are read back from the instrument software\'s files). Update now?')], en('Update now'));
+    } finally { upd.asking = false; }
+    if (!yes) return;
+  }
+  tellHost({ cmd: 'installUpdate', version: String(version) });
+}
+/** A button of the notice (X.UPDATE_ACTIONS). */
+function updateAction(a) {
+  const u = upd.info;
+  if (!u) return;
+  if (a === 'install') installUpdate(u.version);
+  else if ((a === 'notes' || a === 'page') && u.url) window.open(u.url, '_blank', 'noopener');
+  else if (a === 'retry') { upd.hidden = true; toast(say('Checking for updates…'), 2500); checkUpdates(); }
+  // "Later" puts this version off (the window does not offer it again by itself); a failed update is only hidden
+  else if (a === 'later') { upd.hidden = true; if (u.state !== 'error') tellHost({ cmd: 'dismissUpdate', version: u.version }); renderUpdate(); }
+}
+/** About: "Check for updates", what the last check came to, and the check at the window's start. Made once and put
+    into About each time it is drawn, so that an answer that comes while About is shown changes them in place. */
+function updateCheck() {
+  if (!upd.line) {
+    upd.line = h('span', { cls: 'hint saa-update-line', translate: 'no', role: 'status' });
+    upd.box = h('input', { type: 'checkbox', onchange: () => { upd.auto = upd.box.checked; tellHost({ cmd: 'setAutoUpdate', on: upd.auto }); } });
+    upd.autoLabel = h('label', { cls: 'chk saa-check' }, upd.box, h('span', null, en('Check automatically when the window opens')));
+  }
+  renderUpdate();
+  return [h('div', { cls: 'saa-card-actions' }, button(en('Check for updates'), checkUpdates, 'sm'), upd.line), upd.autoLabel];
+}
+/** The notice (after the banners of the problems) and the line in About, as the last message says; made again in
+    another language. */
+function renderUpdate() {
+  if (!updating()) return;
+  const zh = inChinese();
+  if (upd.line) {
+    setText(upd.line, updateLineText());
+    const auto = autoUpdate();
+    show(upd.autoLabel, auto !== null);
+    upd.box.checked = auto === true;
+  }
+  if (!bannerBox) return;                          // (a message before mount(): shown from start() on)
+  if (!upd.el) upd.el = h('div', { cls: 'saa-banner', role: 'status', translate: 'no', hidden: true });
+  if (!upd.el.isConnected) bannerBox.appendChild(upd.el);
+  const b = upd.hidden ? null : X.updateBanner(upd.info, zh), sig = b ? JSON.stringify(b) : '';
+  show(upd.el, !!b);
+  if (!b || sig === upd.sig) return;
+  upd.sig = sig;
+  setAttr(upd.el, 'data-sev', b.sev);
+  setAttr(upd.el, 'role', b.sev === 'error' ? 'alert' : 'status');
+  upd.el.replaceChildren(icon(b.sev === 'error' ? 'alert' : 'info'), h('span', null, b.text),
+    h('span', { cls: 'saa-banner-acts' }, b.actions.map(a => dataButton(say(X.UPDATE_ACTIONS[a]), () => updateAction(a), a === 'notes' || a === 'later' ? 'sm ghost' : 'sm primary'))));
 }
 
 /* ---------- the program's window: a .pk file opened with a double click comes as a message { cmd: 'openRun', name, run, path, analysis } ---------- */
@@ -2154,6 +2348,10 @@ function guardKeys(e) {
   }
   if (view === 'analysis' || document.querySelector('.modal-back')) return;
   const el = document.activeElement, typing = X.isEntry(el);
+  // the plate layout editor: Ctrl+Z takes its last change of the wells back (in a text box: the box's own undo)
+  if (ctrl && !e.altKey && !e.shiftKey && k === 'z' && !typing && view === 'layouts' && lay.draft && lay.undo) {
+    e.preventDefault(); e.stopImmediatePropagation(); undoLayoutEdit(); return;
+  }
   // digits and G group the selection, ? opens the help (also the fullwidth one a Chinese input method types)
   const pages = (ctrl && (k === 'z' || k === 'y' || k === 'a')) || (!ctrl && !e.altKey && !typing && (/^[0-9g?\uff1f]$/.test(k)));
   if (pages && !(typing && own(el))) e.stopImmediatePropagation();
@@ -2194,6 +2392,7 @@ function start() {
     setInterval(syncNow, 1000);
     for (const type of ['pointerup', 'keyup', 'change']) document.addEventListener(type, syncSoon, true);
     document.addEventListener('pointerdown', e => { if (e.target && e.target.closest && e.target.closest('#dsTabs [data-close]')) syncNow(); }, true);
+    document.addEventListener('click', guardClose, true);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncSoon(); });
     // closing the page: what is changed goes now, with a request that outlives the page
     window.addEventListener('pagehide', () => { try { sync.flush(); } catch (e) { /* the page is going */ } });
@@ -2217,7 +2416,7 @@ function start() {
 // the program's window (WebView2) hands over the runs of the .pk files it is asked to open, and answers what the page
 // asks of it; heard from the start, so that a message sent while the page is still loading is not lost
 if (window.chrome && window.chrome.webview && typeof window.chrome.webview.addEventListener === 'function') window.chrome.webview.addEventListener('message', windowMessage);
-window.SAAShell = { mount };
+window.SAAShell = { mount, updateInfo };
 // a page the server did not recognise never calls mount(): show the instruments above it once it is there
 document.addEventListener('DOMContentLoaded', () => { if (!mode) mount(null); });
 })();

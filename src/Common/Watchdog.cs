@@ -5,6 +5,8 @@
 //   - no look for 10 minutes: logged as an error; the Windows service then ends with exit code 3, and Windows' recovery
 //     starts it again after 10 s (what it missed is caught up from the instrument software's files, as after an update).
 //     A program started by hand cannot be restarted by anyone: it says so instead ("close the program and start it again").
+//   - a check that comes long after the one before (the PC slept or hibernated): the time asleep is no time without a
+//     look; the quiet time counts from that check on.
 // An unexpected error that ends the program is written to System\log\crash-<yyyyMMdd-HHmmss>.txt (and the log).
 // System\log\run-state.json tells the next start how this one ended: {"pid", "startedAt", "lookedAt" (the last look, at
 // most a minute old), "stoppedAt" (null until a clean stop)}. A start after a crash or a watchdog exit shows the problem
@@ -33,6 +35,7 @@ namespace SAAControl
 
         static readonly object Gate = new object();
         static long lastBeat = Stopwatch.GetTimestamp();
+        static long lastCheck;                  // (Stopwatch) when the previous check ran; 0: none since the start
         static DateTime lastBeatAt = DateTime.Now;
         static List<string> measuring = new List<string>();
         static readonly HashSet<string> stuckShown = new HashSet<string>(StringComparer.Ordinal);   // instrument keys ("": none measuring)
@@ -94,7 +97,7 @@ namespace SAAControl
             {
                 asService = service;
                 if (thread != null) return;
-                lastBeat = Stopwatch.GetTimestamp();
+                lastBeat = lastCheck = Stopwatch.GetTimestamp();
                 lastBeatAt = DateTime.Now;
                 stopping = new ManualResetEvent(false);
                 var stop = stopping;
@@ -122,20 +125,33 @@ namespace SAAControl
             t?.Join(2000);
         }
 
-        /// <summary>The check the watchdog's thread makes (tests call it directly).</summary>
+        /// <summary>The check the watchdog's thread makes (tests call it directly). A check that comes more than three
+        /// CheckEvery after the one before did not see the looks stop: the process was not running (the PC slept or
+        /// hibernated) or not given time, and so was the watcher. The quiet time counts from then on, as if the watcher
+        /// had just looked; a watcher that really hangs is still found, one check later.</summary>
         public static void Check()
         {
             TimeSpan quiet;
             DateTime since;
             List<string> keys;
             bool service;
+            double held = 0;
             lock (Gate)
             {
-                quiet = TimeSpan.FromSeconds((Stopwatch.GetTimestamp() - lastBeat) / (double)Stopwatch.Frequency);
+                long now = Stopwatch.GetTimestamp();
+                if (lastCheck != 0 && (now - lastCheck) / (double)Stopwatch.Frequency > 3 * CheckEvery.TotalSeconds)
+                {
+                    held = (now - lastCheck) / (double)Stopwatch.Frequency;
+                    lastBeat = now;
+                }
+                lastCheck = now;
+                quiet = TimeSpan.FromSeconds((now - lastBeat) / (double)Stopwatch.Frequency);
                 since = lastBeatAt;
                 keys = measuring.ToList();
                 service = asService;
             }
+            if (held > 0)
+                Log.Info("the watchdog did not run for " + (int)held + " s (the PC slept, or the program was held): the time without a look counts from now");
             WriteState(false);
             if (quiet < StuckAfter) return;
             string at = since.ToString("HH':'mm", CultureInfo.InvariantCulture);
@@ -343,6 +359,7 @@ namespace SAAControl
             lock (Gate)
             {
                 lastBeat = Stopwatch.GetTimestamp();
+                lastCheck = 0;
                 lastBeatAt = DateTime.Now;
                 measuring = new List<string>();
                 stuckShown.Clear();
@@ -361,6 +378,52 @@ namespace SAAControl
                 lastBeat = Stopwatch.GetTimestamp() - (long)(ago.TotalSeconds * Stopwatch.Frequency);
                 lastBeatAt = DateTime.Now - ago;
             }
+        }
+
+        /// <summary>For tests: the PC slept that long right after the last look and the last check.</summary>
+        public static void PretendSlept(TimeSpan span)
+        {
+            lock (Gate)
+            {
+                long ticks = (long)(span.TotalSeconds * Stopwatch.Frequency);
+                lastBeat -= ticks;
+                lastCheck = (lastCheck != 0 ? lastCheck : Stopwatch.GetTimestamp()) - ticks;
+                lastBeatAt -= span;
+            }
+        }
+    }
+
+    /// <summary>The tray's looks at the service in a row that got no answer: after Limit of them the user is told once
+    /// that the service does not answer. Counted in looks, not with the clock, so that the first look after a standby (or
+    /// after the clock was set forward) is one look that failed, not minutes of silence.</summary>
+    public sealed class SilentLooks
+    {
+        public readonly int Limit;
+        int failed;
+        bool told;
+
+        public SilentLooks(int limit)
+        {
+            Limit = Math.Max(1, limit);
+        }
+
+        /// <summary>The looks in a row without an answer.</summary>
+        public int Count => failed;
+
+        /// <summary>A look got no answer. True once per silent spell: at the look that makes it Limit looks long.</summary>
+        public bool Failed()
+        {
+            failed++;
+            if (told || failed < Limit) return false;
+            told = true;
+            return true;
+        }
+
+        /// <summary>The service answered: the next silence is a new spell.</summary>
+        public void Answered()
+        {
+            failed = 0;
+            told = false;
         }
     }
 }

@@ -79,6 +79,9 @@ namespace SAAControl
     {
         const int LookEvery = 5;                  // ticks of 2 s: the service is asked every 10 s
         static readonly TimeSpan Recent = TimeSpan.FromHours(12), SilentFor = TimeSpan.FromMinutes(3), SettingsEvery = TimeSpan.FromSeconds(60);
+        // "the service does not answer" after SilentFor of looks without an answer (18 looks of 10 s), counted in looks:
+        // the clock jumps after a standby or when it is set, and the first look then is not minutes of silence
+        static readonly int LooksSilent = (int)Math.Ceiling(SilentFor.TotalSeconds / (LookEvery * 2.0));
 
         readonly string appName, shown, exe, dataDir;
         readonly int port;
@@ -91,8 +94,9 @@ namespace SAAControl
         int ticks, missingLooks;
         string replacedBy;                         // the program file's identity after a replacement, until it is settled
         volatile bool looking;
-        bool firstAnswer = true, silenceShown, ending;
-        DateTime lastAnswer = DateTime.UtcNow, settingsAt = DateTime.MinValue;
+        bool firstAnswer = true, ending;
+        readonly SilentLooks silence = new SilentLooks(LooksSilent);
+        DateTime settingsAt = DateTime.MinValue;
         Dictionary<string, object> settings;
 
         public Tray(string appName, int port, string dataDir, string exe)
@@ -256,19 +260,16 @@ namespace SAAControl
             }
             if (state == null)
             {
-                if (!silenceShown && DateTime.UtcNow - lastAnswer >= SilentFor)
-                {
-                    silenceShown = true;
-                    if (Wants("stuck"))
-                        Notify(shown + ": " + Say("\u540e\u53f0\u670d\u52a1\u6ca1\u6709\u56de\u5e94", "the service does not answer"),
-                               Say("\u5df2\u7ecf 3 \u5206\u949f\u6ca1\u6709\u56de\u5e94\uff0c\u73b0\u5728\u53ef\u80fd\u6ca1\u6709\u5728\u8bb0\u5f55\u3002\u8bf7\u6253\u5f00\u7a97\u53e3\u67e5\u770b\uff0c\u6216\u8005\u91cd\u65b0\u542f\u52a8\u7535\u8111\u3002",
-                                   "It has not answered for 3 minutes and may not be recording. Open the window to check, or restart the PC."), true);
-                }
+                // (never "restart the PC": that would end a run the instrument software is measuring)
+                // "\u5df2\u7ecf 3 \u5206\u949f\u6ca1\u6709\u56de\u5e94\uff0c\u73b0\u5728\u53ef\u80fd\u6ca1\u6709\u5728\u8bb0\u5f55\u3002\u8bf7\u6253\u5f00\u7a97\u53e3\u67e5\u770b\u3002\u4eea\u5668\u6b63\u5728\u6d4b\u91cf\u65f6\u8bf7\u4e0d\u8981\u91cd\u65b0\u542f\u52a8\u7535\u8111\u3002"
+                if (silence.Failed() && Wants("stuck"))
+                    Notify(shown + ": " + Say("\u540e\u53f0\u670d\u52a1\u6ca1\u6709\u56de\u5e94", "the service does not answer"),
+                           Say("\u5df2\u7ecf 3 \u5206\u949f\u6ca1\u6709\u56de\u5e94\uff0c\u73b0\u5728\u53ef\u80fd\u6ca1\u6709\u5728\u8bb0\u5f55\u3002\u8bf7\u6253\u5f00\u7a97\u53e3\u67e5\u770b\u3002\u4eea\u5668\u6b63\u5728\u6d4b\u91cf\u65f6\u8bf7\u4e0d\u8981\u91cd\u65b0\u542f\u52a8\u7535\u8111\u3002",
+                               "It has not answered for 3 minutes and may not be recording. Open the window to check. Do not restart the PC while an instrument is measuring."), true);
                 SetTip(Say("\u540e\u53f0\u670d\u52a1\u6ca1\u6709\u56de\u5e94", "The service does not answer"));
                 return;
             }
-            lastAnswer = DateTime.UtcNow;
-            silenceShown = false;
+            silence.Answered();
 
             var fresh = new List<Dictionary<string, object>>();
             if (state.TryGetValue("events", out object list) && list is List<object> events)

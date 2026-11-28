@@ -300,6 +300,7 @@ footer { max-width: 1200px; margin: 0 auto; padding: 0 20px 36px; color: var(--m
 <tr><td>Plate Kinetics Live (Archimed)</td><td class="wrap-ok">RocGene Archimed 实时荧光定量 PCR 仪。已验证：Archimed X4 和 Archimed Analyzer 1.5.5。</td><td class="wrap-ok">Archimed Analyzer 的日志；桌面上的实验文件</td></tr>
 </table></div>
 <p>两个程序可以装在同一台电脑上，各用各的端口和数据文件夹，互不影响。</p>
+<p>安装时可以选<b>完整安装</b>（记录仪器并分析，本手册讲的就是它）或<b>仅安装分析软件</b>：没有后台服务、托盘和数据文件夹，只用来打开 .pk 实验文件和 .pkproj 项目文件做分析，适合不接仪器的办公电脑。另有单独的 <b>Plate Kinetics Analysis</b>：只有分析页面的桌面程序，和网站 tools.fow.mobi/kinetics 是同一个页面，数据都留在本机。</p>
 
 <h3>安装版和便携版</h3>
 <div class="tw"><table>
@@ -558,7 +559,8 @@ Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</
 <li>开着的窗口会被关掉，更新后从开始菜单重新打开；托盘自己换成新版本。</li>
 <li>更新失败时，原来的版本照常运行和记录。</li>
 <li><b>便携版</b>：在没有实验测量时关掉程序，把新版本解压到原来的文件夹（覆盖程序文件，保留 PlateKineticsLive-data），再启动。</li>
-<li>当前版本号在“关于”里。</li>
+<li>当前版本号在“关于”里。那里还有“检查更新”：有新版本时窗口上方出现提示，点“立即更新”就下载安装程序、核对它的 SHA-256 后运行（需要管理员权限；有仪器在测量时先提醒“记录会停约 10 秒，不丢数据”）。便携版只给出下载页面，请按上一条手动更新。没有更新成功时，原来的版本照常运行，窗口会说明。</li>
+<li>“自动检查更新”默认关闭，可以在“关于”里打开；“仅安装分析软件”和 Plate Kinetics Analysis 默认打开，可以关掉。不能访问 GitHub 的电脑不受影响。</li>
 </ul>
 
 <h2 id="zh-uninstall">11. 卸载</h2>
@@ -574,7 +576,7 @@ Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</
 <dt>程序会控制仪器，或者改动仪器软件的文件吗？</dt>
 <dd>不会。它只读取仪器软件写下的文件（与仪器软件共享读取），从不写入、锁住或改动它们，也从不向仪器发送命令。</dd>
 <dt>数据会被发到网上吗？</dt>
-<dd>不会。程序没有联网功能，不收集使用统计，不检查更新；它的网页服务只对这台电脑本身开放。数据只在你自己拷走或发出去时才会离开这台电脑。</dd>
+<dd>不会。程序不收集使用统计，默认不主动连接任何地方；它的网页服务只对这台电脑本身开放。只有在“关于”里点“检查更新”（或者你打开了“自动检查更新”）时，程序才向 GitHub 查询最新版本号，不发送任何实验数据。数据只在你自己拷走或发出去时才会离开这台电脑。</dd>
 <dt>关掉窗口还会记录吗？</dt>
 <dd>安装版会：记录的是后台服务，窗口只用来看。便携版不会：关窗口就停止记录，关之前会提醒。</dd>
 <dt>测量中停电或电脑重启了怎么办？</dt>
@@ -625,6 +627,7 @@ Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</
 <li>默认装到 <code>C:\Program Files\Plate Kinetics Live (BMG)</code> 或 <code>C:\Program Files\Plate Kinetics Live (Archimed)</code>。已经装过的，装回原来的文件夹；要换文件夹用 <code>--move-to</code>（第 10 节）。</li>
 <li>为整台电脑登记：“应用”列表里的条目（发布者 hx_mao）；所有用户的开始菜单快捷方式（程序本身和“<i>程序名</i> Experiments”）和桌面快捷方式；.pk 文件类型（双击运行 <code>"&lt;exe&gt;" --open "&lt;文件&gt;"</code>）；登录时启动的托盘；Windows 服务。安装完在安装者的会话里马上启动托盘。</li>
 <li>每次安装和更新都设置数据文件夹的权限（第 3 节），不改动里面的文件。</li>
+<li>安装窗口里可以选“完整安装”或“仅安装分析软件”。后者不注册服务、不启动托盘、不建数据文件夹，程序文件夹里的 <code>analysis-only.mode</code> 文件标记这种安装；.pk 和 .pkproj 双击后在分析窗口里打开。把一个完整安装改成“仅安装分析软件”会删掉后台服务，这台电脑从此不再记录实验（数据文件夹保留）：安装程序会先问清楚，有仪器正在测量时拒绝这样做。</li>
 <li>安装程序和程序都<b>没有代码签名</b>。Windows SmartScreen 可能提示“Windows 已保护你的电脑”：点“更多信息”→“仍要运行”。请只使用来源可信的安装程序，需要时核对文件的 SHA-256；杀毒软件可能需要放行。</li>
 <li>有仪器正在测量时：窗口先说明“记录会停约 10 秒，不丢数据”，点“继续”才做；静默安装不问，只记进日志。</li>
 <li>有一个自己在记录的副本（例如便携版）正在运行时，安装会停下（退出码 2），请先关掉它。安装程序不会关掉它。</li>
@@ -634,6 +637,9 @@ Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</
 <tr><th>参数</th><th>作用</th></tr>
 <tr><td><code>/S</code></td><td class="wrap-ok">静默：不显示任何窗口；结果看退出码和日志</td></tr>
 <tr><td><code>/NODESKTOP</code></td><td class="wrap-ok">不新建桌面快捷方式（已有的保留）</td></tr>
+<tr><td><code>/FULL</code></td><td class="wrap-ok">完整安装（记录仪器）。更新仪器电脑时建议总是带上</td></tr>
+<tr><td><code>/ANALYSISONLY</code></td><td class="wrap-ok">仅安装分析软件。原来是完整安装的，后台服务会被删除；有仪器在测量时拒绝（退出码 2）</td></tr>
+<tr><td><code>/RELAUNCH</code></td><td class="wrap-ok">装完后重新打开程序窗口（窗口里的“立即更新”就是这样运行安装程序的）；没装成也重新打开原来的程序，并在窗口里说明</td></tr>
 <tr><td><code>/D=&lt;文件夹&gt;</code></td><td class="wrap-ok">装到这个文件夹。必须放在命令行最后，路径不用加引号</td></tr>
 <tr><td><code>--move-to [&lt;文件夹&gt;]</code></td><td class="wrap-ok">把已经装好的程序连同数据搬到这个文件夹（不写就是 Program Files 里的标准位置），见第 10 节</td></tr>
 </table></div>
@@ -696,7 +702,7 @@ sc start PlateKineticsLive</pre>
 <ul>
 <li>BMG 程序用 TCP 端口 <b>47815</b>，Archimed 程序用 <b>47825</b>，只监听 <b>127.0.0.1</b>（本机回环地址）。其他电脑访问不到；不需要、也不会添加防火墙规则。</li>
 <li>每个请求都检查 Host 头（必须是 <code>127.0.0.1:&lt;端口&gt;</code> 或 <code>localhost:&lt;端口&gt;</code>），<code>/api/</code> 请求还要带 <code>System\api-token</code> 里的令牌（本机用户可读）。这样网上的网页不能借浏览器读取或改动数据。</li>
-<li>程序不主动连接任何地方：没有使用统计，不检查更新，也不向仪器发送任何东西。WebView2 运行时是 Windows 的组件，由微软像 Edge 一样更新。</li>
+<li>程序默认不主动连接任何地方：没有使用统计，也不向仪器发送任何东西。唯一的外连是检查更新：用户在“关于”里点“检查更新”，或打开了“自动检查更新”（完整安装默认关闭）时，向 <code>api.github.com</code> 查询最新发布的版本；用户点“立即更新”时从 <code>github.com</code>（会转到 <code>*.githubusercontent.com</code>）下载安装程序，和发布页公布的 SHA-256 核对一致才运行。访问不了 GitHub 时什么都不受影响。WebView2 运行时是 Windows 的组件，由微软像 Edge 一样更新。</li>
 <li>端口被别的程序占用时，程序在日志和窗口里写出占用端口的进程。</li>
 <li>要从别的电脑查看，请用远程桌面。</li>
 </ul>
@@ -765,6 +771,7 @@ sc start PlateKineticsLive</pre>
 <tr><th>参数</th><th>作用</th></tr>
 <tr><td><code>--open &lt;文件.pk&gt;</code></td><td class="wrap-ok">在窗口里打开这个实验文件（双击 .pk 时就是这样）；程序已经开着时交给它，并把窗口带到前面</td></tr>
 <tr><td><code>--tray</code></td><td class="wrap-ok">托盘（登录时自动运行）</td></tr>
+<tr><td><code>--analysis-only</code></td><td class="wrap-ok">只打开分析窗口：不记录、不连后台服务（“仅安装分析软件”装的程序总是这样）</td></tr>
 <tr><td><code>--uninstall [/S]</code></td><td class="wrap-ok">卸载</td></tr>
 <tr><td><code>--install-service [--demand-start]</code></td><td class="wrap-ok">注册并启动服务（管理员；安装程序用）</td></tr>
 <tr><td><code>--uninstall-service</code></td><td class="wrap-ok">停止并删除服务（管理员）</td></tr>
@@ -881,6 +888,7 @@ sc start PlateKineticsLive</pre>
 <tr><td>Plate Kinetics Live (Archimed)</td><td class="wrap-ok">RocGene Archimed real-time PCR instrument. Verified: Archimed X4 with Archimed Analyzer 1.5.5.</td><td class="wrap-ok">Archimed Analyzer's log; the experiment files on the Desktop</td></tr>
 </table></div>
 <p>Both programs can be installed on the same PC; each has its own port and data folder.</p>
+<p>The installer offers a <b>full installation</b> (recording and analysis: what this manual describes) or <b>analysis only</b>: no background service, no tray and no data folder, just the window that opens .pk experiment files and .pkproj project files, for office PCs without an instrument. There is also the separate <b>Plate Kinetics Analysis</b>: a desktop program with the analysis page alone, the same page as the website tools.fow.mobi/kinetics; all data stay on the PC.</p>
 
 <h3>Installed and portable edition</h3>
 <div class="tw"><table>
@@ -1139,7 +1147,8 @@ Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</
 <li>Open windows are closed; open the program from the Start menu again afterwards. The tray changes to the new version by itself.</li>
 <li>If an update fails, the previous version goes on running and recording.</li>
 <li><b>Portable edition</b>: while no run measures, close the program, unzip the new version into the same folder (replacing the program files, keeping PlateKineticsLive-data) and start it again.</li>
-<li>The version in use is shown under About.</li>
+<li>The version in use is shown under About. “Check for updates” is there too: when a newer version exists a notice appears at the top of the window, and “Update now” downloads the installer, compares its SHA-256 and runs it (administrator rights are needed; while an instrument measures it first says “Recording pauses about 10 seconds; no data is lost”). The portable edition only gets the download page: update it by hand as above. If the update does not succeed, the previous version goes on running and the window says so.</li>
+<li>The automatic check is off by default and can be turned on under About; for an analysis-only installation and for Plate Kinetics Analysis it is on and can be turned off. A PC that cannot reach GitHub is not affected.</li>
 </ul>
 
 <h2 id="en-uninstall">11. Uninstalling</h2>
@@ -1155,7 +1164,7 @@ Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</
 <dt>Does the program control the instrument or change the instrument software's files?</dt>
 <dd>No. It only reads the files the instrument software writes (sharing them for reading), never writes, locks or changes them, and never sends commands to an instrument.</dd>
 <dt>Is any data sent over the internet?</dt>
-<dd>No. The program has no online features, collects no usage statistics and does not check for updates; its web server is open to this PC only. Data leave the PC only when you copy or send them yourself.</dd>
+<dd>No. The program collects no usage statistics and connects nowhere by default; its web server is open to this PC only. Only when you click “Check for updates” under About (or have turned on the automatic check) does it ask GitHub for the latest version number; no experiment data are sent. Data leave the PC only when you copy or send them yourself.</dd>
 <dt>Does it still record when I close the window?</dt>
 <dd>Installed edition: yes, the service records and the window only shows. Portable edition: no, closing the window stops recording (you are asked first).</dd>
 <dt>What if the power fails or the PC restarts during a run?</dt>
@@ -1206,6 +1215,7 @@ Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</
 <li>Default folder: <code>C:\Program Files\Plate Kinetics Live (BMG)</code> or <code>C:\Program Files\Plate Kinetics Live (Archimed)</code>. An existing installation is updated where it is; to change its folder use <code>--move-to</code> (section 10).</li>
 <li>Registered for the whole PC: an entry in the list of apps (publisher hx_mao); Start menu shortcuts for all users (the program and “<i>name</i> Experiments”) and a desktop shortcut; the .pk file type (a double-click runs <code>"&lt;exe&gt;" --open "&lt;file&gt;"</code>); the tray at every sign-in; the Windows service. The tray is started in the installing user's session right away.</li>
 <li>Every install and update sets the data folder's permissions (section 3); the files in it are not changed.</li>
+<li>The window offers “Full installation” or “Analysis only”. The latter registers no service, starts no tray and makes no data folder; the file <code>analysis-only.mode</code> in the program folder marks it, and .pk and .pkproj files open in the analysis window. Changing a full installation to analysis only removes the background service: the PC no longer records experiments (the data folder stays). The installer asks plainly first and refuses while an instrument measures.</li>
 <li>The installers and programs are <b>not code-signed</b>. Windows SmartScreen may say “Windows protected your PC”: choose More info, then Run anyway. Use installers from a source you trust only, and compare the file's SHA-256 if needed; antivirus software may need an exception.</li>
 <li>While an instrument measures, the window first explains “Recording pauses about 10 seconds; no data is lost” and goes on with Continue; a silent install does not ask and notes it in the log.</li>
 <li>When a copy that records by itself (for example the portable edition) is running, the installer stops (exit code 2): close that copy first. The installer does not close it.</li>
@@ -1215,6 +1225,9 @@ Experiments\2026-11\2026-11-20 14-05-32 Plate 7 - FLUOstar Omega 415-0123.xlsx</
 <tr><th>Option</th><th>Effect</th></tr>
 <tr><td><code>/S</code></td><td class="wrap-ok">Silent: no window at all; the exit code and the log tell the result</td></tr>
 <tr><td><code>/NODESKTOP</code></td><td class="wrap-ok">No new desktop shortcut (an existing one is kept)</td></tr>
+<tr><td><code>/FULL</code></td><td class="wrap-ok">Full installation (recording). Best given always when an instrument PC is updated</td></tr>
+<tr><td><code>/ANALYSISONLY</code></td><td class="wrap-ok">Analysis only. A full installation loses its background service; refused while an instrument measures (exit code 2)</td></tr>
+<tr><td><code>/RELAUNCH</code></td><td class="wrap-ok">Open the program's window again afterwards (how “Update now” in the window runs the installer); after a failure the previous program is opened again and says so</td></tr>
 <tr><td><code>/D=&lt;folder&gt;</code></td><td class="wrap-ok">Install into this folder. Must be last on the command line; no quotes needed</td></tr>
 <tr><td><code>--move-to [&lt;folder&gt;]</code></td><td class="wrap-ok">Move the installed program with its data into this folder (none: the standard one under Program Files), see section 10</td></tr>
 </table></div>
@@ -1277,7 +1290,7 @@ sc start PlateKineticsLive</pre>
 <ul>
 <li>The BMG program uses TCP port <b>47815</b>, the Archimed program <b>47825</b>, listening on <b>127.0.0.1</b> (loopback) only. Other PCs cannot reach it; no firewall rule is needed or added.</li>
 <li>Every request must carry the Host <code>127.0.0.1:&lt;port&gt;</code> or <code>localhost:&lt;port&gt;</code>, and <code>/api/</code> requests also the token from <code>System\api-token</code> (readable by local users). Web pages from the internet therefore cannot read or change anything through a browser.</li>
-<li>The program opens no outgoing connections: no usage statistics, no update checks, nothing sent to the instruments. The WebView2 Runtime is a Windows component that Microsoft updates like Edge.</li>
+<li>By default the program opens no outgoing connections: no usage statistics, nothing sent to the instruments. The one exception is the update check: when a user clicks “Check for updates” under About, or has turned on the automatic check (off by default for a full installation), it asks <code>api.github.com</code> for the latest release; “Update now” downloads the installer from <code>github.com</code> (redirected to <code>*.githubusercontent.com</code>) and runs it only when its SHA-256 equals the one published with the release. Nothing depends on GitHub being reachable. The WebView2 Runtime is a Windows component that Microsoft updates like Edge.</li>
 <li>When the port is held by another program, the log and the window name the process that holds it.</li>
 <li>To look from another PC, use Remote Desktop.</li>
 </ul>
@@ -1346,6 +1359,7 @@ sc start PlateKineticsLive</pre>
 <tr><th>Option</th><th>Effect</th></tr>
 <tr><td><code>--open &lt;file.pk&gt;</code></td><td class="wrap-ok">Show this experiment file in the window (what a double-click on a .pk does); a program already running gets it and comes to the front</td></tr>
 <tr><td><code>--tray</code></td><td class="wrap-ok">The tray (started at every sign-in)</td></tr>
+<tr><td><code>--analysis-only</code></td><td class="wrap-ok">The analysis window alone: no recording, no connection to the service (always so for an analysis-only installation)</td></tr>
 <tr><td><code>--uninstall [/S]</code></td><td class="wrap-ok">Uninstall</td></tr>
 <tr><td><code>--install-service [--demand-start]</code></td><td class="wrap-ok">Register and start the service (administrator; used by the installer)</td></tr>
 <tr><td><code>--uninstall-service</code></td><td class="wrap-ok">Stop and remove the service (administrator)</td></tr>

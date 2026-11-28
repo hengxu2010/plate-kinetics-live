@@ -21,6 +21,11 @@
 //                    {cmd: "focus"}                  the window was brought to the front by a second start
 // Before the page's own script runs, window.PKHost = {window: true, user, pc, edition, recordsHere} tells the page where
 // it is shown.
+//
+// The messages of the desktop features (project files, PDF, autosave, updates) stand at "Desktop features" below. What
+// the page asks there is not believed - it shows data from files of other people: the window writes without a dialog
+// only into project files it handed out itself, opens and shows in Explorer only files of its own lists (HostGrants.cs),
+// hands only web and mail links to Windows, and installs only the update its own check found (Updater.cs).
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -63,6 +68,12 @@ namespace SAAControl
         Rectangle prevBounds;
         CoreWebView2Environment wvEnv;         // shared WebView2 environment (reused for hidden PrintToPdfAsync)
         bool updateCheckStarted;
+        UpdateResult pendingUpdate;            // what this window's own last check found: the only thing "Update now" installs
+        bool installingUpdate;                 // an update is being downloaded (a second "Update now" does nothing)
+        readonly System.Threading.CancellationTokenSource gone = new System.Threading.CancellationTokenSource();   // the window closed: a download ends
+        string hostScript;                     // the script that sets window.PKHost (made again when a setting in it changes)
+        readonly HostGrants grants = new HostGrants();            // the project files this window handed to the page
+        readonly LatestFile autosave;          // the page's autosave copy, written in the background
         readonly List<DateTime> failures = new List<DateTime>();  // the web control's failures (it is made again a few times)
 
         /// <summary>The Experiments folder of the program's data folder (the page asks the window to open it in Explorer).</summary>
@@ -114,6 +125,7 @@ namespace SAAControl
             this.carryOverFrom = carryOverFrom ?? new List<string>();
             this.firstPlacement = firstPlacement;
             placementFile = Path.Combine(userDir, profile == "webview" ? "window.json" : profile + "-window.json");
+            autosave = new LatestFile(AutosaveFilePath);
             Text = InstallShared.DisplayName(appName);   // the program's name stays the window's title (the page's names the analysis page)
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch (Exception) { }
             var area = Screen.PrimaryScreen.WorkingArea;
@@ -328,10 +340,17 @@ namespace SAAControl
                         BeginInvoke(new Action(PickDataFiles));
                         break;
                     case "openRecent":
-                        if (!string.IsNullOrWhiteSpace(Field("path"))) OpenLocalPaths(new[] { Field("path") });
+                    {
+                        // only a file of the list the window keeps itself: the page's word for a path is not taken
+                        string recent = Field("path");
+                        if (HostGrants.InList(recent, RecentPaths())) OpenLocalPaths(new[] { HostGrants.Full(recent) });
+                        else if (!string.IsNullOrWhiteSpace(recent)) Log.Warning("the page asked to open a file that is not among the recent files: not opened");
                         break;
+                    }
                     case "revealFile":
-                        RevealFile(Field("path"));
+                        // only a recent file, or a project file the window handed out
+                        if (grants.MayReveal(Field("path"), RecentPaths())) RevealFile(Field("path"));
+                        else if (!string.IsNullOrWhiteSpace(Field("path"))) Log.Warning("the page asked to show a file in Explorer that this window did not hand out: not shown");
                         break;
                     case "clearRecent":
                         SaveRecent(new List<Dictionary<string, object>>());
@@ -341,7 +360,7 @@ namespace SAAControl
                         BeginInvoke(new Action(() => SaveProjectFile(Field("path"), Field("suggestedName"), Field("text"))));
                         break;
                     case "autosaveWrite":
-                        WriteAutosave(Field("json"));
+                        autosave.Write(Field("json"));     // (the whole project: written in the background)
                         break;
                     case "zoom":
                     {
@@ -361,12 +380,22 @@ namespace SAAControl
                     }
                     case "installUpdate":
                     {
-                        var _ = RunInstallUpdateAsync(Field("version"), Field("assetUrl"), Field("sha256"));
+                        // (only the version is read: an address or a hash in the message is not looked at)
+                        var _ = RunInstallUpdateAsync(Field("version"));
                         break;
                     }
                     case "dismissUpdate":
                         Updater.DismissVersion(appName, Field("version"));
                         break;
+                    case "setAutoUpdate":
+                    {
+                        if (message.TryGetValue("on", out object ao) && ao is bool autoOn)
+                        {
+                            Updater.SetAutoCheck(appName, autoOn);
+                            var _ = RenewHostInfoAsync();      // (a page loaded again reads the setting from window.PKHost)
+                        }
+                        break;
+                    }
                 }
             }
             catch (Exception error) { Log.Warning("a message of the page could not be handled (" + error.Message + ")"); }
@@ -576,6 +605,15 @@ namespace SAAControl
         }
 
         // ---- Desktop features: native PDF, recent files, batch open, direct save, local autosave, zoom, fullscreen, GitHub updater ----
+        //
+        // The updates (Updater.cs):
+        //   page -> window   {cmd: "checkUpdate", manual: true}   {cmd: "installUpdate", version}   {cmd: "dismissUpdate", version}
+        //                    {cmd: "setAutoUpdate", on}             the check at the window's start, on or off
+        //   window -> page   {cmd: "updateInfo", available, manual, version, notes, url, canInstall, auto, error, errorZh,
+        //                     state: absent | "downloading" | "installing" | "error", progress: 0-100, code, assetUrl}
+        // and window.PKHost.autoUpdate. "installUpdate" names only the version: what is installed is what this window's own
+        // check found (pendingUpdate), and only where that can work - an installed program whose window does not record by
+        // itself (canInstall); elsewhere the page links to the release page.
 
         static readonly HashSet<string> SupportedDataExts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -588,6 +626,8 @@ namespace SAAControl
         void OnPageReadyMessage()
         {
             Post(new Dictionary<string, object> { ["cmd"] = "recentFiles", ["items"] = LoadRecent().Cast<object>().ToList() });
+            // (a page loaded again: the autosave it gave last is on the disk before it is read back)
+            if (Standalone) autosave.Complete(TimeSpan.FromSeconds(3));
             if (Standalone && File.Exists(AutosaveFilePath) && toOpenLocal.Count == 0)
             {
                 try
@@ -599,6 +639,16 @@ namespace SAAControl
                 catch (Exception) { }
             }
             if (toOpenLocal.Count > 0) opening.Start();
+            // the installer started the program again after a silent update that failed: the page says so, once (and
+            // this start does not check by itself: the answer would take the place of that notice)
+            int? failedCode = Updater.FailedUpdate;
+            if (failedCode != null)
+            {
+                Updater.FailedUpdate = null;
+                updateCheckStarted = true;
+                Log.Warning("a silent update failed (the installer ended with code " + failedCode.Value + "): the page is told");
+                Post(Updater.FailedInfo(appName, ForAnalysis, failedCode.Value, AutoUpdate));
+            }
             if (!updateCheckStarted)
             {
                 updateCheckStarted = true;
@@ -606,52 +656,163 @@ namespace SAAControl
             }
         }
 
+        /// <summary>The analysis programs (the standalone one, an analysis-only installation) follow their own releases
+        /// and check for them at the start unless the user switched that off; the recorder checks only when asked.</summary>
+        bool ForAnalysis => AnalysisOnly || Standalone;
+        bool AutoUpdate => Updater.AutoCheck(appName, ForAnalysis);
+
+        /// <summary>The check at the window's start, when it is switched on (never for a recorder whose user did not
+        /// switch it on: an instrument PC connects nowhere by itself). Nothing leaves this method unlogged.</summary>
         async Task DelayedUpdateCheckAsync()
         {
-            await Task.Delay(6000);
-            if (!IsDisposed && !closeAsked && !closeConfirmed) await RunUpdateCheckAsync(false);
+            try
+            {
+                await Task.Delay(6000);
+                if (IsDisposed || closeAsked || closeConfirmed || !AutoUpdate) return;
+                await RunUpdateCheckAsync(false);
+            }
+            catch (Exception error) { Log.Warning("the check for updates at the start failed (" + error.Message + ")"); }
         }
 
+        /// <summary>Asks GitHub (in the background, within its deadlines) and tells the page; a manual check always gets
+        /// its answer. What a check without an error found is what "Update now" installs.</summary>
         async Task RunUpdateCheckAsync(bool manual)
         {
-            string ver = !string.IsNullOrWhiteSpace(CurrentVersion) ? CurrentVersion : AnalysisRunner.ProgramVersion();
-            var res = await Updater.CheckAsync(appName, ver, AnalysisOnly || Standalone, manual);
-            if (IsDisposed) return;
-            Post(new Dictionary<string, object>
+            try
             {
-                ["cmd"] = "updateInfo",
-                ["available"] = res.Available,
-                ["manual"] = manual,
-                ["version"] = res.Version,
-                ["notes"] = res.Notes,
-                ["url"] = res.ReleaseUrl,
-                ["assetUrl"] = res.AssetUrl,
-                ["sha256"] = res.Sha256,
-                ["error"] = res.Error,
-            });
+                string ver = !string.IsNullOrWhiteSpace(CurrentVersion) ? CurrentVersion : AnalysisRunner.ProgramVersion();
+                UpdateResult res = await Updater.CheckAsync(appName, ver, ForAnalysis, manual);
+                if (IsDisposed || closeConfirmed) return;
+                if (string.IsNullOrEmpty(res.Error)) pendingUpdate = res;
+                else Log.Warning("the check for updates failed (" + res.Error + ")");
+                Post(Updater.Info(res, manual, Updater.CanInstallHere(res, Runtime.Edition, RecordsHere), AutoUpdate));
+            }
+            catch (Exception error)
+            {
+                Log.Warning("the check for updates failed (" + error.Message + ")");
+                if (manual && !IsDisposed) Post(Updater.Info(null, true, false, AutoUpdate, null, -1, new UpdateProblem(error.Message)));
+            }
         }
 
-        async Task RunInstallUpdateAsync(string version, string assetUrl, string sha256)
+        /// <summary>"Update now" for a version: the page only names it. Installed is what this window's own check found,
+        /// when it is that version and this window may install it (Updater.InstallRefusal); the window closes once the
+        /// installer runs (it starts the program again).</summary>
+        async Task RunInstallUpdateAsync(string version)
         {
-            Post(new Dictionary<string, object> { ["cmd"] = "updateInfo", ["available"] = true, ["state"] = "downloading", ["version"] = version ?? "", ["progress"] = 0 });
-            string err = await Updater.DownloadAndInstallAsync(appName, version, assetUrl, sha256, AnalysisOnly || Standalone, pct =>
+            try
             {
-                if (!IsDisposed)
-                    BeginInvoke(new Action(() => Post(new Dictionary<string, object> { ["cmd"] = "updateInfo", ["available"] = true, ["state"] = "downloading", ["version"] = version ?? "", ["progress"] = pct })));
-            });
-            if (IsDisposed) return;
-            if (err != null)
+                if (installingUpdate) return;      // (the download runs: the page shows its progress)
+                UpdateResult update = pendingUpdate;
+                bool auto = AutoUpdate, here = Updater.CanInstallHere(update, Runtime.Edition, RecordsHere);
+                UpdateProblem refused = Updater.InstallRefusal(update, version, Runtime.Edition, RecordsHere);
+                if (refused != null)
+                {
+                    Log.Warning("the page asked for an update that is not installed: " + refused.Message);
+                    if (update == null || update.Version.Length == 0)
+                        update = new UpdateResult
+                        {
+                            Version = version == null ? "" : version.Substring(0, Math.Min(40, version.Length)),
+                            ReleaseUrl = Updater.ReleasesPage(Updater.RepoFor(appName, ForAnalysis)),
+                        };
+                    Post(Updater.Info(update, false, here, auto, "error", -1, refused));
+                    return;
+                }
+                installingUpdate = true;
+                UpdateProblem failed;
+                try
+                {
+                    Post(Updater.Info(update, false, true, auto, "downloading", 0));
+                    failed = await Updater.DownloadAndInstallAsync(appName, update, ForAnalysis, percent =>
+                    {
+                        // (called on a thread of the pool; the window may have gone meanwhile)
+                        try
+                        {
+                            if (!IsDisposed && IsHandleCreated)
+                                BeginInvoke(new Action(() => Post(Updater.Info(update, false, true, auto, "downloading", percent))));
+                        }
+                        catch (Exception) { }
+                    }, gone.Token);
+                }
+                finally { installingUpdate = false; }
+                if (IsDisposed || gone.IsCancellationRequested) return;
+                if (failed != null)
+                {
+                    Log.Warning("the update to version " + update.Version + " failed: " + failed.Message);
+                    Post(Updater.Info(update, false, here, auto, "error", -1, failed));
+                    return;
+                }
+                Post(Updater.Info(update, false, true, auto, "installing"));
+                // Installer launched with /S /RELAUNCH: close this window cleanly so files update without locking
+                closeConfirmed = true;
+                BeginInvoke(new Action(Close));
+            }
+            catch (Exception error) { Log.Warning("the update could not be installed (" + error.Message + ")"); }
+        }
+
+        /// <summary>window.PKHost: where the page is shown - the program's window, for which user - and what the window can do.</summary>
+        Dictionary<string, object> HostInfo() => new Dictionary<string, object>
+        {
+            ["window"] = true, ["desktop"] = true, ["standalone"] = Standalone, ["analysisOnly"] = AnalysisOnly,
+            ["nativePdf"] = true, ["updater"] = true, ["autoUpdate"] = AutoUpdate, ["appName"] = appName,
+            ["version"] = !string.IsNullOrWhiteSpace(CurrentVersion) ? CurrentVersion : AnalysisRunner.ProgramVersion(),
+            ["user"] = Session.ThisUser(), ["pc"] = Session.Machine(), ["edition"] = Runtime.Edition, ["recordsHere"] = RecordsHere,
+        };
+
+        /// <summary>window.PKHost for the pages loaded from now on (a setting in it changed): the script that sets it is
+        /// made again, then the earlier one is taken away.</summary>
+        async Task RenewHostInfoAsync()
+        {
+            try
             {
-                Post(new Dictionary<string, object> { ["cmd"] = "updateInfo", ["available"] = true, ["state"] = "error", ["version"] = version ?? "", ["error"] = err });
+                var core = view.CoreWebView2;
+                if (core == null) return;
+                string earlier = hostScript;
+                hostScript = await core.AddScriptToExecuteOnDocumentCreatedAsync("window.PKHost = " + Json.Serialize(HostInfo()) + ";");
+                if (earlier != null) core.RemoveScriptToExecuteOnDocumentCreated(earlier);
+            }
+            catch (Exception error) { Log.Warning("window.PKHost could not be renewed for the page (" + error.Message + ")"); }
+        }
+
+        /// <summary>A link of the page that leaves the program goes to Windows (the default browser, the mail program) only
+        /// as a web or mail address: anything else - a file, a program, another scheme - Windows would open or run just
+        /// the same, so it is dropped.</summary>
+        void OpenExternally(string uri)
+        {
+            string link = HostGrants.ExternalLink(uri);
+            if (link == null)
+            {
+                var shown = new System.Text.StringBuilder();
+                foreach (char c in uri ?? "")
+                    if (c > ' ' && c <= '~' && shown.Length < 80) shown.Append(c);
+                Log.Warning("a link of the page was not opened (only http, https and mailto addresses are handed to Windows): " + shown);
                 return;
             }
-            Post(new Dictionary<string, object> { ["cmd"] = "updateInfo", ["available"] = true, ["state"] = "installing", ["version"] = version ?? "" });
-            // Installer launched with /S /RELAUNCH: close this window cleanly so files update without locking
-            closeConfirmed = true;
-            BeginInvoke(new Action(Close));
+            try { Process.Start(new ProcessStartInfo(link) { UseShellExecute = true }); }
+            catch (Exception error) { Log.Warning("a link of the page could not be opened (" + error.Message + ")"); }
         }
 
+        /// <summary>The window is gone: a download of an update ends, and the page's last autosave is on the disk before
+        /// the process ends (waited for, 3 s at most).</summary>
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            try { gone.Cancel(); } catch (Exception) { }
+            if (!autosave.Complete(TimeSpan.FromSeconds(3))) Log.Warning("the page's last autosave was not written within 3 s");
+            base.OnFormClosed(e);
+        }
+
+        /// <summary>The page's report as a PDF file the user chooses (nobody waits for this task: whatever goes wrong is
+        /// logged and told to the page here).</summary>
         async Task ExportPdfAsync(string html, string filename, bool landscape)
+        {
+            try { await WritePdfAsync(html, filename, landscape); }
+            catch (Exception error)
+            {
+                Log.Warning("native PDF export failed: " + error.Message);
+                Post(new Dictionary<string, object> { ["cmd"] = "pdfExported", ["ok"] = false, ["error"] = error.Message });
+            }
+        }
+
+        async Task WritePdfAsync(string html, string filename, bool landscape)
         {
             if (string.IsNullOrEmpty(html) || wvEnv == null)
             {
@@ -699,15 +860,31 @@ namespace SAAControl
                 var pdfDone = new TaskCompletionSource<bool>();
                 BeginInvoke(new Action(async () =>
                 {
+                    // the report as a file of its own in the user's folder, shown from there: NavigateToString takes 2 MB
+                    // at most, and the report of a 384-well plate is larger (the byte order mark settles its encoding)
+                    string page = Path.Combine(userDir, "pdf-" + Guid.NewGuid().ToString("N") + ".html");
                     try
                     {
+                        Directory.CreateDirectory(userDir);
+                        foreach (string left in Directory.GetFiles(userDir, "pdf-*.html"))     // (of an export that was cut short)
+                        {
+                            try { if (DateTime.UtcNow - File.GetLastWriteTimeUtc(left) > TimeSpan.FromHours(1)) File.Delete(left); }
+                            catch (Exception) { }
+                        }
+                        File.WriteAllText(page, html, new System.Text.UTF8Encoding(true));
                         hidden = new WebView2 { Visible = false, Width = landscape ? 1123 : 794, Height = landscape ? 794 : 1123 };
                         Controls.Add(hidden);
-                        await hidden.EnsureCoreWebView2Async(wvEnv);
+                        await Within(hidden.EnsureCoreWebView2Async(wvEnv), 60000,
+                                     Both("PDF \u5f15\u64ce\u5728 60 \u79d2\u5185\u6ca1\u6709\u542f\u52a8\uff0c\u6ca1\u6709\u751f\u6210 PDF", "the PDF engine did not start within 60 seconds; no PDF was written"));
+                        // (the report is a finished document: as a local file it runs no script)
+                        hidden.CoreWebView2.Settings.IsScriptEnabled = false;
                         var navDone = new TaskCompletionSource<bool>();
                         hidden.CoreWebView2.NavigationCompleted += (s, ev) => navDone.TrySetResult(ev.IsSuccess);
-                        hidden.CoreWebView2.NavigateToString(html);
-                        await navDone.Task;
+                        hidden.CoreWebView2.Navigate(new Uri(page).AbsoluteUri);
+                        await Within(navDone.Task, 60000,
+                                     Both("\u62a5\u544a\u5728 60 \u79d2\u5185\u6ca1\u6709\u6392\u597d\u7248\uff0c\u6ca1\u6709\u751f\u6210 PDF", "the report could not be laid out within 60 seconds; no PDF was written"));
+                        if (!navDone.Task.Result)
+                            throw new IOException(Both("\u62a5\u544a\u65e0\u6cd5\u8f7d\u5165\u6253\u5370\uff0c\u6ca1\u6709\u751f\u6210 PDF", "the report could not be loaded for printing; no PDF was written"));
                         await Task.Delay(120);
                         var ps = hidden.CoreWebView2.Environment.CreatePrintSettings();
                         ps.Orientation = landscape ? CoreWebView2PrintOrientation.Landscape : CoreWebView2PrintOrientation.Portrait;
@@ -715,8 +892,10 @@ namespace SAAControl
                         ps.ShouldPrintHeaderAndFooter = false;
                         // CSS @page sets exact A4 margins (13mm 14mm / 10mm 12mm); keep WebView2 margins 0 to avoid double margins
                         ps.MarginTop = 0; ps.MarginBottom = 0; ps.MarginLeft = 0; ps.MarginRight = 0;
-                        bool ok = await hidden.CoreWebView2.PrintToPdfAsync(savePath, ps);
-                        pdfDone.TrySetResult(ok);
+                        Task<bool> print = hidden.CoreWebView2.PrintToPdfAsync(savePath, ps);
+                        await Within(print, 120000,
+                                     Both("PDF \u5728 120 \u79d2\u5185\u6ca1\u6709\u5b8c\u6210\uff0c\u6587\u4ef6\u53ef\u80fd\u4e0d\u5b8c\u6574", "the PDF was not finished within 120 seconds; the file may be incomplete"));
+                        pdfDone.TrySetResult(print.Result);
                     }
                     catch (Exception ex) { pdfDone.TrySetException(ex); }
                     finally
@@ -725,6 +904,7 @@ namespace SAAControl
                         {
                             try { Controls.Remove(hidden); hidden.Dispose(); } catch (Exception) { }
                         }
+                        try { File.Delete(page); } catch (Exception) { }
                     }
                 }));
                 bool okRes = await pdfDone.Task;
@@ -740,6 +920,22 @@ namespace SAAControl
                 Log.Warning("native PDF export failed: " + ex.Message);
                 Post(new Dictionary<string, object> { ["cmd"] = "pdfExported", ["ok"] = false, ["error"] = ex.Message });
             }
+        }
+
+        /// <summary>What the page shows when the export is late or fails: Chinese and English in one text (the message to
+        /// the page has one field for it).</summary>
+        static string Both(string zh, string en) => zh + " / " + en;
+
+        /// <summary>Waits for a step of the web control, that long at most: then a TimeoutException with these words (the
+        /// step is given up; an error it still meets later is looked at, so that none stays unseen).</summary>
+        static async Task Within(Task step, int milliseconds, string late)
+        {
+            if (await Task.WhenAny(step, Task.Delay(milliseconds)) != step)
+            {
+                var _ = step.ContinueWith(given => given.Exception, TaskContinuationOptions.OnlyOnFaulted);
+                throw new TimeoutException(late);
+            }
+            await step;
         }
 
         List<Dictionary<string, object>> LoadRecent()
@@ -768,6 +964,8 @@ namespace SAAControl
             }
             catch (Exception) { }
         }
+
+        IEnumerable<string> RecentPaths() => LoadRecent().Select(d => d["path"] as string);
 
         void RememberRecent(string path)
         {
@@ -862,6 +1060,7 @@ namespace SAAControl
                             ["kind"] = "project", ["name"] = name, ["path"] = full,
                             ["text"] = File.ReadAllText(full, System.Text.Encoding.UTF8),
                         });
+                        grants.Grant(full);        // "Save" may write it back without a dialog
                     }
                     else
                     {
@@ -883,30 +1082,38 @@ namespace SAAControl
                 Post(new Dictionary<string, object> { ["cmd"] = "openLocalBatch", ["files"] = batch });
         }
 
+        /// <summary>"Save" of the project. Written without a dialog only into a project file (.pkproj, .pka, .json) this
+        /// window handed out itself - one it opened for the page, or one a "Save as" dialog of it returned; for any other
+        /// path, as for none, the user chooses the place.</summary>
         void SaveProjectFile(string existingPath, string suggestedName, string text)
         {
             if (text == null) return;
-            string target = existingPath;
-            if (string.IsNullOrWhiteSpace(target))
-            {
-                using (var dlg = new SaveFileDialog
-                {
-                    FileName = string.IsNullOrWhiteSpace(suggestedName) ? "project.pkproj" : Path.GetFileName(suggestedName),
-                    OverwritePrompt = true, AddExtension = true, DefaultExt = "pkproj", RestoreDirectory = true,
-                    Filter = "Plate Kinetics project (*.pkproj;*.json)|*.pkproj;*.json|All files (*.*)|*.*",
-                })
-                {
-                    if (lastExportFolder != null && Directory.Exists(lastExportFolder)) dlg.InitialDirectory = lastExportFolder;
-                    if (dlg.ShowDialog(this) != DialogResult.OK)
-                    {
-                        Post(new Dictionary<string, object> { ["cmd"] = "projectSaved", ["ok"] = false, ["cancelled"] = true });
-                        return;
-                    }
-                    target = dlg.FileName;
-                }
-            }
             try
             {
+                string target = grants.MayWrite(existingPath) ? HostGrants.Full(existingPath) : null;
+                if (target == null)
+                {
+                    if (!string.IsNullOrWhiteSpace(existingPath))
+                        Log.Warning("the page asked to save into a file this window did not hand out: the place is asked for");
+                    string name = "project.pkproj";
+                    try { if (!string.IsNullOrWhiteSpace(suggestedName)) name = Path.GetFileName(suggestedName); } catch (Exception) { }
+                    using (var dlg = new SaveFileDialog
+                    {
+                        FileName = name,
+                        OverwritePrompt = true, AddExtension = true, DefaultExt = "pkproj", RestoreDirectory = true,
+                        Filter = "Plate Kinetics project (*.pkproj;*.json)|*.pkproj;*.json|All files (*.*)|*.*",
+                    })
+                    {
+                        if (lastExportFolder != null && Directory.Exists(lastExportFolder)) dlg.InitialDirectory = lastExportFolder;
+                        if (dlg.ShowDialog(this) != DialogResult.OK)
+                        {
+                            Post(new Dictionary<string, object> { ["cmd"] = "projectSaved", ["ok"] = false, ["cancelled"] = true });
+                            return;
+                        }
+                        target = dlg.FileName;
+                        grants.Grant(target);      // the user chose it: the next "Save" writes there
+                    }
+                }
                 string full = Path.GetFullPath(target);
                 string tmp = full + ".tmp-" + Guid.NewGuid().ToString("N").Substring(0, 6);
                 File.WriteAllText(tmp, text, new System.Text.UTF8Encoding(false));
@@ -920,20 +1127,6 @@ namespace SAAControl
             {
                 Post(new Dictionary<string, object> { ["cmd"] = "projectSaved", ["ok"] = false, ["error"] = ex.Message });
             }
-        }
-
-        void WriteAutosave(string json)
-        {
-            if (string.IsNullOrEmpty(json)) return;
-            try
-            {
-                Directory.CreateDirectory(userDir);
-                string tmp = AutosaveFilePath + ".tmp";
-                File.WriteAllText(tmp, json, new System.Text.UTF8Encoding(false));
-                if (File.Exists(AutosaveFilePath)) File.Replace(tmp, AutosaveFilePath, null);
-                else File.Move(tmp, AutosaveFilePath);
-            }
-            catch (Exception) { }
         }
 
         void ApplyZoom(double factor)
@@ -1001,19 +1194,12 @@ namespace SAAControl
                 core.DownloadStarting += OnDownload;
                 core.ProcessFailed += OnProcessFailed;
                 // where the page is shown: the program's window, for which user
-                var host = new Dictionary<string, object>
-                {
-                    ["window"] = true, ["desktop"] = true, ["standalone"] = Standalone, ["analysisOnly"] = AnalysisOnly,
-                    ["nativePdf"] = true, ["updater"] = true, ["appName"] = appName,
-                    ["version"] = !string.IsNullOrWhiteSpace(CurrentVersion) ? CurrentVersion : AnalysisRunner.ProgramVersion(),
-                    ["user"] = Session.ThisUser(), ["pc"] = Session.Machine(), ["edition"] = Runtime.Edition, ["recordsHere"] = RecordsHere,
-                };
-                await core.AddScriptToExecuteOnDocumentCreatedAsync("window.PKHost = " + Json.Serialize(host) + ";");
+                hostScript = await core.AddScriptToExecuteOnDocumentCreatedAsync("window.PKHost = " + Json.Serialize(HostInfo()) + ";");
                 // links that open a new window (a shared room's web address) go to the default browser
                 core.NewWindowRequested += (s, e) =>
                 {
                     e.Handled = true;
-                    try { Process.Start(new ProcessStartInfo(e.Uri) { UseShellExecute = true }); } catch (Exception) { }
+                    OpenExternally(e.Uri);
                 };
                 // leaving the page for about:blank is how the window closes (see OnClosing)
                 core.NavigationCompleted += (s, e) =>
@@ -1042,7 +1228,7 @@ namespace SAAControl
                     // the page must not wander off to another site inside the program's window
                     if (closeAsked || e.Uri == "about:blank" || own) return;
                     e.Cancel = true;
-                    try { Process.Start(new ProcessStartInfo(e.Uri) { UseShellExecute = true }); } catch (Exception) { }
+                    OpenExternally(e.Uri);
                 };
                 core.Navigate(url);
             }

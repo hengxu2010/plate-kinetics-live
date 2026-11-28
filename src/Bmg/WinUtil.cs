@@ -2,6 +2,7 @@
 // Windows API. Only looked at, never changed. (The window functions of winutil.py belong to the host.)
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 namespace SAAControl.Bmg
@@ -41,16 +42,19 @@ namespace SAAControl.Bmg
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool CloseHandle(IntPtr handle);
 
-        /// <summary>(name of the program file, process id, id of the process that started it) of every running process.</summary>
+        /// <summary>(name of the program file, process id, id of the process that started it) of every running process.
+        /// When Windows cannot give the list (the snapshot fails) this throws Win32Exception: no list is not an empty
+        /// list, which would read as "Omega is not running".</summary>
         public static List<(string Name, uint Id, uint Parent)> EachProcess()
         {
             var found = new List<(string, uint, uint)>();
             IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-            if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1)) return found;
+            if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1)) throw new Win32Exception(Marshal.GetLastWin32Error());
             try
             {
                 var entry = new ProcessEntry { dwSize = (uint)Marshal.SizeOf(typeof(ProcessEntry)) };
                 bool more = Process32FirstW(snapshot, ref entry);
+                if (!more) throw new Win32Exception(Marshal.GetLastWin32Error());   // (a list always has Windows' own processes)
                 while (more)
                 {
                     found.Add((entry.szExeFile ?? "", entry.th32ProcessID, entry.th32ParentProcessID));
@@ -64,7 +68,8 @@ namespace SAAControl.Bmg
             return found;
         }
 
-        /// <summary>{process id: id of the process that started it} for the running processes of that program file.</summary>
+        /// <summary>{process id: id of the process that started it} for the running processes of that program file
+        /// (Win32Exception: no list could be had, see EachProcess).</summary>
         public static Dictionary<uint, uint> Processes(string exeName)
         {
             string wanted = Py.Casefold(exeName);
@@ -74,7 +79,8 @@ namespace SAAControl.Bmg
             return found;
         }
 
-        /// <summary>Lower-case (casefolded) names of the program files of all running processes.</summary>
+        /// <summary>Lower-case (casefolded) names of the program files of all running processes (Win32Exception: no list
+        /// could be had, see EachProcess).</summary>
         public static HashSet<string> ProcessNames()
         {
             var names = new HashSet<string>();

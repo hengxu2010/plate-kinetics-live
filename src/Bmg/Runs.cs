@@ -39,9 +39,12 @@
 //
 // A record also keeps the run's experiment id, who ran it (the user logged on at its start) and, for a run that ended
 // early, why ({at, reason, detail} from Windows' event logs: Common\Interruptions.cs). Omega's program gone for 2 minutes
-// while its test measures ends the run there ("instrument-software-closed" or "-crashed"). After every look the watchdog
-// hears from the watcher, the PC is kept awake while a test measures, and a test that brings no new data for more than
-// two cycles gives the event "stuck". A reader whose live data cannot be read says so on its card ("unreadable", for a
+// while its test measures ends the run there ("instrument-software-closed" or "-crashed"); so it does for a test whose
+// record is still open when the program starts without Omega running (Omega or the PC stopped during the run). A look
+// that cannot list the running programs, or cannot read TestAkt.DB although it is there, goes on with what was found
+// before (TestAkt.DB: for TestMisses looks at most); only TestAkt.DB not there ends a test at once. After every look the
+// watchdog hears from the watcher, the PC is kept awake while a test measures, and a test that brings no new data for
+// more than two cycles gives the event "stuck". A reader whose live data cannot be read says so on its card ("unreadable", for a
 // version that is not verified: OmegaVersions.UnsupportedText), never "idle" while Omega measures.
 using System;
 using System.Collections.Generic;
@@ -68,6 +71,9 @@ namespace SAAControl.Bmg
         public static int ParseFailures = 10;       // reads of Readings.abs in a row that may fail to parse before the reader is "unreadable"
         public static double GoneAfter = 120.0;     // seconds Omega's program may be gone while its test measures before the run has ended
         public static double UnreadableAfter = 30.0;   // seconds TestAkt.DB may be there but unreadable before the reader is "unreadable"
+        // looks in a row that go on with the test as it was read before while TestAkt.DB is there but cannot be read just
+        // now (held for a moment, being written); after them the test has ended, as when the file is gone
+        public static int TestMisses = 5;
         public static double NoDataAfter = 600.0;   // a test of a version not verified that brings no readable data for this long (or two cycles): "unreadable"
         // a test that brings no new data for max(QuietFloor, QuietCycles x its cycle time + QuietSlack) seconds: the event "stuck"
         public static double QuietFloor = 300.0, QuietCycles = 2.0, QuietSlack = 60.0;
@@ -85,6 +91,7 @@ namespace SAAControl.Bmg
         public static Func<Install, object> LastTarget = OmegaLive.LastTarget;
         public static Func<Install, string> LastModel = OmegaLive.LastModel;
         public static Func<string, object> JsonLoads = Json.Parse;
+        public static Func<string, Py.StatResult> TestStat = Py.Stat;      // (of Temp\TestAkt.DB)
 
         static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
@@ -390,6 +397,7 @@ namespace SAAControl.Bmg
             public bool StuckSent;              // the event "stuck" was sent for that quiet spell
             public double? GoneSince;           // (monotonic) Omega's program gone while its test measures
             public double? TestUnreadableSince; // (monotonic) TestAkt.DB there but not readable
+            public int TestMissed;              // looks in a row that went on with Test as it was (TestAkt.DB not readable just now)
             public double? WaitingSince;        // (monotonic) a test runs and no reading of it could be read yet
 
             public Instrument(Install install) { Install = install; }
@@ -402,8 +410,9 @@ namespace SAAControl.Bmg
         readonly History history;
         readonly object gate = new object();
         long rev;
-        HashSet<string> programs = new HashSet<string>();
+        HashSet<string> programs;               // the running programs as last listed (null: no list could be had yet)
         double? programsAt;
+        int programsFailed;                     // looks in a row that could not list the running programs
         Dictionary<string, ((long, long) Stamp, Dictionary<string, object> Item)> recordedCache =
             new Dictionary<string, ((long, long), Dictionary<string, object>)>();    // file name -> (stamp, its line of Recorded())
         readonly ManualResetEvent stopEvent = new ManualResetEvent(false);
@@ -511,7 +520,9 @@ namespace SAAControl.Bmg
         /// null for completed or stopped by its cycles.</summary>
         void Finish(Instrument instrument, string status)
         {
-            if (instrument.Snap == null || !Py.Truthy(instrument.RunId) || instrument.Sealed && !instrument.Final) return;
+            // (Sealed with Final: its end is written already, and a finished run is never written again - after Omega was
+            // gone its settings file can go later, or the next test begin, and the run stays as it ended)
+            if (instrument.Snap == null || !Py.Truthy(instrument.RunId) || instrument.Sealed) return;
             instrument.Status = status ?? ExperimentInfo.EndStatus(instrument.Snap.CyclesComplete, Runs.PlannedCycles(instrument.Snap, instrument.Meta));
             if (instrument.EndedAt == null)
                 instrument.EndedAt = status == "interrupted" ? ExperimentInfo.LastReading(Py.Get(instrument.Meta, "startedAt") as string, instrument.Snap.Times) ?? PyTime.Now()
@@ -670,10 +681,21 @@ namespace SAAControl.Bmg
             double now = PyTime.Monotonic();
             if (programsAt == null || everything || now - programsAt.Value >= Runs.ProgramsEvery)
             {
-                programs = Runs.RunningPrograms();
-                programsAt = now;
+                try
+                {
+                    programs = Runs.RunningPrograms();
+                    programsAt = now;
+                    if (programsFailed > 0) Log.Info("the running programs can be listed again (after " + programsFailed + " looks that could not)");
+                    programsFailed = 0;
+                }
+                catch (System.ComponentModel.Win32Exception error)
+                {
+                    // Windows could not list the running programs just now: that is not "Omega is not running". The last
+                    // list stands for this look; the next look asks again.
+                    if (programsFailed++ == 0) Log.Warning("the running programs could not be listed (" + error.Message + "): the last list stands until they can");
+                }
             }
-            HashSet<string> running = programs;
+            HashSet<string> running = programs;     // null: no list could be had since the start
             foreach (Instrument instrument in Instruments)
             {
                 if (!everything && instrument.Test == null && instrument.Pending == null && now < instrument.NextLook) continue;
@@ -873,7 +895,7 @@ namespace SAAControl.Bmg
         bool Look(Instrument instrument, HashSet<string> running)
         {
             Install install = instrument.Install;
-            bool program = assumeRunning || running.Contains(Py.Casefold(Path.GetFileName(install.Exe)));
+            bool program = assumeRunning || (running != null && running.Contains(Py.Casefold(Path.GetFileName(install.Exe))));
             bool changed = program != instrument.ProgramRunning;
             instrument.ProgramRunning = program;
             Dictionary<string, object> test = TestOf(instrument);      // null: no test is in progress
@@ -1024,6 +1046,12 @@ namespace SAAControl.Bmg
                 bool news;
                 string startedBy = null;
                 if (!Py.Eq(runId, instrument.RunId) && test != null && program) startedBy = OperatorNow();   // (not under the lock)
+                // A test whose record is still open, first seen while Omega's program is not running (Omega or the PC
+                // stopped during the run while this program was not running, and the settings file stayed): it is
+                // followed as measuring, so that the end for "Omega is gone" (GoneAfter) ends it as interrupted - only
+                // when the readings hold all that its record holds (after a power loss they may hold less: then it is
+                // shown as before and its record is not touched).
+                bool resumed = !Py.Eq(runId, instrument.RunId) && test != null && !program && running != null && OpenRecordHeld(install, runId, snap);
                 lock (gate)
                 {
                     bool same = Py.Eq(runId, instrument.RunId);
@@ -1036,7 +1064,8 @@ namespace SAAControl.Bmg
                         instrument.Closed = false;
                         instrument.Extra = StoredExtra(runId);
                         instrument.Closed = instrument.Extra.Closed;
-                        Shown(instrument, test != null && program);
+                        Shown(instrument, test != null && (program || resumed));
+                        if (resumed) Note(instrument, "followed while Omega is not running");
                         // a run that begins now: who is logged on at the PC runs it (a run recorded before keeps its own)
                         if (!instrument.Extra.Exists && string.IsNullOrEmpty(instrument.Extra.Operator)) instrument.Extra.Operator = startedBy;
                     }
@@ -1054,6 +1083,12 @@ namespace SAAControl.Bmg
                     instrument.Settled = digest;
                     instrument.DataRev = Py.AddOne(instrument.DataRev);
                     if (test != null && program) instrument.UpdatedAt = PyTime.Now();   // news of a test that is running
+                    else if (resumed)
+                    {
+                        // it ended at its last reading, also when Omega comes back before GoneAfter and the run ends later
+                        // in another way (its settings file goes, the next test begins): Finish keeps an end that is known
+                        instrument.UpdatedAt = instrument.EndedAt = ExperimentInfo.LastReading(Py.Get(meta, "startedAt") as string, snap.Times);
+                    }
                     else if (!same) instrument.UpdatedAt = null;        // left behind by an earlier run: when it ended is not known
                 }
                 // The record is written when a cycle is complete (or the run is another one). A 6.40 reader fills the table
@@ -1064,6 +1099,27 @@ namespace SAAControl.Bmg
             // (a run this program ended - Omega was gone - is not measuring when Omega comes back with its old settings file)
             bool measuring = program && test != null && !(instrument.Final && Py.Eq(instrument.RunId, Runs.RunIdOf(install, testStarted)));
             return Set(instrument, measuring ? "measuring" : "finished", program ? "" : Runs.LeftOver, LeftOverMessageZh(program)) || changed;
+        }
+
+        /// <summary>Whether the record of runId is still open ("measuring") and the readings hold all of it: the same run,
+        /// and at least its complete cycles (as Complete asks of Omega's database before it takes a run from there).</summary>
+        bool OpenRecordHeld(Install install, object runId, Snapshot snap)
+        {
+            try
+            {
+                var record = Runs.JsonLoads(Py.ReadText(RecordPath(runId))) as Dictionary<string, object>;
+                if (record == null || Py.Get(record, "status") as string != "measuring") return false;
+                object recorded = Py.Item(record, "data");
+                object complete = Py.Get(recorded, "cyclesComplete");
+                if (Py.Ge(Py.Truthy(complete) ? complete : 0L, 1L)
+                    && (Py.Lt((long)snap.CyclesComplete, complete) || !Runs.SameRun(recorded, Runs.RunPayload("", install.Key, snap, 0L, null))))
+                    return false;
+                return true;
+            }
+            catch (Exception e) when (Py.Is(e, PyKinds.OSError | PyKinds.ValueError | PyKinds.KeyError | PyKinds.TypeError | PyKinds.IndexError))
+            {
+                return false;
+            }
         }
 
         /// <summary>A test has ended: take the run as Omega stored it in its own database, which has every cycle. Whatever
@@ -1223,29 +1279,59 @@ namespace SAAControl.Bmg
             }
         }
 
-        /// <summary>Settings of the test in progress; TestAkt.DB is only parsed again when it has changed.</summary>
+        /// <summary>Settings of the test in progress; TestAkt.DB is only parsed again when it has changed. TestAkt.DB not
+        /// there: the test has ended (at once). There but not readable just now while a test is followed: see KeepTest.</summary>
         Dictionary<string, object> TestOf(Instrument instrument)
         {
             string path = Path.Combine(instrument.Install.Root, "Temp", "TestAkt.DB");
             Py.StatResult stat;
-            try { stat = Py.Stat(path); }
+            try { stat = Runs.TestStat(path); }
             catch (Exception e) when (Py.Is(e, PyKinds.OSError))
             {
+                if (!Py.IsNotFound(e) && KeepTest(instrument, Py.ExceptionText(e))) return instrument.Test;
                 instrument.Test = null;
                 instrument.TestStamp = null;
                 instrument.TestUnreadableSince = null;
+                instrument.TestMissed = 0;
                 return null;
             }
             var stamp = (stat.MtimeNs, stat.Size);
             if (!(instrument.TestStamp.HasValue && instrument.TestStamp.Value == stamp))
             {
-                instrument.Test = Runs.TestSettings(Path.GetDirectoryName(path));
+                Dictionary<string, object> test = Runs.TestSettings(Path.GetDirectoryName(path));
+                if (test == null && instrument.Test != null && !Gone(path) && KeepTest(instrument, "it changed and could not be read"))
+                    return instrument.Test;
+                instrument.Test = test;
                 instrument.TestStamp = instrument.Test != null ? stamp : ((long, long)?)null;   // unreadable (being written): again next time
                 // (unreadable for long: another Omega version - Look says so)
                 if (instrument.Test != null) instrument.TestUnreadableSince = null;
                 else if (instrument.TestUnreadableSince == null) instrument.TestUnreadableSince = PyTime.Monotonic();
             }
+            instrument.TestMissed = 0;
             return instrument.Test;
+        }
+
+        /// <summary>TestAkt.DB is there but could not be read at this look (held for a moment by another program, being
+        /// written: a sharing violation, access denied, a torn read). While a test is followed the look goes on with the
+        /// test as it was read before, as if the file had been read: at most Runs.TestMisses looks in a row, after them the
+        /// test has ended as when the file is gone. False: no test is followed, or those looks are used up.</summary>
+        bool KeepTest(Instrument instrument, string why)
+        {
+            if (instrument.Test == null || instrument.TestMissed >= Runs.TestMisses) return false;
+            if (instrument.TestMissed++ == 0)
+                Log.Info(instrument.Install.Key + ": TestAkt.DB could not be read just now (" + why + "): the test goes on as it was read before");
+            return true;
+        }
+
+        /// <summary>The file is not there (any other answer, an error included, is not "gone").</summary>
+        static bool Gone(string path)
+        {
+            try
+            {
+                Runs.TestStat(path);
+                return false;
+            }
+            catch (Exception e) when (Py.Is(e, PyKinds.OSError)) { return Py.IsNotFound(e); }
         }
 
         /// <summary>Id and settings for readings no test in progress accounts for: those they were recorded under, or an id

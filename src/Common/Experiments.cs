@@ -21,6 +21,13 @@
 // again when a file was moved or renamed. Runs whose files were made whole once (the .pk with the run's end, and the
 // .xlsx) are listed in System\runs\pk-made.txt: files a user deleted are not made again for an ended run (they are
 // listed as "removed" and can be restored). The background preparation of the records makes what such a run lacks.
+// Two files of one experiment (the user copied a file, or a month folder as a backup): the run keeps the file the
+// program wrote, the copy is listed and never written. A junction or symbolic link in the folder is a folder like any
+// other as far as the files in it itself go (a month folder kept on another disk); the folders in it are not looked
+// into. A folder that cannot be listed just now costs nothing of what was known of its files (it is not "all deleted").
+//
+// The watchers write the end of a run once. When that write fails (the .pk is held by another program, the disk is
+// full), the run is tried again from its record at every look of the timer (WorkbookCheck) until its files are whole.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -92,7 +99,13 @@ namespace SAAControl
         }
 
         /// <summary>The start plus the time of the run's last reading, as "yyyy-MM-ddTHH:mm:ss"; null when not known.</summary>
-        public static string LastReading(string startedAt, object seconds)
+        public static string LastReading(string startedAt, object seconds) => LastReading(startedAt, seconds, TimeZoneInfo.Local);
+
+        /// <summary>The same for the clock of a time zone (the PC's; tests give others). The seconds are added to the moment
+        /// of the start, not to what the clock showed then: where the clock is put forward or back while the run goes on
+        /// (daylight-saving time), the end would else be an hour off. With no such change in between, the same as adding
+        /// them to the clock time.</summary>
+        public static string LastReading(string startedAt, object seconds, TimeZoneInfo zone)
         {
             DateTime? start = Naming.Start(startedAt);
             if (start == null || !(seconds is List<object> list)) return null;
@@ -103,7 +116,16 @@ namespace SAAControl
                 if (!double.IsNaN(s) && s > last) last = s;
             }
             if (last < 0) return null;
-            return start.Value.AddSeconds(Math.Min(last, 1e9)).ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss", CultureInfo.InvariantCulture);
+            last = Math.Min(last, 1e9);
+            DateTime end;
+            try
+            {
+                // (a start the clock never showed - inside the hour left out in spring - has no moment: as on the clock)
+                end = zone.IsInvalidTime(start.Value) ? start.Value.AddSeconds(last)
+                    : TimeZoneInfo.ConvertTimeFromUtc(TimeZoneInfo.ConvertTimeToUtc(start.Value, zone).AddSeconds(last), zone);
+            }
+            catch (ArgumentException) { end = start.Value.AddSeconds(last); }
+            return end.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss", CultureInfo.InvariantCulture);
         }
 
         /// <summary>The status in words: "Stopped early at cycle 98 of 300" / "\u63d0\u524d\u505c\u6b62\uff08\u7b2c 98/300 \u8f6e\uff09".</summary>
@@ -248,6 +270,10 @@ namespace SAAControl
         Func<Dictionary<string, object>, ExperimentInfo> describe;   // the watcher's description of a record
         Func<string, bool> live = _ => false;                         // the watcher writes that run's files itself
         readonly HashSet<string> keptSealed = new HashSet<string>(StringComparer.Ordinal);   // (logged once)
+        readonly HashSet<string> copiesSaid = new HashSet<string>(StringComparer.OrdinalIgnoreCase);   // (logged once: "<file>|<its copy>")
+        readonly HashSet<string> leftOut = new HashSet<string>(StringComparer.OrdinalIgnoreCase);      // (logged once: folders not listed)
+        // runs whose end could not be saved (the last write of their files failed): tried again from their records (SaveEndsAgain)
+        readonly HashSet<string> unsavedEnds = new HashSet<string>(StringComparer.Ordinal);
         readonly DateTime startedUtc = DateTime.UtcNow;               // files of saves cut short are older than this
 
         /// <summary>How files go to the Recycle Bin (tests replace it): true when they went.</summary>
@@ -511,11 +537,21 @@ namespace SAAControl
                         var infoJson = InfoJson(info, name, sealedAt, analysis);
                         SafeFile.Write(pk, PkFile.Build(infoJson, runBytes, analysisBytes), PkFile.Validate, keepBackup: true, hideBackup: true);
                         Storage.Succeeded(pk);
+                        // (a save that failed under the name the file had before it was renamed just now is made good too)
+                        if (known != null && !string.Equals(known, pk, StringComparison.OrdinalIgnoreCase)) Storage.Succeeded(known);
                         state.SealedAt = sealedAt;
                     }
                     catch (Exception error)
                     {
                         Storage.Failed(pk, error);
+                        // The watchers write the end of a run once. One that could not be written (the .pk is held by another
+                        // program, the disk is full) is tried again from the run's record until it is saved: SaveEndsAgain.
+                        if (!measuring && !force && unsavedEnds.Add(info.RunId))
+                        {
+                            Log.Warning("the end of " + info.RunId + " could not be saved: it is tried again every " +
+                                        (int)WorkbookCheck.TotalSeconds + " seconds, from the run's record");
+                            StartTimer();
+                        }
                         return null;
                     }
                     index[info.RunId] = pk;
@@ -529,6 +565,8 @@ namespace SAAControl
                     state.Key = info.Key ?? state.Key;
                     state.Operator = info.Operator;
                 }
+                // (an end that could not be saved before is saved now - or the run is written by its watcher again)
+                if (unsavedEnds.Remove(info.RunId) && !measuring) Log.Info("the end of " + info.RunId + " is saved now: " + Relative(pk));
                 if (Json.Serialize(state.ToJson()) != stateBefore) SaveStates();
                 if (xlsx)
                 {
@@ -794,7 +832,7 @@ namespace SAAControl
             if (index.TryGetValue(runId, out string path))
             {
                 if (File.Exists(path)) return path;
-                Scan();                                // (after it the run is either found or no longer indexed)
+                Scan();                                // (after it the run is found, or its file is not there)
             }
             else if ((DateTime.UtcNow - rescanned).TotalSeconds >= 2) Scan();
             return index.TryGetValue(runId, out path) && File.Exists(path) ? path : null;
@@ -850,9 +888,25 @@ namespace SAAControl
         void Scan()
         {
             rescanned = DateTime.UtcNow;
+            var unlisted = new List<string>();
+            List<string> paths = PkPaths(out bool whole, unlisted);
+            // Experiments itself cannot be listed just now: what was known of its files stays (taken as "no files", every
+            // experiment would count as deleted by the user, and the next save would make its files a second time)
+            if (!whole && index != null) return;
             var found = new Dictionary<string, string>(StringComparer.Ordinal);
             var written = new Dictionary<string, DateTime>(StringComparer.Ordinal);
-            foreach (string path in PkPaths())
+            var held = new HashSet<string>(StringComparer.Ordinal);       // runs whose file cannot be read just now: it stays theirs
+            // the same for one folder in it that cannot be listed just now: the files known in it stay their runs'
+            if (index != null && unlisted.Count > 0)
+                foreach (var entry in index)
+                    if (unlisted.Any(folder => entry.Value.StartsWith(folder.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase))
+                        && File.Exists(entry.Value))
+                    {
+                        found[entry.Key] = entry.Value;
+                        written[entry.Key] = DateTime.MinValue;
+                        held.Add(entry.Key);
+                    }
+            foreach (string path in paths)
             {
                 try
                 {
@@ -868,6 +922,19 @@ namespace SAAControl
                     string experimentId = read.Info.TryGetValue("experimentId", out object e) ? e as string : null;
                     bool ours = states != null && states.TryGetValue(runId, out RunState s) && s.ExperimentId != null && s.ExperimentId == experimentId;
                     DateTime at = File.GetLastWriteTimeUtc(path);
+                    if (held.Contains(runId)) continue;
+                    if (ours && found.TryGetValue(runId, out string other) && written[runId] == DateTime.MaxValue)
+                    {
+                        // Both are this PC's experiment: the user copied the file, or a whole month folder as a backup. The
+                        // run keeps the file the program wrote - not the one that happens to be listed last: saving would
+                        // move to the copy without a word, and the original would not be written any more.
+                        bool takes = Preferred(runId, path, other);
+                        string kept = takes ? path : other, copy = takes ? other : path;
+                        if (copiesSaid.Add(kept + "|" + copy))
+                            Log.Warning("two files in Experiments hold the experiment " + runId + ": " + Relative(kept) +
+                                        " is the one the program writes, " + Relative(copy) + " is a copy and stays as it is");
+                        if (!takes) continue;
+                    }
                     if (!found.ContainsKey(runId) || ours || (at > written[runId] && !OursAt(found[runId], runId)))
                     {
                         found[runId] = path;
@@ -878,18 +945,43 @@ namespace SAAControl
                 {
                     // not one of ours, or held by another program just now (a virus scanner, a backup, a zip program): a file
                     // that was the run's stays the run's - else the run would seem to have lost its file, and Ctrl+S would
-                    // make it again beside it
-                    if ((error is IOException || error is UnauthorizedAccessException) && index != null)
-                        foreach (var entry in index)
-                            if (string.Equals(entry.Value, path, StringComparison.OrdinalIgnoreCase) && !found.ContainsKey(entry.Key))
-                            {
-                                found[entry.Key] = path;
-                                written[entry.Key] = DateTime.MinValue;
-                                break;
-                            }
+                    // make it again beside it; and a copy of it, listed before or after it, does not take its place. At the
+                    // first look of a start no file was a run's yet: then the file the program's list names for the run.
+                    if (error is IOException || error is UnauthorizedAccessException)
+                    {
+                        string run = index != null
+                            ? index.FirstOrDefault(entry => string.Equals(entry.Value, path, StringComparison.OrdinalIgnoreCase)).Key
+                            : states?.FirstOrDefault(s => string.Equals(s.Value.File, Relative(path), StringComparison.OrdinalIgnoreCase)).Key;
+                        if (run != null)
+                        {
+                            found[run] = path;
+                            written[run] = DateTime.MinValue;
+                            held.Add(run);
+                        }
+                    }
                 }
             }
             index = found;
+        }
+
+        /// <summary>Of two files of the same experiment of this PC, whether `path` rather than `other` is the run's: the one
+        /// the program wrote (the file its list names), else the one the run had before this look, else the one that was
+        /// made first (a copy is made after what it is a copy of).</summary>
+        bool Preferred(string runId, string path, string other)
+        {
+            string own = states.TryGetValue(runId, out RunState state) ? state.File : null;
+            if (own != null)
+            {
+                if (string.Equals(Relative(path), own, StringComparison.OrdinalIgnoreCase)) return true;
+                if (string.Equals(Relative(other), own, StringComparison.OrdinalIgnoreCase)) return false;
+            }
+            if (index != null && index.TryGetValue(runId, out string before))
+            {
+                if (string.Equals(path, before, StringComparison.OrdinalIgnoreCase)) return true;
+                if (string.Equals(other, before, StringComparison.OrdinalIgnoreCase)) return false;
+            }
+            try { return File.GetCreationTimeUtc(path) < File.GetCreationTimeUtc(other); }
+            catch (Exception) { return false; }
         }
 
         bool OursAt(string path, string runId)
@@ -936,20 +1028,44 @@ namespace SAAControl
             SaveStates();
         }
 
-        /// <summary>Every .pk under Experiments (temporary and backup files left out).</summary>
-        List<string> PkPaths()
+        /// <summary>Every .pk under Experiments (temporary and backup files left out). Folders are gone through one by one
+        /// (SafeFile.ListFiles): a junction or symbolic link gives the files in it itself, not those of the folders in it,
+        /// and a folder that cannot be listed is left out - each said in the log once - without the others being lost.
+        /// whole: false when Experiments itself cannot be listed; then nothing is known of its files, which is not "there
+        /// are none". unlisted: gets the folders that could not be listed.</summary>
+        List<string> PkPaths(out bool whole, List<string> unlisted = null)
         {
+            var files = new List<string>();
+            whole = true;
             try
             {
-                if (!Directory.Exists(Folder)) return new List<string>();
-                return Directory.EnumerateFiles(Folder, "*" + PkFile.Extension, SearchOption.AllDirectories)
-                    .Where(p => p.EndsWith(PkFile.Extension, StringComparison.OrdinalIgnoreCase) && !Path.GetFileName(p).StartsWith("."))
-                    .ToList();
+                if (!Directory.Exists(Folder)) return files;
+                whole = SafeFile.ListFiles(Folder, "*" + PkFile.Extension, files, (folder, error) =>
+                {
+                    LeftOut(folder, error);
+                    if (error != null) unlisted?.Add(folder);
+                });
             }
             catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
             {
-                return new List<string>();
+                whole = false;
             }
+            return files.Where(p => p.EndsWith(PkFile.Extension, StringComparison.OrdinalIgnoreCase) && !Path.GetFileName(p).StartsWith(".")).ToList();
+        }
+
+        /// <summary>A folder under Experiments that is a junction or link (error null: the folders in it are not looked into)
+        /// or cannot be listed: said in the log once.</summary>
+        void LeftOut(string folder, Exception error)
+        {
+            lock (leftOut)
+                if (!leftOut.Add(folder)) return;
+            if (error == null)
+                Log.Warning("the folder " + folder + " is a link to another place (a junction or symbolic link): the experiment files" +
+                            " in it are the program's as in any folder, the folders in it are not looked into");
+            else if (string.Equals(folder, Folder, StringComparison.OrdinalIgnoreCase))
+                Log.Warning("the folder " + folder + " cannot be listed (" + error.Message + "): what the program knew of the experiment files stays");
+            else
+                Log.Warning("the folder " + folder + " cannot be listed (" + error.Message + "): the experiment files in it are left out");
         }
 
         void Made(string runId)
@@ -1246,7 +1362,39 @@ namespace SAAControl
             if (!(analysis["settings"] is Dictionary<string, object>)) throw new ApiError(400, "settings must be an object");
             foreach (var item in posted)
                 if (!analysis.ContainsKey(item.Key) && item.Key != "rev") analysis[item.Key] = item.Value;
-            return analysis;
+            return (Dictionary<string, object>)Sound(analysis);
+        }
+
+        /// <summary>A value with every text in it (the names of items too) as UTF-8 can say it: half a pair that stands alone
+        /// ("\ud842" without its second half - JSON can say that, the files cannot, and saving would fail as if the disk
+        /// did) becomes U+FFFD, the sign for a character that could not be read.</summary>
+        static object Sound(object value)
+        {
+            switch (value)
+            {
+                case string text: return SoundText(text);
+                case Dictionary<string, object> items:
+                {
+                    var copy = new Dictionary<string, object>(items.Count);
+                    foreach (var item in items) copy[SoundText(item.Key)] = Sound(item.Value);
+                    return copy;
+                }
+                case List<object> list: return list.Select(Sound).ToList();
+                default: return value;
+            }
+        }
+
+        static string SoundText(string text)
+        {
+            StringBuilder sb = null;
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (!char.IsSurrogate(text[i])) continue;
+                if (char.IsHighSurrogate(text[i]) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1])) { i++; continue; }   // a whole pair
+                if (sb == null) sb = new StringBuilder(text);
+                sb[i] = '\ufffd';
+            }
+            return sb == null ? text : sb.ToString();
         }
 
         /// <summary>POST /api/analysis?runId=: the analysis becomes the run's - the last save wins - in System\analysis and in
@@ -1450,16 +1598,74 @@ namespace SAAControl
         void Waits(string runId, bool again)
         {
             if (again || !waiting.ContainsKey(runId)) waiting[runId] = DateTime.UtcNow;
+            StartTimer();
+        }
+
+        /// <summary>From now on the program looks every WorkbookCheck for what waits: workbooks that are due, ends of runs
+        /// that could not be saved (under the gate).</summary>
+        void StartTimer()
+        {
             if (workbookTimer == null && !closed)
                 workbookTimer = new System.Threading.Timer(_ => Tick(), null, WorkbookCheck, WorkbookCheck);
         }
 
-        void Tick()
+        /// <summary>The timer's look (tests call it).</summary>
+        internal void Tick()
         {
             if (closed || !Monitor.TryEnter(flushGate)) return;          // (the last look is still going)
-            try { FlushWorkbooks(); }
+            try
+            {
+                try { SaveEndsAgain(); }
+                catch (Exception error) { Log.Warning("saving the ends of runs that wait failed (" + error.Message + ")"); }
+                FlushWorkbooks();
+            }
             catch (Exception error) { Log.Warning("making the workbooks that wait failed (" + error.Message + ")"); }
             finally { Monitor.Exit(flushGate); }
+        }
+
+        /// <summary>The runs whose end could not be saved (Write) get their files from their records now, as the watcher's
+        /// write at the end would have made them: the .pk with the end, the .xlsx, and the event of the end - once, when
+        /// the .pk is written. A run stays on the list until that works; it leaves it without a write when its watcher
+        /// writes its files again (it measures on), when its record is gone, or when the user deleted its files meanwhile.
+        /// Returns how many were saved.</summary>
+        int SaveEndsAgain()
+        {
+            List<string> runs;
+            lock (gate) runs = unsavedEnds.ToList();
+            int saved = 0;
+            foreach (string runId in runs)
+            {
+                try
+                {
+                    if (live(runId)) continue;                           // (asked outside the gate, as Prepare does)
+                    lock (gate)
+                    {
+                        if (!unsavedEnds.Contains(runId)) continue;      // saved meanwhile
+                        EnsureIndex();
+                        string pk = PkOf(runId);
+                        if (!SafeRunId(runId) || !File.Exists(Path.Combine(Layout.Runs, runId + ".json")) || (pk == null && made.Contains(runId)))
+                        {
+                            unsavedEnds.Remove(runId);
+                            Log.Info("the end of " + runId + " is not tried again: its record is gone, or its files were deleted");
+                            continue;
+                        }
+                        // (still held by another program: a try now would only wait, and leave temporary names beside the file)
+                        if (pk != null && !Replaceable(pk)) continue;
+                        Dictionary<string, object> record = ReadRecord(runId);
+                        if (record == null) continue;                    // (it cannot be read just now: at the next look)
+                        ExperimentInfo info = DescribeRecord(record);
+                        if (info == null || info.RunId != runId || !ExperimentInfo.IsFinal(info.Status))
+                        {
+                            // (no record of a run that has ended: its end is the watcher's to write, or the next start's)
+                            unsavedEnds.Remove(runId);
+                            continue;
+                        }
+                        if (Write(info, xlsx: true, onlyIfNew: false, force: false) != null) saved++;
+                    }
+                }
+                catch (Exception error) { Log.Warning("the end of " + runId + " could not be saved again (" + error.Message + ")"); }
+            }
+            return saved;
         }
 
         /// <summary>The workbook of a run made with its saved analysis when it is behind (under the gate). explicitly:
@@ -1594,6 +1800,21 @@ namespace SAAControl
                 }
                 return written;
             }
+        }
+
+        /// <summary>Whether a file can be replaced or renamed just now: no other program has it open in a way that forbids
+        /// that (asked for by opening it with the right to delete it; nothing is changed).</summary>
+        internal static bool Replaceable(string path)
+        {
+            try
+            {
+                using (new FileStream(path, FileMode.Open, System.Security.AccessControl.FileSystemRights.Delete, FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.None)) { }
+                return true;
+            }
+            catch (FileNotFoundException) { return true; }
+            catch (DirectoryNotFoundException) { return true; }
+            catch (IOException) { return false; }
+            catch (Exception) { return true; }           // (no rights, ...: the write itself says what is wrong, and shows it)
         }
 
         /// <summary>The program stops: the workbooks that wait are made (for at most budget; the rest at the next start).</summary>
@@ -1807,16 +2028,27 @@ namespace SAAControl
             Dictionary<string, Listed> known;
             lock (gate) known = listed;
             var present = new HashSet<string>(StringComparer.Ordinal);
-            foreach (string path in PkPaths())
+            List<string> paths = PkPaths(out bool whole);
+            // Experiments itself cannot be listed just now: the list as it was (and nothing counts as deleted by the user)
+            if (!whole) paths = known.Keys.ToList();
+            foreach (string path in paths)
             {
                 Dictionary<string, object> item;
                 try
                 {
-                    var file = new FileInfo(path);
-                    long size = file.Length, written = file.LastWriteTimeUtc.Ticks;
-                    if (known.TryGetValue(path, out Listed cached) && cached.Size == size && cached.Written == written) item = cached.Item;
-                    else item = ListItem(path);
-                    seen[path] = new Listed { Size = size, Written = written, Item = item };
+                    if (!whole)
+                    {
+                        item = known[path].Item;
+                        seen[path] = known[path];
+                    }
+                    else
+                    {
+                        var file = new FileInfo(path);
+                        long size = file.Length, written = file.LastWriteTimeUtc.Ticks;
+                        if (known.TryGetValue(path, out Listed cached) && cached.Size == size && cached.Written == written) item = cached.Item;
+                        else item = ListItem(path);
+                        seen[path] = new Listed { Size = size, Written = written, Item = item };
+                    }
                 }
                 catch (Exception) { continue; }        // gone meanwhile
                 var copy = new Dictionary<string, object>(item) { ["xlsx"] = File.Exists(Path.ChangeExtension(path, XlsxFile.Extension)) };
@@ -1828,7 +2060,7 @@ namespace SAAControl
             {
                 listed = seen;
                 EnsureIndex();
-                removed = Removed(present);
+                removed = whole ? Removed(present) : new List<object>();
             }
             var items = found.OrderByDescending(item => item["startedAt"] as string ?? "", StringComparer.Ordinal)
                              .ThenBy(item => item["file"] as string ?? "", StringComparer.Ordinal)
@@ -1920,6 +2152,8 @@ namespace SAAControl
             foreach (string runId in made)
             {
                 if (present.Contains(runId) || live(runId)) continue;
+                // (its file is there, in a folder that cannot be listed just now: not deleted by the user)
+                if (index.TryGetValue(runId, out string known) && File.Exists(known)) continue;
                 string record = Path.Combine(Layout.Runs, runId + ".json");
                 if (!SafeRunId(runId) || !File.Exists(record)) continue;
                 if (!states.TryGetValue(runId, out RunState state) || state.Title == null)
@@ -2368,7 +2602,7 @@ namespace SAAControl
         /// aside into System\recovery and replaced by its previous copy (.pk.bak), else made again from the record.</summary>
         void CheckFiles(WaitHandle stop)
         {
-            List<string> paths = PkPaths();
+            List<string> paths = PkPaths(out _);
             string recovery = null;
             foreach (string path in paths)
             {

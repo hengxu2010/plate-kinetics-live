@@ -3,6 +3,8 @@
 #   dist\<name>-portable.zip             the same program without installer and service: unzip, run <name>.exe
 #   dist\PlateKineticsLive-offline.zip   with -Offline: the installers built and Microsoft's installers of the .NET
 #                                        Framework 4.8 and the WebView2 Runtime (from redist\), for PCs without internet
+#   dist\SHA256SUMS.txt                  the SHA-256 of every installer and zip in dist\: published with a release
+#                                        (the programs' updater installs only an installer whose SHA-256 it finds there)
 # An installer carries its program as an embedded zip and its settings (name, exe, version, port); src\Setup\Setup.cs
 # is the source of the installer. The program's files: the exe, the WebView2 DLLs (vendor\webview2), web\ (the
 # page and the shell), Help\ (every file of help\: the manuals), the licence texts (LICENSE.txt, NOTICE.txt and
@@ -121,6 +123,22 @@ function New-Zip([string]$Zip, [string]$Folder, [string]$Prefix) {
     }
 }
 
+# SHA256SUMS.txt in a folder: one line "<SHA-256, 64 lowercase hex digits>  <file name>" for every package of ours there
+# (*-Setup.exe, *-portable.zip, *-offline.zip), sorted by name; UTF-8 without a byte order mark, lines ending with LF (as
+# sha256sum writes it and checks it). The programs' own updater installs a release only when the release itself
+# publishes the installer's SHA-256: upload this file to the release together with the installers.
+function Write-Checksums([string]$Folder) {
+    $names = [string[]]@(Get-ChildItem -LiteralPath $Folder -File |
+        Where-Object { $_.Name -like '*-Setup.exe' -or $_.Name -like '*-portable.zip' -or $_.Name -like '*-offline.zip' } | ForEach-Object Name)
+    if ($names.Count -eq 0) { return }
+    [Array]::Sort($names, [StringComparer]::Ordinal)
+    $text = ''
+    foreach ($name in $names) { $text += (Get-FileHash -LiteralPath (Join-Path $Folder $name) -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + $name + "`n" }
+    $sums = Join-Path $Folder 'SHA256SUMS.txt'
+    [IO.File]::WriteAllText($sums, $text, (New-Object Text.UTF8Encoding $false))
+    '{0}  the SHA-256 of {1} packages (publish it with them)' -f $sums, $names.Count
+}
+
 # The installer of one program: the payload zip and the settings, then Setup.csproj with both embedded.
 function New-Installer([string]$AppName, [string]$Exe, [string]$Web, [int]$AppPort, [string]$AppMode = '', [string[]]$WebOnly = @(), [string]$AppVersion = '') {
     $ver = if ($AppVersion) { $AppVersion } else { $Version }
@@ -217,3 +235,4 @@ foreach ($setup in @($built) + @(Get-ChildItem $OutDir -Filter '*-portable.zip' 
     '{0}  {1:N1} MB ({2:N0} bytes)  sha256 {3}  version {4}' -f $item.FullName, ($item.Length / 1MB), $item.Length,
         (Get-FileHash $setup -Algorithm SHA256).Hash.Substring(0, 16).ToLower(), $Version
 }
+Write-Checksums $OutDir

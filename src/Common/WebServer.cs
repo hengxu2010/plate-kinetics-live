@@ -3,6 +3,9 @@
 // checks, page patching and answers, so the page, the shell and everything that used the Python server work as
 // before. GET is served, and POST for the routes that change something; every /api/ request needs the Host check and
 // the X-SAA-Token. Nothing is ever sent to an instrument.
+// No client can use the server up: at most MaxConnections are served at once (one more is closed at once), a request's
+// first line and headers have HeadTime and MaxHead, and a body is read only after the method, the Host and the token
+// were found right (one over MaxBody: 413, and the connection ends).
 //
 // API: /api/state (with "storage", "problems", "events", "operator", "keepAwake", "openQueue"; each run's "analysisRev"),
 // /api/run, /api/runs (each run's "analysisRev") as before (/api/run, /api/pk and /api/pk-file's "run" with the run's
@@ -308,12 +311,17 @@ namespace SAAControl
         static Dictionary<string, object> Body(byte[] body)
         {
             if (body == null || body.Length == 0) throw new ApiError(400, "the request has no body");
-            try
-            {
-                if (Json.Parse(new UTF8Encoding(false, true).GetString(body)) is Dictionary<string, object> value) return value;
-            }
+            Dictionary<string, object> value = null;
+            try { value = Json.Parse(new UTF8Encoding(false, true).GetString(body)) as Dictionary<string, object>; }
             catch (Exception) { }
-            throw new ApiError(400, "the body is not a JSON object");
+            if (value == null) throw new ApiError(400, "the body is not a JSON object");
+            // NaN, Infinity and a number too large (1e999) are read as Python reads them, but they are no JSON: kept (in
+            // an analysis), they would come back in answers that no browser can read
+            if (!Json.Finite(value))
+                throw new ApiError(400, "the body holds a number that is not a number of JSON (NaN, Infinity, or one too large such as 1e999); nothing was saved",
+                                   // "The request holds a value that is not a valid number (NaN, Infinity, or one too large); nothing was saved."
+                                   "\u8bf7\u6c42\u91cc\u6709\u4e0d\u662f\u6709\u6548\u6570\u5b57\u7684\u6570\u503c\uff08NaN\u3001Infinity\uff0c\u6216\u8fc7\u5927\u7684\u6570\uff09\uff0c\u6ca1\u6709\u4fdd\u5b58\u3002");
+            return value;
         }
 
         /// <summary>The run's data now when it is the run an instrument shows (measuring or just ended); null else.</summary>
@@ -492,8 +500,17 @@ namespace SAAControl
         TcpListener listener;
         Thread acceptThread;
         volatile bool stopping;
+        int active;                              // connections being served now (each has a thread of its own)
         static readonly Dictionary<string, long> Logged = new Dictionary<string, long>();
         const long MaxBody = 64L << 20;          // a POST's body: an analysis, a workbook to import
+        const int IdleTime = 120000;             // ms a connection waits for its next request, and for more of a body
+        const int LeaveTime = 2000, LeaveBytes = 1 << 20;   // what is still read of a body that is not wanted (see Leave)
+
+        /// <summary>What keeps one client from using the server up (tests change them): the connections served at once
+        /// (the window, the tray and the online view together use a handful), and the size and the time a request's first
+        /// line and headers may take.</summary>
+        public static int MaxConnections = 64, MaxHead = 32 << 10;
+        public static TimeSpan HeadTime = TimeSpan.FromSeconds(15);
 
         public WebServer(Service service, int port)
         {
@@ -536,22 +553,56 @@ namespace SAAControl
                 TcpClient client;
                 try { client = listener.AcceptTcpClient(); }
                 catch (Exception) { if (stopping) return; Thread.Sleep(50); continue; }
-                var t = new Thread(() => Serve(client)) { IsBackground = true, Name = "http-client" };
-                t.Start();
+                // Nothing here may end this thread - it is the server - nor the program: a connection that cannot be
+                // served (too many at once, no memory for one more thread) is closed, and the next one is waited for.
+                try
+                {
+                    if (Interlocked.Increment(ref active) > MaxConnections)
+                    {
+                        Interlocked.Decrement(ref active);
+                        client.Close();
+                        if (Rarely("connections")) Log.Warning("the local server serves " + MaxConnections + " connections at once: one more was closed");
+                        continue;
+                    }
+                    bool started = false;
+                    try
+                    {
+                        var t = new Thread(() => Serve(client)) { IsBackground = true, Name = "http-client" };
+                        t.Start();
+                        started = true;                // (from here on Serve gives the place back)
+                    }
+                    finally
+                    {
+                        if (!started)
+                        {
+                            Interlocked.Decrement(ref active);
+                            try { client.Close(); } catch (Exception) { }
+                        }
+                    }
+                }
+                catch (Exception error)
+                {
+                    try { LogFailure("connection", "127.0.0.1", error); } catch (Exception) { }
+                }
             }
+        }
+
+        /// <summary>True once in ten minutes for a key: what is logged with it would else fill the log.</summary>
+        static bool Rarely(string key)
+        {
+            long now = Environment.TickCount;
+            lock (Logged)
+            {
+                if (Logged.TryGetValue(key, out long last) && unchecked((uint)(now - last)) < 600000) return false;
+                Logged[key] = now;
+            }
+            return true;
         }
 
         /// <summary>A request that failed, to the log: the same failure once in ten minutes (the page asks every two seconds).</summary>
         static void LogFailure(string method, string path, Exception error)
         {
-            string key = method + " " + path + " " + error.GetType().Name;
-            long now = Environment.TickCount;
-            lock (Logged)
-            {
-                if (Logged.TryGetValue(key, out long last) && unchecked((uint)(now - last)) < 600000) return;
-                Logged[key] = now;
-            }
-            Log.Error(method + " " + path + " failed", error);
+            if (Rarely(method + " " + path + " " + error.GetType().Name)) Log.Error(method + " " + path + " failed", error);
         }
 
         sealed class Request
@@ -559,37 +610,94 @@ namespace SAAControl
             public string Method, Target, Path, Query;
             public Dictionary<string, string> Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             public bool KeepAlive;
-            public byte[] Body;                  // what a POST sent (null: nothing)
-            public bool TooLarge;                // it sent more than MaxBody
+            public long Length;                  // the Content-Length (0: none)
+            public byte[] Body;                  // what a POST sent (null: nothing, or not read)
+            public bool TooLarge;                // it would send more than MaxBody
+            public bool Unread;                  // it has a body that was not read: the connection ends with the answer
         }
 
         void Serve(TcpClient client)
         {
-            using (client)
+            try
             {
-                try
+                using (client)
                 {
-                    client.ReceiveTimeout = 120000;
-                    client.SendTimeout = 60000;
-                    client.NoDelay = true;
-                    var stream = client.GetStream();
-                    var reader = new BufferedReader(stream);
-                    while (!stopping)
+                    try
                     {
-                        Request req = ReadRequest(reader);
-                        if (req == null) return;
-                        bool keep = Answer(stream, req);
-                        if (!keep || !req.KeepAlive) return;
+                        client.ReceiveTimeout = IdleTime;
+                        client.SendTimeout = 60000;
+                        client.NoDelay = true;
+                        var stream = client.GetStream();
+                        var reader = new BufferedReader(stream);
+                        bool used = false;
+                        while (!stopping)
+                        {
+                            // a connection that was used waits for its next request as long as before; the request itself -
+                            // its first line and headers - has HeadTime and MaxHead, whoever sends it
+                            if (used && !reader.Wait(IdleTime)) return;
+                            reader.HeadBegins((int)HeadTime.TotalMilliseconds, MaxHead);
+                            Request req = ReadHead(reader);
+                            reader.HeadEnds(IdleTime);
+                            if (req == null) return;
+                            used = true;
+                            if (req.Length > 0)
+                            {
+                                // the method, the Host and the token first: only a body that will be used is read
+                                if (!WantsBody(req)) req.Unread = true;
+                                else if (req.Length > MaxBody) req.TooLarge = req.Unread = true;
+                                else req.Body = reader.Read((int)req.Length);
+                            }
+                            bool keep = Answer(stream, req);
+                            if (req.Unread)
+                            {
+                                Leave(client, stream);
+                                return;
+                            }
+                            if (!keep || !req.KeepAlive) return;
+                        }
                     }
+                    catch (IOException) { }            // the window was closed while the answer was on its way
+                    catch (SocketException) { }
+                    catch (ObjectDisposedException) { }
+                    catch (Exception e) { LogFailure("request", "127.0.0.1", e); }
                 }
-                catch (IOException) { }            // the window was closed while the answer was on its way
-                catch (SocketException) { }
-                catch (ObjectDisposedException) { }
-                catch (Exception e) { LogFailure("request", "127.0.0.1", e); }
             }
+            finally { Interlocked.Decrement(ref active); }
         }
 
-        static Request ReadRequest(BufferedReader reader)
+        /// <summary>Whether a request's body will be used: a POST to the API with the right Host and token (Answer makes
+        /// the same checks again, in its order, for what it answers).</summary>
+        bool WantsBody(Request req) =>
+            req.Method == "POST" && req.Path.StartsWith("/api/") && req.Path != "/api/ping" && Allowed(req, true);
+
+        /// <summary>The end of a connection whose request had a body that was not read. Closed at once, with the body still
+        /// on its way, Windows resets the connection and the client may lose the answer that was just sent. So the sending
+        /// side is closed first, and what still comes in is read and dropped for a moment: a little, never the whole of
+        /// a large body.</summary>
+        static void Leave(TcpClient client, Stream stream)
+        {
+            try
+            {
+                client.Client.Shutdown(SocketShutdown.Send);
+                var dropped = new byte[8192];
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                long total = 0;
+                while (total < LeaveBytes)
+                {
+                    long left = LeaveTime - clock.ElapsedMilliseconds;
+                    if (left <= 0) break;
+                    stream.ReadTimeout = (int)left;
+                    int count = stream.Read(dropped, 0, dropped.Length);
+                    if (count <= 0) break;
+                    total += count;
+                }
+            }
+            catch (Exception) { }
+        }
+
+        /// <summary>A request's first line and headers (its body is read by Serve, when it is wanted); null: none came, or
+        /// not a request.</summary>
+        static Request ReadHead(BufferedReader reader)
         {
             string line = reader.ReadLine();
             while (line != null && line.Length == 0) line = reader.ReadLine();   // tolerate stray blank lines
@@ -606,11 +714,7 @@ namespace SAAControl
                 int colon = h.IndexOf(':');
                 if (colon > 0) req.Headers[h.Substring(0, colon).Trim()] = h.Substring(colon + 1).Trim();
             }
-            if (req.Headers.TryGetValue("Content-Length", out var cl) && long.TryParse(cl, out long n) && n > 0)
-            {
-                if (n > MaxBody) { req.TooLarge = true; reader.Skip(n); }
-                else req.Body = reader.Read((int)n);
-            }
+            if (req.Headers.TryGetValue("Content-Length", out var cl) && long.TryParse(cl, out long n) && n > 0) req.Length = n;
             req.Headers.TryGetValue("Connection", out var conn);
             conn = (conn ?? "").ToLowerInvariant();
             req.KeepAlive = version == "HTTP/1.1" ? conn != "close" : conn == "keep-alive";
@@ -733,8 +837,10 @@ namespace SAAControl
             return diff == 0;
         }
 
+        // (allowNan: false - a NaN or an infinite number, which a record of an earlier version may hold, is sent as null:
+        // a missing value for the page, instead of an answer that no browser can read)
         static void SendJson(Stream stream, object value, int status) =>
-            Send(stream, status, Encoding.UTF8.GetBytes(Json.Serialize(value, ensureAscii: false)), "application/json; charset=utf-8");
+            Send(stream, status, Encoding.UTF8.GetBytes(Json.Serialize(value, ensureAscii: false, allowNan: false)), "application/json; charset=utf-8");
 
         static readonly Dictionary<int, string> Reasons = new Dictionary<int, string>
         {
@@ -796,17 +902,50 @@ namespace SAAControl
 
         static string Unquote(string s) => Uri.UnescapeDataString(s.Replace('+', ' '));
 
-        /// <summary>Reads lines (ASCII, CRLF or LF) and skips bodies on a network stream, without reading ahead past a request.</summary>
+        /// <summary>Reads lines (ASCII, CRLF or LF) and bodies on a network stream, without reading ahead past a request.
+        /// Between HeadBegins and HeadEnds - a request's first line and headers - all that is read must come within a
+        /// time and a size, or the reading fails (IOException) and the connection ends.</summary>
         sealed class BufferedReader
         {
             readonly Stream s;
             readonly byte[] buf = new byte[8192];
             int pos, len;
+            readonly System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
+            long headUntil = -1;                 // on the clock: when the head being read must be complete (-1: none is read)
+            int headLeft;                        // the bytes it may still have
             public BufferedReader(Stream s) { this.s = s; }
+
+            public void HeadBegins(int milliseconds, int most)
+            {
+                headUntil = clock.ElapsedMilliseconds + milliseconds;
+                headLeft = most;
+            }
+
+            /// <summary>The head is read: from now on each read waits up to `timeout` ms again.</summary>
+            public void HeadEnds(int timeout)
+            {
+                headUntil = -1;
+                s.ReadTimeout = timeout;
+            }
+
+            /// <summary>Wait up to `timeout` ms for what comes next; false when the connection ended instead.</summary>
+            public bool Wait(int timeout)
+            {
+                s.ReadTimeout = timeout;
+                return Fill();
+            }
 
             bool Fill()
             {
                 if (pos < len) return true;
+                if (headUntil >= 0)
+                {
+                    // (the time is for the whole head, not for each read: a client that sends a byte now and then
+                    // does not keep its connection)
+                    long left = headUntil - clock.ElapsedMilliseconds;
+                    if (left <= 0) throw new IOException("the request's first line and headers took too long");
+                    s.ReadTimeout = (int)left;
+                }
                 len = s.Read(buf, 0, buf.Length);
                 pos = 0;
                 return len > 0;
@@ -819,6 +958,7 @@ namespace SAAControl
                 {
                     if (!Fill()) return sb.Length > 0 ? sb.ToString() : null;
                     byte b = buf[pos++];
+                    if (headUntil >= 0 && --headLeft < 0) throw new IOException("the request's first line and headers are too long");
                     if (b == (byte)'\n') { if (sb.Length > 0 && sb[sb.Length - 1] == '\r') sb.Length--; return sb.ToString(); }
                     sb.Append((char)b);
                     if (sb.Length > 65536) throw new IOException("header line too long");
@@ -840,17 +980,6 @@ namespace SAAControl
                 }
                 if (at < n) Array.Resize(ref data, at);
                 return data;
-            }
-
-            public void Skip(long n)
-            {
-                while (n > 0)
-                {
-                    if (!Fill()) return;
-                    int take = (int)Math.Min(n, len - pos);
-                    pos += take;
-                    n -= take;
-                }
             }
         }
 

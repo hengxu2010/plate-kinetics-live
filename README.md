@@ -23,7 +23,9 @@ workbook. The analysis page is the same as the website [Plate Kinetics Analysis]
 - **Background service** (installed version): records from boot without a window or a login; tray notifications when a
   run finishes, stops early or is interrupted.
 - **Safe for the instrument**: never controls the reader, never changes the Omega software's files.
-- **No network use**: the web server listens on `127.0.0.1:47815` only; no usage statistics, no update checks.
+- **No network use by default**: the web server listens on `127.0.0.1:47815` only; no usage statistics. The one
+  outgoing connection is the update check (About > "Check for updates", automatic only when turned on): it asks
+  GitHub for the latest release and runs a downloaded installer only when its SHA-256 matches the published one.
 - English and Chinese interface.
 
 > For research use only, not for diagnostic use. Developed independently; not affiliated with or endorsed by
@@ -39,6 +41,11 @@ Ready-made builds are on the [Releases](https://github.com/hengxu2010/plate-kine
 |---|---|
 | `PlateKineticsLive-Setup.exe` | Installer (run as administrator). Installs to `C:\Program Files\Plate Kinetics Live (BMG)` with the background service |
 | `PlateKineticsLive-portable.zip` | Portable: unzip, run `PlateKineticsLive.exe`; records while its window is open |
+| `SHA256SUMS.txt` | SHA-256 of every file of the release (the in-program update checks the installer against it) |
+
+The installer also offers "Analysis only" (no service, no tray, no data folder: the window that opens .pk and .pkproj
+files, for PCs without an instrument). The analysis page alone as a desktop program is Plate Kinetics Analysis,
+released with the website's page in [plate-kinetics-analysis](https://github.com/hengxu2010/plate-kinetics-analysis).
 
 Requires Windows 10/11 (the .NET Framework 4.8 and the WebView2 Runtime are part of Windows).
 
@@ -92,7 +99,7 @@ Plate Kinetics Live 是 Windows 程序，给用 Omega 控制软件的 BMG LABTEC
 - **使用**：装在有 Omega 软件的电脑上，开始测量后程序自动找到实验并显示曲线。Omega 不在默认位置时用 `--bmg-root <文件夹>`。
   详细说明见程序里的"帮助"或 [help/index.html](help/index.html)。
 - **编译**：装好 .NET SDK 后运行 `powershell -ExecutionPolicy Bypass -File build.ps1`，成品在 `dist\`。不需要联网下载任何包。
-- **安全**：不控制仪器，不改 Omega 的文件；不联网，网页服务只开在本机 `127.0.0.1:47815`。
+- **安全**：不控制仪器，不改 Omega 的文件；默认不联网，网页服务只开在本机 `127.0.0.1:47815`。唯一的外连是检查更新（“关于”里点“检查更新”，或自己打开了自动检查）：向 GitHub 查询最新版本，下载的安装程序和发布页公布的 SHA-256 一致才运行。
 
 > 仅供科研使用，不用于临床诊断。本项目独立开发，与 BMG LABTECH 无关，也没有得到它的认可。本仓库不含 BMG 的任何程序、
 > 库文件、说明书或数据文件，使用时需要你自己合法安装的 Omega 软件。BMG LABTECH、Omega、FLUOstar、MARS 是 BMG LABTECH GmbH

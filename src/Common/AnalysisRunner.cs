@@ -21,10 +21,12 @@ namespace SAAControl
         public static bool IsAnalysisOnlyInstall(string programDir) =>
             !string.IsNullOrEmpty(programDir) && File.Exists(Path.Combine(programDir, MarkerFileName));
 
+        /// <summary>The program's version as its releases are tagged: three parts, four when the fourth is not 0 (so that
+        /// a release tagged x.y.z.w is not offered again once it is installed).</summary>
         public static string ProgramVersion()
         {
             var v = Assembly.GetEntryAssembly()?.GetName().Version;
-            return v != null ? v.Major + "." + v.Minor + "." + v.Build : "3.18.0";
+            return v != null ? Updater.VersionText(v) : "3.18.0";
         }
 
         [DllImport("user32.dll")]
@@ -36,7 +38,8 @@ namespace SAAControl
             return Path.Combine(local, InstallShared.DisplayName(appName));
         }
 
-        /// <summary>Collect all file/folder paths passed on the command line (bare paths or --open values).</summary>
+        /// <summary>Collect all file/folder paths passed on the command line (bare paths or --open values). An option
+        /// ("--update-failed=3" of the installer, any other "--..." or "/...") is never a file to open.</summary>
         public static List<string> IncomingPaths(string[] argv)
         {
             var list = new List<string>();
@@ -87,11 +90,18 @@ namespace SAAControl
             Directory.CreateDirectory(userDir);
             Log.Open(Path.Combine(userDir, "analysis.log"));
             List<string> filesToOpen = IncomingPaths(argv);
+            // the installer started the program again after a silent update that failed (--update-failed=<its exit
+            // code>): the window tells the page once it is there
+            Updater.FailedUpdate = Updater.UpdateFailedCode(argv);
 
             string mutexName = "Local\\" + appName + "-analysis-window";
             string showEventName = "Local\\" + appName + "-analysis-show";
             using (var mutex = new Mutex(true, mutexName, out bool isFirst))
             {
+                // after a failed update the window that started it may still be closing: this start waits until it is
+                // gone and shows the window (and the notice) itself, instead of calling a window that is about to go
+                if (!isFirst && Updater.FailedUpdate != null)
+                    isFirst = Updater.TakeOverFrom(mutex, TimeSpan.FromSeconds(Updater.ClosingWindowSeconds));
                 if (!isFirst)
                 {
                     foreach (string f in filesToOpen) LeaveRequest(appName, f);

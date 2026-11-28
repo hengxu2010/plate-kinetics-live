@@ -223,11 +223,28 @@ namespace SAAControl
                 if (required) throw new InvalidDataException("not a Plate Kinetics Live experiment file: no " + name);
                 return null;
             }
-            if (entry.Length > MaxEntry) throw new InvalidDataException(name + " is too large");
+            return EntryBytes(entry, MaxEntry, name);
+        }
+
+        /// <summary>The bytes of a zip entry: at most `most`, and never more than the size the zip gives for it. That size is
+        /// only what the file says: a file made to do harm says "10 bytes" and unpacks to gigabytes. Throws
+        /// InvalidDataException for an entry beyond either.</summary>
+        public static byte[] EntryBytes(ZipArchiveEntry entry, long most, string name)
+        {
+            long said = entry.Length;
+            if (said > most) throw new InvalidDataException(name + " is too large");
             using (Stream data = entry.Open())
             using (var memory = new MemoryStream())
             {
-                data.CopyTo(memory);
+                var buffer = new byte[81920];
+                long total = 0;
+                int count;
+                while ((count = data.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    total += count;
+                    if (total > said) throw new InvalidDataException(name + " holds more than its size in the file says");
+                    memory.Write(buffer, 0, count);
+                }
                 return memory.ToArray();
             }
         }
