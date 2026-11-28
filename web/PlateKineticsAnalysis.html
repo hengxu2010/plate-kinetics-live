@@ -26,7 +26,7 @@
 <meta name="description" content="Plate Kinetics Analysis: kinetic curves from 96- and 384-well plates. Import with automatic layout recognition, grouping, curve parameters, statistics, figures and reports. Runs in the browser, online or offline.">
 <meta name="author" content="hx_mao">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Crect width='26' height='26' rx='6' fill='%23077682'/%3E%3Cg fill='%23fff'%3E%3Ccircle cx='7' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='9' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='19' cy='9' r='2.7'/%3E%3Ccircle cx='7' cy='17' r='2.7' fill-opacity='.45'/%3E%3Ccircle cx='13' cy='17' r='2.7'/%3E%3Ccircle cx='19' cy='17' r='2.7' fill-opacity='.45'/%3E%3C/g%3E%3C/svg%3E">
-<title>孔板动力学分析 · v3.17.0</title>
+<title>孔板动力学分析 · v3.17.1</title>
 <script>
 /* A light / dark choice made in this browser is applied before the first paint (the rest lives at the end of the page). */
 try { var pkUi = JSON.parse(localStorage.getItem('pk.ui.v1') || 'null'); if (pkUi && (pkUi.theme === 'light' || pkUi.theme === 'dark')) document.documentElement.setAttribute('data-theme', pkUi.theme); } catch (e) { /* storage unavailable */ }
@@ -46,8 +46,8 @@ try { var pkUi = JSON.parse(localStorage.getItem('pk.ui.v1') || 'null'); if (pkU
   setTimeout(function () { root.className = root.className.replace(/\s*\bpk-wait\b/, ''); }, 3000);
 })();
 </script>
-<meta name="application-version" content="v3.17.0">
-<meta name="application-build" content="pk-v3-17-0-4089532a55e1">
+<meta name="application-version" content="v3.17.1">
+<meta name="application-build" content="pk-v3-17-1-ff24f0dc86ab">
 <style>
 :root {
   /* Layout idea: inputs on the left (plate, groups, settings), outputs on the right (curves, results).
@@ -748,24 +748,13 @@ svg.chart:not(.chart-ov) .tb-neg { opacity: .28; }
 #btnPlateNotes.has { color: var(--accent-strong); border-color: var(--accent); background: var(--accent-wash); }
 #btnPlateNotes.has::after { content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
 .nt-ed { display: flex; flex-direction: column; gap: 10px; }
-.nt-meta-box { border: 1px solid var(--hair); border-radius: 8px; padding: 7px 10px; background: var(--surface-2); }
-.nt-meta-box summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ink-2); user-select: none; }
-.nt-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 12px; margin-top: 9px; }
+.nt-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; padding: 10px 12px; border: 1px solid var(--hair); border-radius: 9px; background: var(--surface-2); }
 @media (max-width: 640px) { .nt-meta-grid { grid-template-columns: minmax(0, 1fr); } }
-.nt-f { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 6px; align-items: center; font-size: 12px; color: var(--ink-2); }
-.nt-f input { width: 100%; height: 27px; padding: 0 8px; font-size: 12.5px; }
+.nt-f { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+.nt-f input { width: 100%; height: 29px; padding: 0 9px; font-size: 12.5px; color: var(--ink); background: var(--surface); border: 1px solid var(--hair-2); border-radius: 6px; }
 .nt-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.nt-bar .nt-tpl { height: 27px; font-size: 12px; max-width: 190px; }
-.nt-ta { display: block; width: 100%; box-sizing: border-box; min-height: 280px; resize: vertical; padding: 10px 12px; font: 13px/1.6 var(--font-sans); border: 1px solid var(--hair-2); border-radius: 8px; background: var(--surface); color: var(--ink); }
-.nt-prev { min-height: 280px; max-height: 55vh; overflow: auto; padding: 12px 14px; border: 1px solid var(--hair); border-radius: 8px; background: var(--surface-2); font-size: 13px; line-height: 1.6; }
-.nt-meta { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 14px; margin: 0 0 12px; padding: 8px 10px; border-radius: 7px; background: var(--surface); border: 1px solid var(--hair); }
-.nt-meta dt { font-size: 11px; color: var(--muted); }
-.nt-meta dd { margin: 0; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
-.nt-body h3, .nt-body h4, .nt-body h5 { margin: 12px 0 5px; font-weight: 700; color: var(--ink); }
-.nt-body h3 { font-size: 14.5px; } .nt-body h4 { font-size: 13.5px; } .nt-body h5 { font-size: 13px; }
-.nt-body p { margin: 0 0 8px; } .nt-body ul, .nt-body ol { margin: 0 0 8px; padding-left: 20px; }
-.nt-body hr { border: 0; border-top: 1px solid var(--hair-2); margin: 10px 0; }
-.nt-body code { font-family: var(--font-mono); font-size: 12px; padding: 1px 4px; border-radius: 4px; background: var(--hair); }
+.nt-ta { display: block; width: 100%; box-sizing: border-box; min-height: 270px; resize: vertical; padding: 11px 13px; font: 13px/1.65 var(--font-sans); border: 1px solid var(--hair-2); border-radius: 9px; background: var(--surface); color: var(--ink); }
+.nt-ta:focus { outline: none; border-color: var(--accent); }
 /* "Parameter markers": a menu of the marks the chart draws */
 #btnMarkers .mk-n { color: var(--muted); font-variant-numeric: tabular-nums; }
 .pop.mk-pop { width: 270px; }
@@ -1057,7 +1046,7 @@ html.pk-wait body { visibility: hidden; }
       <circle cx="7" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/><circle cx="13" cy="17" r="2.6" fill="var(--accent)" fill-opacity=".55"/><circle cx="19" cy="17" r="2.6" fill="currentColor" fill-opacity=".22"/>
     </svg>
     <div class="brand-copy">
-      <div class="brand-name"><span>Plate Kinetics Analysis</span><span class="brand-author" translate="no">by hx_mao</span><span class="brand-version" id="brandVersion" role="button" tabindex="0" translate="no" aria-label="Version v3.17.0">v3.17.0</span></div>
+      <div class="brand-name"><span>Plate Kinetics Analysis</span><span class="brand-author" translate="no">by hx_mao</span><span class="brand-version" id="brandVersion" role="button" tabindex="0" translate="no" aria-label="Version v3.17.1">v3.17.1</span></div>
       <div class="brand-sub">PLATE KINETICS · 96 / 384</div>
     </div>
   </div>
@@ -1101,7 +1090,7 @@ html.pk-wait body { visibility: hidden; }
           </optgroup>
           <option value="call">Wells: positive / negative</option>
         </select>
-        <button class="btn sm ghost" id="btnPlateNotes" type="button" title="Open experiment notes editor (structured info, templates, long notes)">Notes</button>
+        <button class="btn sm ghost" id="btnPlateNotes" type="button" title="Open experiment notes editor">Notes</button>
         <button class="btn sm" id="btnPlateExport" type="button" aria-haspopup="true" title="Export plate layout as image, PDF, Excel (with bracket lines) or CSV">Export ▾</button>
       </div>
       <div class="plate-bar" id="plateBar" hidden></div>
@@ -3516,6 +3505,11 @@ const LOCALES = {
       'Positive (+) & excluded marks': '显示阳性 (+) 与排除标记',
       'Legend below plate': '底部附分组图例',
       'Names & Calls': '孔名与判定',
+      'Calls & Lag': '阳性判定与起峰时间',
+      'Open experiment notes editor': '打开实验记录',
+      'Reagents & Conditions': '试剂与体系条件',
+      'Write experiment notes, observations, anomalies or conclusions here…': '在此记录实验目的、样品处理、体系条件、现象观察或结论…',
+      'Group statistics list': '分组统计列表',
       '+ positive · hatched = excluded': '+ 为阳性 · 斜线为已排除',
       'PDF report (direct print / save as PDF)': 'PDF 报告（直接导出 / 打印）',
       'Print or save a formatted A4 PDF report directly (layout, curves, group statistics, cross table and per-well results)': '直接调起排版好的 A4 PDF 导出/打印（含实验记录、高清孔板排布、曲线、统计/交叉表与每孔结果）',
@@ -13138,22 +13132,25 @@ function setScope(each) {
 }
 
 /* ---------- notes about the experiment of a dataset ---------- */
-/* Each dataset can carry structured + long-form notes in ds.notes (plain readable text / lightweight Markdown so
-   project files, Plate Kinetics Live .pk archives, Excel Info sheets and PDF/HTML reports stay 100% compatible). */
+/* Each dataset can carry structured + long-form plain-text notes in ds.notes so project files,
+   Plate Kinetics Live .pk archives, Excel Info sheets and PDF/HTML reports stay 100% compatible. */
 const NOTES_MAX = 50000;
 const NOTE_FIELDS = [
   ['date', 'Date', '日期'],
   ['operator', 'Operator', '操作人'],
   ['instrument', 'Instrument / Protocol', '仪器 / 方案'],
-  ['sample', 'Sample source', '样品来源'],
-  ['reagent', 'Reagent / Lot', '试剂 / 批号'],
-  ['cond', 'Conditions', '体系与条件']
+  ['cond', 'Reagents & Conditions', '试剂与体系条件']
 ];
+const NOTE_LEGACY_KEYS = {
+  'reagent / lot': 'cond', '试剂 / 批号': 'cond',
+  'conditions': 'cond', '体系与条件': 'cond',
+  'sample source': 'cond', '样品来源': 'cond'
+};
 /** Parse optional leading Key: Value metadata header from ds.notes -> { meta: {...}, body: string }. */
 function parseNotes(raw) {
   const text = String(raw || '').replace(/\r\n?/g, '\n');
   const meta = Object.fromEntries(NOTE_FIELDS.map(f => [f[0], '']));
-  const keyMap = new Map();
+  const keyMap = new Map(Object.entries(NOTE_LEGACY_KEYS));
   NOTE_FIELDS.forEach(([k, en, zh]) => { keyMap.set(en.toLowerCase(), k); keyMap.set(zh.toLowerCase(), k); });
   const lines = text.split('\n');
   let i = 0, matched = false;
@@ -13163,7 +13160,8 @@ function parseNotes(raw) {
     const m = /^([^:：\n]{1,36})[:：]\s*(.*)$/.exec(ln);
     const key = m && keyMap.get(m[1].trim().toLowerCase());
     if (!key) break;
-    meta[key] = m[2].trim();
+    const val = m[2].trim();
+    if (val) meta[key] = meta[key] ? meta[key] + '; ' + val : val;
     matched = true;
     i++;
   }
@@ -13181,41 +13179,16 @@ function serializeNotes(meta, body) {
   if (!head.length) return cleanBody.slice(0, NOTES_MAX);
   return (head.join('\n') + (cleanBody.trim() ? '\n\n' + cleanBody : '')).slice(0, NOTES_MAX);
 }
-/** Safe lightweight Markdown renderer for notes preview and PDF/HTML reports (HTML-escaped first). */
+/** Render structured metadata + clean plain-text notes for PDF/HTML reports (HTML-escaped). */
 function renderNotesHtml(raw) {
   const { meta, body } = parseNotes(raw);
-  const inline = s => esc(s)
-    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`\n]+)`/g, '<code>$1</code>');
   const metaItems = NOTE_FIELDS.filter(([k]) => meta[k]).map(([k, en]) => `<div><dt>${esc(L(en))}</dt><dd translate="no">${esc(meta[k])}</dd></div>`);
   let out = metaItems.length ? `<dl class="nt-meta">${metaItems.join('')}</dl>` : '';
-  const lines = body.split('\n');
-  let i = 0, bodyHtml = '';
-  while (i < lines.length) {
-    const ln = lines[i];
-    if (!ln.trim()) { i++; continue; }
-    if (/^-{3,}\s*$/.test(ln.trim())) { bodyHtml += '<hr>'; i++; continue; }
-    const hm = /^(#{1,3})\s+(.+)$/.exec(ln);
-    if (hm) { const tag = 'h' + (hm[1].length + 2); bodyHtml += `<${tag} translate="no">${inline(hm[2].trim())}</${tag}>`; i++; continue; }
-    if (/^\s*[-*•]\s+/.test(ln)) {
-      const items = [];
-      while (i < lines.length && /^\s*[-*•]\s+/.test(lines[i])) { items.push(`<li>${inline(lines[i].replace(/^\s*[-*•]\s+/, ''))}</li>`); i++; }
-      bodyHtml += `<ul translate="no">${items.join('')}</ul>`; continue;
-    }
-    if (/^\s*\d+\.\s+/.test(ln)) {
-      const items = [];
-      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) { items.push(`<li>${inline(lines[i].replace(/^\s*\d+\.\s+/, ''))}</li>`); i++; }
-      bodyHtml += `<ol translate="no">${items.join('')}</ol>`; continue;
-    }
-    const para = [];
-    while (i < lines.length && lines[i].trim() && !/^-{3,}\s*$/.test(lines[i].trim()) && !/^(#{1,3})\s+/.test(lines[i]) && !/^\s*(?:[-*•]|\d+\.)\s+/.test(lines[i])) {
-      para.push(inline(lines[i])); i++;
-    }
-    bodyHtml += `<p translate="no">${para.join('<br>')}</p>`;
-  }
-  return out + (bodyHtml ? `<div class="nt-body">${bodyHtml}</div>` : (!out ? `<p class="hint">${esc(L('No experiment notes yet'))}</p>` : ''));
+  const clean = body.trim();
+  if (clean) out += `<div class="nt-body" translate="no">${esc(clean)}</div>`;
+  return out || `<p class="hint">${esc(L('No experiment notes yet'))}</p>`;
 }
-/** Build a ready-to-insert concise analysis summary for the current dataset. */
+/** Build a clean plain-text analysis summary for the current dataset (no Markdown markup). */
 function notesAnalysisSummary(ds) {
   ensureAnalysis(ds);
   const res = ds.res || {}, tf = TF(), tu = TU();
@@ -13224,34 +13197,22 @@ function notesAnalysisSummary(ds) {
   const ex = dw.filter(w => w.excluded).length;
   const gList = groupStatsList(ds, null, false, null).filter(g => g.gid);
   const lines = [
-    `## ${L('Analysis summary')} (${new Date().toLocaleString(dateLocale(), { hour12: false })})`,
-    `- **${L('Plate')}**: ${L('{0:well}', ds.plate.rows * ds.plate.cols)}, ${valid.length} ${L('valid')}` + (ex ? `, ${ex} ${L('excluded')}` : '') + `, ${L('{0}/{1} positive', pos, valid.length)} (${valid.length ? (pos / valid.length * 100).toFixed(1) : '0.0'}%)`,
-    `- **${L('Time range')}**: ${+(ds.t[0] * tf).toFixed(2)} – ${+(ds.t[ds.t.length - 1] * tf).toFixed(2)} ${tu} (${ds.t.length} ${L('time points')})`,
-    `- **${L('Analysis parameters')}**: ${L('Threshold')} ${S.set.thrMode} (k=${S.set.thrK}), ${L('smoothing')} ${S.set.smooth}, ${L('cut-off')} ${S.set.cutoff != null ? +(S.set.cutoff * tf).toFixed(2) + ' ' + tu : Lc('cutoff', 'none')}`
+    `[${L('Analysis summary')} · ${new Date().toLocaleString(dateLocale(), { hour12: false })}]`,
+    `${L('Plate')}: ${L('{0:well}', ds.plate.rows * ds.plate.cols)}, ${valid.length} ${L('valid')}` + (ex ? `, ${ex} ${L('excluded')}` : '') + `, ${L('{0}/{1} positive', pos, valid.length)} (${valid.length ? (pos / valid.length * 100).toFixed(1) : '0.0'}%)`,
+    `${L('Time range')}: ${+(ds.t[0] * tf).toFixed(2)} – ${+(ds.t[ds.t.length - 1] * tf).toFixed(2)} ${tu} (${ds.t.length} ${L('time points')})`,
+    `${L('Analysis parameters')}: ${L('Threshold')} ${S.set.thrMode} (k=${S.set.thrK}), ${L('smoothing')} ${S.set.smooth}, ${L('cut-off')} ${S.set.cutoff != null ? +(S.set.cutoff * tf).toFixed(2) + ' ' + tu : Lc('cutoff', 'none')}`
   ];
   if (gList.length) {
-    lines.push(`- **${L('Groups')}** (${ds.sets[ds.gs].name}): ` + gList.slice(0, 12).map(g => `${g.label} ${g.pos}/${g.n}${isFinite(g.st.lag.mean) ? ` (lag ${fmtAuto(g.st.lag.mean, 'T')}${g.st.lag.n > 1 ? ' ± ' + fmtAuto(g.st.lag.sd, 'T') : ''} ${tu})` : ''}`).join('; '));
+    lines.push(`${L('Groups')} (${ds.sets[ds.gs].name}): ` + gList.slice(0, 12).map(g => `${g.label} ${g.pos}/${g.n}${isFinite(g.st.lag.mean) ? ` (${fmtAuto(g.st.lag.mean, 'T')}${g.st.lag.n > 1 ? ' ± ' + fmtAuto(g.st.lag.sd, 'T') : ''} ${tu})` : ''}`).join('; '));
   }
   return lines.join('\n');
-}
-function notesTemplates() {
-  return [
-    {
-      id: 'saa', label: L('Standard kinetics / SAA log'),
-      text: `## ${L('Objective')}\n- \n\n## ${L('Samples & dilution')}\n- \n\n## ${L('Reaction mix & reagent lots')}\n- \n\n## ${L('Observations & anomalies')}\n- \n\n## ${L('Conclusion & next steps')}\n- `
-    },
-    {
-      id: 'cmp', label: L('Comparison / troubleshooting note'),
-      text: `## ${L('Variables compared')}\n- \n\n## ${L('Key findings')}\n- \n\n## ${L('Issues / follow-up')}\n- `
-    }
-  ];
 }
 function syncNotesBadge() {
   const b = $('#btnPlateNotes'), ds = curDS();
   if (!b) return;
   const has = !!(ds && ds.notes && ds.notes.trim());
   b.classList.toggle('has', has);
-  b.title = has ? ds.notes.slice(0, 300) : L('Open experiment notes editor (structured info, templates, long notes)');
+  b.title = has ? ds.notes.slice(0, 300) : L('Open experiment notes editor');
 }
 function openNotes(anchor, i) {
   const ds = S.ds[i != null ? i : S.cur];
@@ -13260,36 +13221,28 @@ function openNotes(anchor, i) {
   const parsed = parseNotes(ds.notes || '');
   const nowStamp = () => {
     const d = new Date(), p2 = n => String(n).padStart(2, '0');
-    return `[${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}] `;
+    return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())} `;
   };
   const hint = COLLAB.active ? L('Not shared with the room and not kept after a reload: use “Save project” to keep them')
     : AUTOSAVE.enabled() ? L('Saved automatically; written into Excel exports and PDF/HTML reports')
     : L('Not saved automatically: use “Save project” before closing the page');
-  const metaHtml = NOTE_FIELDS.map(([k, en]) => `<label class="nt-f"><span>${esc(L(en))}</span><input type="text" data-nm="${k}" value="${esc(parsed.meta[k])}" placeholder="${esc(L(en))}" translate="no"></label>`).join('');
-  const tpls = notesTemplates();
+  const metaHtml = NOTE_FIELDS.map(([k, en]) => `<label class="nt-f"><span>${esc(L(en))}</span><input type="text" data-nm="${k}" value="${esc(parsed.meta[k])}" placeholder="—" translate="no"></label>`).join('');
   const m = openModal({
     title: L('Experiment notes · {0}', ds.name), wide: true,
     body: `<div class="nt-ed">
-      <details class="nt-meta-box"${Object.values(parsed.meta).some(Boolean) ? ' open' : ''}>
-        <summary>${esc(L('Experiment metadata (optional — date, operator, reagents, conditions)'))}</summary>
-        <div class="nt-meta-grid">${metaHtml}</div>
-      </details>
+      <div class="nt-meta-grid">${metaHtml}</div>
       <div class="nt-bar">
-        <div class="seg sm" role="group"><button type="button" data-ntv="edit" class="on">${esc(L('Edit'))}</button><button type="button" data-ntv="prev">${esc(L('Preview'))}</button></div>
-        <select class="nt-tpl" aria-label="${esc(L('Insert template'))}"><option value="">${esc(L('Insert template…'))}</option>${tpls.map(t => `<option value="${t.id}">${esc(t.label)}</option>`).join('')}</select>
         <button class="btn sm ghost" type="button" data-nta="time">${esc(L('+ Timestamp'))}</button>
         <button class="btn sm ghost" type="button" data-nta="sum">${esc(L('+ Analysis summary'))}</button>
         <span class="spacer"></span>
         <button class="btn sm ghost" type="button" data-nta="copy">${ICON.copy}${esc(L('Copy'))}</button>
-        <button class="btn sm ghost" type="button" data-nta="md">${ICON.dl}.md</button>
       </div>
-      <textarea class="nt-ta" rows="14" placeholder="${esc(L('Write detailed experiment notes here (supports ## headings, **bold**, - bullet lists, --- dividers)…'))}"></textarea>
-      <div class="nt-prev" hidden></div>
+      <textarea class="nt-ta" rows="13" placeholder="${esc(L('Write experiment notes, observations, anomalies or conclusions here…'))}"></textarea>
       <p class="hint" style="margin:0" translate="no">${esc(hint)}</p>
     </div>`,
     foot: `<span class="left" id="ntCount"></span><button class="btn ghost" type="button" data-clr>${esc(L('Clear'))}</button><button class="btn primary" type="button" data-ok>${esc(L('Done'))}</button>`
   });
-  const ta = $('.nt-ta', m.el), prev = $('.nt-prev', m.el), cnt = $('#ntCount', m.el);
+  const ta = $('.nt-ta', m.el), cnt = $('#ntCount', m.el);
   ta.value = parsed.body;
   const readMeta = () => Object.fromEntries($$('[data-nm]', m.el).map(inp => [inp.dataset.nm, inp.value]));
   const refreshCount = () => { cnt.textContent = L('{0} / {1} chars', (ds.notes || '').length, NOTES_MAX); };
@@ -13308,7 +13261,7 @@ function openNotes(anchor, i) {
   const insertAtCursor = txt => {
     const a = ta.selectionStart != null ? ta.selectionStart : ta.value.length;
     const b = ta.selectionEnd != null ? ta.selectionEnd : ta.value.length;
-    const pre = ta.value.slice(0, a), sep = pre && !pre.endsWith('\n') && txt.startsWith('##') ? '\n\n' : '';
+    const pre = ta.value.slice(0, a), sep = pre && !pre.endsWith('\n') && txt.startsWith('[') ? '\n\n' : '';
     ta.value = pre + sep + txt + ta.value.slice(b);
     const pos = pre.length + sep.length + txt.length;
     ta.focus();
@@ -13319,36 +13272,19 @@ function openNotes(anchor, i) {
   ta.addEventListener('input', commit);
   $$('[data-nm]', m.el).forEach(inp => inp.addEventListener('input', commit));
   ta.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); commit(); m.close(); } });
-  $('.nt-tpl', m.el).addEventListener('change', e => {
-    const t = tpls.find(x => x.id === e.target.value);
-    e.target.value = '';
-    if (!t) return;
-    if (ta.value.trim()) insertAtCursor(t.text);
-    else { ta.value = t.text; ta.focus(); commit(); }
-  });
   m.el.addEventListener('click', e => {
-    const vBtn = e.target.closest('[data-ntv]');
-    if (vBtn) {
-      const isPrev = vBtn.dataset.ntv === 'prev';
-      $$('[data-ntv]', m.el).forEach(x => x.classList.toggle('on', x === vBtn));
-      ta.hidden = isPrev; prev.hidden = !isPrev;
-      if (isPrev) prev.innerHTML = renderNotesHtml(ds.notes || '');
-      return;
-    }
     const aBtn = e.target.closest('[data-nta]');
     if (!aBtn) return;
     const act = aBtn.dataset.nta;
     if (act === 'time') insertAtCursor(nowStamp());
     else if (act === 'sum') insertAtCursor(notesAnalysisSummary(ds));
     else if (act === 'copy') copyText(ds.notes || '');
-    else if (act === 'md') saveFile(safeName(ds.name + '_notes_' + dateTag()) + '.md', (ds.notes || '') + '\n');
   });
   $('[data-clr]', m.el).onclick = () => {
     if (!ds.notes) return;
     confirmBox(L('Clear experiment notes'), L('Clear all experiment notes for “{0}”?', esc(ds.name)), L('Clear'), () => {
       $$('[data-nm]', m.el).forEach(inp => { inp.value = ''; });
       ta.value = '';
-      prev.innerHTML = renderNotesHtml('');
       commit();
     });
   };
@@ -14992,13 +14928,15 @@ function layoutRows(ds, refOnly) {
       }));
     });
   }
-  grid('Sample names (fill = well colour; [excluded] = left out of the analysis)', w => {
-    const col = wellColorHex(ds, w, false);
-    const cell = { v: (w.name || '') + (w.excluded ? L(' [excluded]') : ''), align: 'center', nt: 1 };
-    if (col) { cell.fill = col; cell.color = inkOn(col); }
-    return cell;
-  });
-  if (refOnly || typeof buildBracketPlateSheet !== 'function' || !hasAssignedGroups(ds)) {
+  if (!refOnly && typeof buildBracketPlateSheet !== 'function') {
+    grid('Sample names (fill = well colour; [excluded] = left out of the analysis)', w => {
+      const col = wellColorHex(ds, w, false);
+      const cell = { v: (w.name || '') + (w.excluded ? L(' [excluded]') : ''), align: 'center', nt: 1 };
+      if (col) { cell.fill = col; cell.color = inkOn(col); }
+      return cell;
+    });
+  }
+  if (!refOnly && (typeof buildBracketPlateSheet !== 'function' || !hasAssignedGroups(ds))) {
     ds.sets.forEach((s, si) => {
       const V = setView(ds, si);
       grid(ds.sets.length > 1 ? L('Groups · ') + s.name : 'Group', w => {
@@ -15113,17 +15051,17 @@ function fitSvgText(text, maxPx, fs) {
 /** Render one plate block into an inner SVG snippet ({ body, W, H }) for Single, Stack, or one Split panel. */
 function renderPlateSvgBlock(ds, cfg) {
   const { rows, cols } = ds.plate, big = cols > 12, res = ds.res || {};
-  const mini = !!cfg.mini, showMarks = cfg.showMarks !== false;
-  const cw = mini ? (big ? 16 : 30) : (big ? 30 : 62);
-  const ch = mini ? (big ? 13 : 22) : (big ? 21 : 42);
+  const mini = !!cfg.mini, showMarks = cfg.showMarks !== false, compact = !!cfg.compact;
+  const cw = mini ? (big ? 17 : 36) : (big ? 30 : 62);
+  const ch = mini ? (big ? 13 : 23) : (big ? 21 : 42);
   const gap = mini ? (big ? 1.5 : 2.5) : (big ? 2.5 : 4.5);
   const rhW = mini ? 18 : (big ? 22 : 26), chH = mini ? 16 : (big ? 18 : 22);
-  const trRowW = mini ? 68 : (big ? 86 : 104), trColH = mini ? 20 : 26;
+  const trRowW = mini ? 88 : (big ? 88 : 108), trColH = mini ? 22 : 26;
   const tracks = cfg.tracks || { left: [], right: [], top: [], bot: [] };
   const nL = tracks.left.length, nR = tracks.right.length, nT = tracks.top.length, nB = tracks.bot.length;
-  const pad = mini ? 10 : 16;
-  const headH = cfg.heading ? (mini ? 22 : 26) : 0;
-  const leftCapW = nL === 0 && (nT > 0 || nB > 0) ? (mini ? 64 : 88) : 0;
+  const pad = mini ? 12 : (compact ? 4 : 16);
+  const headH = cfg.heading ? (mini ? 24 : 26) : 0;
+  const leftCapW = nL === 0 && (nT > 0 || nB > 0) ? (mini ? 94 : 106) : 0;
   const x0 = pad + leftCapW + nL * trRowW + rhW;
   const y0 = pad + headH + nT * trColH + chH;
   const gridW = cols * cw + (cols - 1) * gap;
@@ -15159,53 +15097,51 @@ function renderPlateSvgBlock(ds, cfg) {
   const yb = r => (r <= 0 ? y0 - gap / 2 : r >= rows ? y0 + gridH + gap / 2 : wy(r) - gap / 2);
   const n1 = v => v.toFixed(1), p = [];
 
-  if (cfg.cardBg) p.push(`<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="#ffffff" stroke="#d9dfe0" stroke-width="1"/>`);
   if (cfg.heading) {
-    p.push(`<text x="${pad}" y="${pad + (mini ? 14 : 17)}" font-size="${mini ? 12 : 14}" font-weight="700" fill="#13191b">${esc(cfg.heading)}</text>`);
-    if (cfg.subHeading) p.push(`<text x="${W - pad}" y="${pad + (mini ? 14 : 17)}" text-anchor="end" font-size="${mini ? 10 : 11}" fill="#646d70">${esc(cfg.subHeading)}</text>`);
+    p.push(`<text x="${pad}" y="${pad + (mini ? 15 : 17)}" font-size="${mini ? 12.5 : 14}" font-weight="700" fill="#13191b">${esc(cfg.heading)}</text>`);
+    if (cfg.subHeading) p.push(`<text x="${W - pad}" y="${pad + (mini ? 15 : 17)}" text-anchor="end" font-size="${mini ? 10 : 11}" fill="#646d70">${esc(cfg.subHeading)}</text>`);
   }
 
-  // Outer column tracks (top & bottom) with crisp bracket lines
+  // Unified right-edge axis for all left-side track headings so top, left, and bottom labels align in one crisp column
+  const leftLabelX = nL > 0 ? (pad + leftCapW + nL * trRowW - 5) : (x0 - 7);
   const brFs = mini ? 8.5 : 10, hdFs = mini ? 8.5 : 10;
   const drawColTrack = (tr, yTop, isBot) => {
     const M = tr.M, scope = tr.scope ? ` (${tr.scope})` : '';
-    const lab = fitSvgText(M.name + scope, x0 - pad - 6, hdFs);
-    p.push(`<text x="${(x0 - 6).toFixed(1)}" y="${(yTop + trColH * (isBot ? 0.68 : 0.56)).toFixed(1)}" text-anchor="end" font-size="${hdFs}" font-weight="600" fill="#50585b">${esc(lab)}</text>`);
+    const lab = fitSvgText(M.name + scope, Math.max(40, leftLabelX - pad), hdFs);
+    p.push(`<text x="${n1(leftLabelX)}" y="${n1(yTop + trColH * (isBot ? 0.72 : 0.56))}" text-anchor="end" font-size="${hdFs}" font-weight="600" fill="#50585b">${esc(lab)}</text>`);
     for (const [a, b, g] of lineRuns(tr.v)) {
       if (!g) continue;
       const lx = wx(a) + 2, rx = wx(b) + cw - 2, mid = (lx + rx) / 2, col = resolveColor(g.color, false) || '#5f6566';
       const yLine = isBot ? yTop + 4 : yTop + trColH - 4;
       const yTip = isBot ? yTop + 1 : yTop + trColH - 1;
-      p.push(`<path d="M${n1(lx)} ${n1(yTip)}V${n1(yLine)}H${n1(rx)}V${n1(yTip)}" fill="none" stroke="${col}" stroke-width="1.35" stroke-opacity="0.85"/>`);
-      const swSz = mini ? 6.5 : 8, txt = fitSvgText(gName(g), Math.max(12, rx - lx - swSz - 6), brFs);
-      const tw = textUnits(txt) * brFs * 0.62, total = swSz + 4 + tw, sx0 = mid - total / 2;
-      const ty = isBot ? yTop + trColH - 4 : yTop + trColH - 9;
-      p.push(svgSwatch(g.color, sx0, ty - swSz + 1, swSz));
-      p.push(`<text x="${(sx0 + swSz + 3.5).toFixed(1)}" y="${ty.toFixed(1)}" font-size="${brFs}" font-weight="600" fill="#1d2426">${esc(txt)}</text>`);
+      p.push(`<path d="M${n1(lx)} ${n1(yTip)}V${n1(yLine)}H${n1(rx)}V${n1(yTip)}" fill="none" stroke="${col}" stroke-width="1.6" stroke-opacity="0.9"/>`);
+      const txt = fitSvgText(gName(g), Math.max(14, rx - lx - 4), brFs);
+      const ty = isBot ? yTop + trColH - 3.5 : yTop + trColH - 8.5;
+      p.push(`<text x="${n1(mid)}" y="${n1(ty)}" text-anchor="middle" font-size="${brFs}" font-weight="600" fill="#1d2426">${esc(txt)}</text>`);
     }
   };
   tracks.top.forEach((tr, ti) => drawColTrack(tr, pad + headH + ti * trColH, false));
-  tracks.bot.forEach((tr, bi) => drawColTrack(tr, y0 + gridH + bi * trColH + 2, true));
+  tracks.bot.forEach((tr, bi) => drawColTrack(tr, y0 + gridH + bi * trColH + 3, true));
 
-  // Outer row tracks (left & right) with vertical bracket lines
+  // Outer row tracks (left & right): swatch pinned directly beside bracket line so label alignment never drifts
   const drawRowTrack = (tr, xLeft, isRight) => {
     const M = tr.M, scope = tr.scope ? ` (${tr.scope})` : '';
+    const xLine = isRight ? xLeft + 4 : xLeft + trRowW - 4;
+    const xTip = isRight ? xLeft + 1 : xLeft + trRowW - 1;
     const lab = fitSvgText(M.name + scope, trRowW - 6, hdFs);
-    p.push(`<text x="${(isRight ? xLeft + 6 : xLeft + trRowW - 6).toFixed(1)}" y="${(y0 - 6).toFixed(1)}" text-anchor="${isRight ? 'start' : 'end'}" font-size="${hdFs}" font-weight="600" fill="#50585b">${esc(lab)}</text>`);
+    p.push(`<text x="${n1(isRight ? xLine + 4 : xLine - 1)}" y="${n1(y0 - 6)}" text-anchor="${isRight ? 'start' : 'end'}" font-size="${hdFs}" font-weight="600" fill="#50585b">${esc(lab)}</text>`);
     for (const [a, b, g] of lineRuns(tr.v)) {
       if (!g) continue;
       const ty = wy(a) + 2, by = wy(b) + ch - 2, mid = (ty + by) / 2, col = resolveColor(g.color, false) || '#5f6566';
-      const xLine = isRight ? xLeft + 4 : xLeft + trRowW - 4;
-      const xTip = isRight ? xLeft + 1 : xLeft + trRowW - 1;
-      if (b > a || true) p.push(`<path d="M${n1(xTip)} ${n1(ty)}H${n1(xLine)}V${n1(by)}H${n1(xTip)}" fill="none" stroke="${col}" stroke-width="1.35" stroke-opacity="0.85"/>`);
-      const swSz = mini ? 6.5 : 8, txt = fitSvgText(gName(g), Math.max(12, trRowW - swSz - 14), brFs);
+      p.push(`<path d="M${n1(xTip)} ${n1(ty)}H${n1(xLine)}V${n1(by)}H${n1(xTip)}" fill="none" stroke="${col}" stroke-width="1.6" stroke-opacity="0.9"/>`);
+      const swSz = mini ? 6.5 : 8, txt = fitSvgText(gName(g), Math.max(12, trRowW - swSz - 16), brFs);
       if (isRight) {
         p.push(svgSwatch(g.color, xLine + 5, mid - swSz / 2, swSz));
-        p.push(`<text x="${(xLine + 5 + swSz + 3.5).toFixed(1)}" y="${(mid + brFs * 0.35).toFixed(1)}" font-size="${brFs}" font-weight="600" fill="#1d2426">${esc(txt)}</text>`);
+        p.push(`<text x="${n1(xLine + 5 + swSz + 4)}" y="${n1(mid + brFs * 0.35)}" font-size="${brFs}" font-weight="600" fill="#1d2426">${esc(txt)}</text>`);
       } else {
-        const tw = textUnits(txt) * brFs * 0.62;
-        p.push(svgSwatch(g.color, xLine - 5 - tw - swSz - 3.5, mid - swSz / 2, swSz));
-        p.push(`<text x="${(xLine - 5).toFixed(1)}" y="${(mid + brFs * 0.35).toFixed(1)}" text-anchor="end" font-size="${brFs}" font-weight="600" fill="#1d2426">${esc(txt)}</text>`);
+        const swX = xLine - 5 - swSz;
+        p.push(svgSwatch(g.color, swX, mid - swSz / 2, swSz));
+        p.push(`<text x="${n1(swX - 4)}" y="${n1(mid + brFs * 0.35)}" text-anchor="end" font-size="${brFs}" font-weight="600" fill="#1d2426">${esc(txt)}</text>`);
       }
     }
   };
@@ -15214,11 +15150,12 @@ function renderPlateSvgBlock(ds, cfg) {
 
   // Row & column headers
   const hdrFs = mini ? (big ? 7 : 8.5) : (big ? 9 : 10.5);
-  for (let c = 0; c < cols; c++) p.push(`<text x="${(wx(c) + cw / 2).toFixed(1)}" y="${(y0 - 6).toFixed(1)}" text-anchor="middle" font-size="${hdrFs}" font-weight="600" fill="#6d7678">${c + 1}</text>`);
-  for (let r = 0; r < rows; r++) p.push(`<text x="${(x0 - 7).toFixed(1)}" y="${(wy(r) + ch / 2 + hdrFs * 0.35).toFixed(1)}" text-anchor="end" font-size="${hdrFs}" font-weight="600" fill="#6d7678">${C.LETTERS[r]}</text>`);
+  for (let c = 0; c < cols; c++) p.push(`<text x="${n1(wx(c) + cw / 2)}" y="${n1(y0 - 6)}" text-anchor="middle" font-size="${hdrFs}" font-weight="600" fill="#6d7678">${c + 1}</text>`);
+  for (let r = 0; r < rows; r++) p.push(`<text x="${n1(x0 - 7)}" y="${n1(wy(r) + ch / 2 + hdrFs * 0.35)}" text-anchor="end" font-size="${hdrFs}" font-weight="600" fill="#6d7678">${C.LETTERS[r]}</text>`);
 
   // Wells
   const primaryM = cfg.primaryMap, stackSq = cfg.sqL || [], turn = cfg.turn || [], activeShown = cfg.activeShown !== false;
+  const anyGrp = hasAssignedGroups(ds);
   const barH = mini ? (big ? 2.2 : 3) : (big ? 3 : 4.5);
   const rad = mini ? (big ? 1.5 : 3) : (big ? 2.5 : 4.5);
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
@@ -15239,7 +15176,6 @@ function renderPlateSvgBlock(ds, cfg) {
     if (w.excluded && showMarks) {
       p.push(`<rect x="${n1(x)}" y="${n1(y)}" width="${cw}" height="${ch}" rx="${rad}" fill="url(#pkExclHatch)"/>`);
     }
-    // Secondary-layer corner squares (Stack mode)
     const sqSize = big ? 4.2 : 6.2, sqGap = big ? 1.2 : 1.8;
     let sqUsedW = 0;
     if (stackSq.length && w.y) {
@@ -15257,17 +15193,15 @@ function renderPlateSvgBlock(ds, cfg) {
         }
       }
     }
-    // Positive mark "+"
     const rr = res[id], isPos = showMarks && rr && !rr.excluded && rr.n && rr.positive;
     if (isPos && !mini) {
       const px = sqUsedW ? x + cw - sqUsedW - 3 : x + cw - 4.5;
       p.push(`<text x="${n1(px)}" y="${n1(y + barH + (big ? 9 : 11))}" text-anchor="end" font-size="${big ? 8.5 : 10.5}" font-weight="700" fill="#d03b3b">+</text>`);
     }
-    // Text inside well (skip for mini 384 or mini-plates where colour + brackets do the talking)
     if (!mini) {
       if (!big) {
         p.push(`<text x="${n1(x + 3.5)}" y="${n1(y + barH + 10.5)}" font-size="8" fill="#889295">${id}</text>`);
-        const first = g ? gName(g) : (w.name || '');
+        const first = g ? gName(g) : (!anyGrp ? (w.name || '') : '');
         const rest = cfg.isStack && cfg.oth ? cfg.oth.map(M => M.of.get(id)).filter(Boolean).map(gName).filter(t => g || t !== first).join('·') : '';
         if (first) {
           const l1 = fitSvgText(first, cw - 7, 9.5);
@@ -15278,19 +15212,19 @@ function renderPlateSvgBlock(ds, cfg) {
           p.push(`<text x="${n1(x + 3.5)}" y="${n1(y + ch - 3.5)}" font-size="8.2" fill="#636d70">${esc(l2)}</text>`);
         }
       } else {
-        const lbl = g ? gName(g) : (w.name || '');
+        const lbl = g ? gName(g) : (!anyGrp ? (w.name || '') : '');
         if (lbl && !sqUsedW) {
           const l1 = fitSvgText(lbl, cw - 4, 7.2);
           p.push(`<text x="${n1(x + cw / 2)}" y="${n1(y + ch - 3.5)}" text-anchor="middle" font-size="7.2" fill="${w.excluded ? '#8a9295' : '#1d2426'}">${esc(l1)}</text>`);
         }
       }
     } else if (!big && g) {
-      const l1 = fitSvgText(gName(g), cw - 4, 7.2);
-      p.push(`<text x="${n1(x + cw / 2)}" y="${n1(y + ch - 4)}" text-anchor="middle" font-size="7.2" fill="#1d2426">${esc(l1)}</text>`);
+      const l1 = fitSvgText(gName(g), cw - 4, 6.8);
+      p.push(`<text x="${n1(x + cw / 2)}" y="${n1(y + ch - 4.5)}" text-anchor="middle" font-size="6.8" fill="#1d2426">${esc(l1)}</text>`);
     }
   }
 
-  // Block outlines & capsule badges (non-row/col contiguous blocks)
+  // Block outlines & capsule badges
   const bls = cfg.blockLayers || [];
   if (bls.length) {
     const usedA = new Map();
@@ -15318,7 +15252,7 @@ function renderPlateSvgBlock(ds, cfg) {
     });
   }
 
-  // User frames (active layer, or every framed layer in Stack when allFr is on)
+  // User frames
   const fLayers = cfg.frameLayers || [cfg.frameSi != null ? cfg.frameSi : ds.gs];
   fLayers.forEach((si, idx) => {
     const fl = frameLines(ds, false, si);
@@ -15359,7 +15293,7 @@ function plateLayoutSvg(ds, opt) {
   const mode = multi && ['expand', 'stack', 'split'].includes(opt.mode) ? opt.mode : (multi ? lv.mode : 'expand');
   const showMarks = opt.marks != null ? !!opt.marks : PLATE_EXP.marks;
   const showLegend = opt.legend != null ? !!opt.legend : PLATE_EXP.legend;
-  const showTitle = opt.title !== false;
+  const showTitle = opt.title !== false, compact = !!opt.compact;
   const titleH = showTitle ? 44 : 0, footH = opt.footer !== false ? 26 : 0;
   const modeLabel = mode === 'stack' ? L('Stack') : mode === 'split' ? L('Split') : (multi ? ds.sets[ds.gs].name : '');
   const titleText = `${ds.name} · ${L('Plate layout')}${modeLabel ? ' (' + modeLabel + ')' : ''}`;
@@ -15373,14 +15307,14 @@ function plateLayoutSvg(ds, opt) {
       const la = plateLayerAnnot(ds, M.si);
       const nUsed = layerValues(ds, M).length;
       return renderPlateSvgBlock(ds, {
-        mini: true, cardBg: true, showMarks, showLegend,
+        mini: true, showMarks, showLegend,
         heading: M.name + (M.si === ds.gs ? ' · ' + L('active') : ''),
         subHeading: nUsed ? Lc('count', '{0:group}', nUsed) : L('Empty'),
         primaryMap: M, tracks: la.tracks, blockLayers: la.blockLayers,
         frameLayers: [M.si], legendLayers: [M]
       });
     });
-    const pGap = 14, pad = 16;
+    const pGap = 14, pad = compact ? 4 : 16;
     const colW = Math.max(...panels.map(x => x.W));
     const rowHs = [];
     for (let i = 0; i < panels.length; i += colsN) rowHs.push(Math.max(...panels.slice(i, i + colsN).map(x => x.H)));
@@ -15391,8 +15325,10 @@ function plateLayoutSvg(ds, opt) {
       for (let c = 0; c < colsN; c++) {
         const pan = panels[r * colsN + c];
         if (!pan) continue;
-        const cx = pad + c * (colW + pGap) + Math.floor((colW - pan.W) / 2);
-        content += `<g transform="translate(${cx},${cy})">${pan.body}</g>`;
+        const cardX = pad + c * (colW + pGap), cardH = rowHs[r];
+        const innerX = cardX + Math.floor((colW - pan.W) / 2);
+        content += `<rect x="${cardX + 0.5}" y="${cy + 0.5}" width="${colW - 1}" height="${cardH - 1}" rx="10" fill="#ffffff" stroke="#d9dfe0" stroke-width="1"/>`;
+        content += `<g transform="translate(${innerX},${cy})">${pan.body}</g>`;
       }
       cy += rowHs[r] + pGap;
     }
@@ -15400,7 +15336,7 @@ function plateLayoutSvg(ds, opt) {
     const pa = plateExportAnnot(ds, mode);
     const fl = mode === 'stack' && lv.allFr && otherFramed(ds) ? framedLayers(ds) : [ds.gs];
     const blk = renderPlateSvgBlock(ds, {
-      mini: false, isStack: pa.stack, showMarks, showLegend,
+      mini: false, compact, isStack: pa.stack, showMarks, showLegend,
       primaryMap: pa.maps[ds.gs], activeShown: pa.activeShown,
       oth: pa.oth, sqL: pa.sqL, turn: pa.turn,
       tracks: pa.tracks, blockLayers: pa.blockLayers,
@@ -15411,7 +15347,7 @@ function plateLayoutSvg(ds, opt) {
   }
 
   const parts = [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family='${EXPORT_FONT}' role="img" aria-label="${esc(titleText)}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="xMidYMid meet" font-family='${EXPORT_FONT}' role="img" aria-label="${esc(titleText)}">`,
     defs,
     `<rect width="${W}" height="${H}" fill="#ffffff"/>`
   ];
@@ -15663,9 +15599,9 @@ function plateLayoutSheets(ds, mode, opt) {
     sheets.push(makeLayerSheet(ds.gs, L('Plate layout')));
   }
 
-  // Add sample names + Call & Lag time reference sheet
+  // Add Call & Lag time reference sheet (no Sample names or duplicate plain Groups)
   const ref = layoutRows(ds, true);
-  sheets.push(Object.assign({ name: L('Names & Calls'), ntName: 1 }, ref));
+  sheets.push(Object.assign({ name: L('Calls & Lag'), ntName: 1 }, ref));
   const src = provenanceText(ds);
   sheets.forEach(sh => sh.rows.push([], [{ v: src, nt: 1 }]));
   return sheets;
@@ -15700,6 +15636,14 @@ function printHtmlDoc(htmlStr, fallbackFilename) {
     return false;
   }
 }
+/** Run fn(ds) with Cross Table enabled whenever >=2 layers have groups (works in Single, Stack, and Split). */
+function withExportCross(ds, fn) {
+  if (!ds || !ds.sets || ds.sets.length < 2) return null;
+  const lv = lvOf(ds), prevMode = lv.mode;
+  lv.mode = 'stack';
+  try { return typeof crossTableData === 'function' && crossTableData(ds) ? fn() : null; }
+  finally { lv.mode = prevMode; }
+}
 /** Standalone single-page A4 landscape PDF document for the plate layout SVG. */
 function plateLayoutPdfHtml(ds, fig) {
   const title = `${ds.name} · ${L('Plate layout')}`;
@@ -15707,9 +15651,9 @@ function plateLayoutPdfHtml(ds, fig) {
 <style>
 @page{size:A4 landscape;margin:10mm}
 *{box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
-html,body{margin:0;padding:0;background:#fff;height:100%}
-body{display:flex;align-items:center;justify-content:center;padding:8px}
-svg{display:block;max-width:100%;max-height:100%;width:auto;height:auto}
+html,body{margin:0;padding:0;background:#fff}
+body{padding:6px;text-align:center}
+svg{display:block;width:100%;height:auto;max-height:186mm;margin:0 auto}
 @media print{body{padding:0}}
 </style></head><body>${fig.svg}</body></html>`;
 }
@@ -15884,6 +15828,13 @@ function buildExport(ds, o) {
     rows[0] = rows[0].map(v => ({ v, bold: true }));
     const multi = ds.sets.length > 1;
     sheets.push({ name: 'Group statistics', rows, freeze: { r: 1, c: multi ? 2 : 1 }, widths: (multi ? [16] : []).concat([20, 9, 9, 10, 12], Array(keys.length * 4).fill(12)) });
+    if (typeof withExportCross === 'function' && typeof crossTableRows === 'function') {
+      const xrows = withExportCross(ds, () => crossTableRows(ds));
+      if (xrows && xrows.length > 1) {
+        xrows[0] = xrows[0].map(v => (v && typeof v === 'object' ? Object.assign({ bold: true }, v) : { v, bold: true }));
+        sheets.push({ name: 'Cross table', rows: xrows, freeze: { r: 1, c: 1 }, widths: [22].concat(Array(Math.max(1, xrows[0].length - 1)).fill(14)) });
+      }
+    }
   }
   if (o.stat && S.view.stat.mode !== 'none') {
     // the tests configured in the comparison plot, for every parameter column shown in the tables
@@ -16087,14 +16038,25 @@ table.plate td{border:1px solid #c9cfce;text-align:center;height:31px;padding:2p
 table.plate.p384{font-size:6.5px}table.plate.p384 td{height:19px;padding:0 1px}
 table.plate td.nd{background:#fafafa;color:#bbb}table.plate b{color:#c62828}table.plate s{color:#888}
 table.kv td{white-space:normal;text-align:left}table.kv td:first-child{width:200px;color:#555}table.kv tr.h td{font-weight:700;color:#111;padding-top:10px}
-.nt-meta{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 16px;margin:0 0 10px;padding:8px 10px;border:1px solid #d5dbdd;border-radius:6px;background:#f8fafa}
+.nt-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px;margin:0 0 10px;padding:8px 12px;border:1px solid #d5dbdd;border-radius:6px;background:#f8fafa}
 .nt-meta dt{font-size:10.5px;color:#666}.nt-meta dd{margin:0;font-weight:600;color:#111;overflow-wrap:anywhere}
-.nt-body h3,.nt-body h4,.nt-body h5{margin:10px 0 4px;font-weight:700}.nt-body p{margin:0 0 7px}.nt-body ul,.nt-body ol{margin:0 0 7px;padding-left:20px}.nt-body hr{border:0;border-top:1px solid #ccc;margin:8px 0}.nt-body code{font-family:ui-monospace,Consolas,monospace;font-size:11px;background:#f1f3f3;padding:1px 4px;border-radius:3px}
-table.xt td{text-align:center;vertical-align:top;padding:4px 6px}table.xt td.rh{text-align:left;font-weight:600}.xc-m{font-weight:600}.xc-m .lag,.xc-p .xk,.xc-s,.dim{color:#555;font-weight:400}.xc-p{display:flex;justify-content:space-between;gap:8px;font-size:9.5px;margin-top:2px}.vq{display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--c);vertical-align:-1px;margin-right:3px;border:1px solid rgba(0,0,0,.15)}
-.plate-fig{margin:8px 0;break-inside:avoid}.plate-fig svg{display:block;width:100%;height:auto;max-height:175mm}
+.nt-body{white-space:pre-wrap;line-height:1.65;color:#1c2224}
+h3.sub-h{font-size:12.5px;font-weight:700;color:#2c3538;margin:14px 0 6px;break-after:avoid}
+.xt-block{break-inside:avoid}
+table.xt th{text-align:center}table.xt th.txt{text-align:left}
+table.xt td{--r:0;text-align:center;vertical-align:top;padding:5px 7px;border-left:1px solid #e3e6e6;background:color-mix(in srgb,#077682 calc(var(--r) * 14%),#ffffff)}
+table.xt td.rh{border-left:0;vertical-align:middle;text-align:left;font-weight:600;background:#f8fafa}
+table.xt td.na{background:#fff}
+.xc-m{font-weight:600;white-space:nowrap}.xc-m .lag,.xc-p .xk,.xc-s,.dim{color:#555;font-weight:400}
+.xc-p{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:9.5px;margin-top:2px;white-space:nowrap}
+.xc-s{display:flex;justify-content:center;align-items:center;gap:4px;font-size:9.5px;margin-top:2px;white-space:nowrap}
+.xc-s .r{color:#666}.xc-s .vq{width:7px;height:7px;margin-right:0}
+.vq{display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--c);vertical-align:-1px;margin-right:3px;border:1px solid rgba(0,0,0,.15)}
+.res-foot{color:#555;font-size:10.5px;margin:6px 0 0}
+.plate-fig{margin:6px 0;break-inside:avoid}.plate-fig svg{display:block;width:100%;height:auto;max-height:155mm;margin:0 auto}
 footer{margin-top:30px;padding-top:8px;border-top:1px solid #ccc;color:#777;font-size:10.5px}
 @page{size:A4;margin:12mm}
-@media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}body{padding:0;max-width:none}.noprint{display:none}.scroll{overflow:visible}table{font-size:8.5px}th,td{padding:2px 4px}}
+@media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}body{padding:0;max-width:none}.facts{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 16px}.noprint{display:none}.scroll{overflow:visible}table{font-size:8.5px}th,td{padding:3px 5px}h2{margin:20px 0 8px}}
 `;
 /** The plate as a table: well name (or its group), tinted with the well's colour, "+" on positive wells, excluded wells struck out. */
 function reportPlate(ds) {
@@ -16140,7 +16102,7 @@ function buildReport(ds, o) {
   if (ds.notes) out.push(section(L('Experiment notes'), typeof renderNotesHtml === 'function' ? renderNotesHtml(ds.notes) : `<p translate="no" style="white-space:pre-wrap;margin:0">${esc(ds.notes)}</p>`));
   if (o.layout) {
     const pHtml = typeof plateLayoutSvg === 'function'
-      ? `<figure class="plate-fig">${plateLayoutSvg(ds, { title: false, footer: false }).svg}</figure>`
+      ? `<figure class="plate-fig">${plateLayoutSvg(ds, { title: false, footer: false, compact: true }).svg}</figure>`
       : reportPlate(ds);
     out.push(section(L('Plate layout'), pHtml + `<p class="note">${esc(L('Cells are tinted with the colour of the well or its group; “+” marks positive wells; struck-out wells are excluded from the analysis.'))}</p>`));
   }
@@ -16156,9 +16118,14 @@ function buildReport(ds, o) {
   }
   if (o.group && (groups.length || (scope && anyStats.length))) {
     const t = groupTableHtml(ds, keys, false, scope);
-    let h = t ? `<div class="scroll">${t.table}</div><p class="note" translate="no">${scope ? L('Selected wells only ({0}). ', scopeCount(ds, scope)) : ''}${t.note}</p>` : '';
-    if (layerStack(ds) && typeof crossTableData === 'function' && crossTableData(ds)) {
-      h += `<div class="scroll" style="margin-top:14px">${crossTableHtml(ds)}</div>`;
+    const xHtml = typeof withExportCross === 'function' && typeof crossTableHtml === 'function' ? withExportCross(ds, () => crossTableHtml(ds)) : '';
+    let h = '';
+    if (t) {
+      if (xHtml) h += `<h3 class="sub-h">${esc(L('Group statistics list'))}</h3>`;
+      h += `<div class="scroll">${t.table}</div><p class="note" translate="no">${scope ? L('Selected wells only ({0}). ', scopeCount(ds, scope)) : ''}${t.note}</p>`;
+    }
+    if (xHtml) {
+      h += `<div class="xt-block"><h3 class="sub-h">${esc(L('Cross table'))}</h3><div class="scroll">${xHtml}</div></div>`;
     }
     const wanted = [...new Set([S.view.cmpParam, 'lag', 't50', 'Fmax'])].filter(k => k === S.view.cmpParam || keys.includes(k));
     for (const k of wanted) {
@@ -18656,7 +18623,7 @@ const PKCollabCore = (() => {
 })();
 
 const COLLAB = (() => {
-  const K = PKCollabCore, BUILD = 'pk-v3-17-0-4089532a55e1', API = '/api/collab/rooms';
+  const K = PKCollabCore, BUILD = 'pk-v3-17-1-ff24f0dc86ab', API = '/api/collab/rooms';
   const route = /^\/share\/([A-Za-z0-9_-]{20,128})\/?$/.exec(typeof location === 'undefined' ? '' : location.pathname);
   const c = { active: !!route, roomId: route ? route[1] : null, state: null, connected: false, closed: false,
     intents: [], conflicts: [], inFlight: null, undoStack: [], redoStack: [], seen: new Set(), deferred: [],
